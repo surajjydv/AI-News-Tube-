@@ -1,0 +1,22 @@
+# Environment variables
+.env
+
+# Python cache and bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environments
+.venv/
+env/
+venv/
+ENV/
+
+# Output and media directories
+logs/
+uploads/
+thumbnails/
+videos/
+voice/
+assets/
