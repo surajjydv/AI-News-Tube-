@@ -2,3 +2,8 @@ feedparser
 groq
 python-dotenv
 trafilatura
+edge-tts
+pillow
+requests
+moviepy
+numpy

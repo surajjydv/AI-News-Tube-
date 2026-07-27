@@ -1,51 +1,71 @@
 from services.scraper_service import get_article_context
 from services.groq_service import generate_text
+from config.settings import CHANNEL_NAME
+from models.news_models import NewsArticle, GeneratedScript
+from utils.logger import logger
 
 
-def build_prompt(title, context, category="General"):
-    return f"""Tum ek popular Hindi YouTube News channel ke liye script writer ho.
+def build_prompt(title: str, context: str, category: str = "General", is_breaking: bool = False) -> str:
+    breaking_prefix = "🚨 BREAKING NEWS! " if is_breaking else ""
+    return f"""Tum ek top-tier YouTube High-Retention News Scriptwriter ho aur {CHANNEL_NAME} channel ki lead news anchor ho.
 
 Category: {category}
-Topic: {title}
+Topic: {breaking_prefix}{title}
 
-Yeh raha is khabar ka context (asli article se liya gaya):
+Article Context:
 \"\"\"
 {context}
 \"\"\"
 
-Upar diye gaye context ke aadhar par, is khabar par ek accurate, engaging
-YouTube script likho Hinglish (Hindi + English mix) mein. Rules:
-- Sirf context mein diye gaye facts use karo, kuch bhi ghadna mat (no hallucination)
-- Simple, conversational tone, jaise ek news anchor bol raha ho
-- 150-200 words
-- Start "Namaskar dosto!" se
-- End mein Subscribe + Bell icon ka reminder do
-- Kisi bhi tarah ka markdown ya heading mat do, sirf spoken script text do
+YouTube Audience Retention ke liye 6-Stage High-Retention Spoken Hindi News Script likho.
+
+SCRIPT STRUCTURE (MUST FOLLOW):
+1. HOOK (First 5 seconds): High-intensity shocker ya curiosity statement se shuru karo.
+2. PROBLEM / CONFLICT: Asli tension ya suspense spasht karo.
+3. WHAT HAPPENED: Main news facts aur details batayein.
+4. IMPACT: Yeh khabar audience aur duniya ke liye kyo mahtvapurna hai.
+5. FUTURE PREDICTION: Aage kya expected hai ya kya badlav aayega.
+6. CTA: {CHANNEL_NAME} ko subscribe aur video ko like karne ki urgent appeal.
+
+RULES:
+- Continuous spoken script text likho (no markdown headings, no bracket labels like [HOOK]).
+- High-retention conversational Hindi tone (jaise TV broadcast presenter bolti ho).
+- Word count: 180-240 words.
 """
 
 
-def script_writer(news_item):
-    print("=" * 50)
-    print("✍️ SCRIPT WRITER AGENT")
-    print("=" * 50)
+def script_writer(news_item: NewsArticle) -> GeneratedScript:
+    """
+    Script Writer Agent: Takes a NewsArticle and generates a high-retention 6-part YouTube script.
+    """
+    logger.info("=" * 50)
+    logger.info("✍️ HIGH-RETENTION SCRIPT WRITER AGENT (HOOK → Problem → Story → Impact → Future → CTA)")
+    logger.info("=" * 50)
 
-    title = news_item["title"]
-    link = news_item.get("link", "")
-    summary = news_item.get("summary", "")
-    category = news_item.get("category", "General")
+    title = news_item.title
+    link = news_item.link
+    summary = news_item.summary
+    category = news_item.category
+    is_brk = getattr(news_item, "is_breaking", False)
 
-    print(f"\n📝 Writing script for: [{category}] {title}")
-    print("🔎 Fetching article context for RAG...")
+    logger.info(f"Writing retention script for: [{category}] {title} (Breaking: {is_brk})")
 
     context = get_article_context(link, fallback_summary=summary)
-
     if not context:
-        context = title  # last-resort fallback so the prompt isn't empty
+        context = title
 
-    prompt = build_prompt(title, context, category)
+    news_item.scraped_content = context
 
-    script = generate_text(prompt)
+    prompt = build_prompt(title, context, category, is_breaking=is_brk)
+    script_text = generate_text(prompt)
 
-    print("\n✅ Script Generated Successfully.")
+    word_count = len(script_text.split())
 
-    return script
+    logger.info(f"✅ High-Retention Script Generated ({word_count} words).")
+
+    return GeneratedScript(
+        topic_title=title,
+        category=category,
+        script_text=script_text,
+        word_count=word_count
+    )
