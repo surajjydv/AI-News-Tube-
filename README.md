@@ -45,7 +45,8 @@ graph TD
 | :--- | :--- |
 | 🚀 [**TECH_STACK.md**](Md%20files/TECH_STACK.md) | Technical stack breakdown, libraries, and framework details. |
 | 📌 [**PROJECT_OVERVIEW.md**](Md%20files/PROJECT_OVERVIEW.md) | High-level summary & pitch for non-technical stakeholders/investors. |
-| 🏗️ [**ARCHITECTURE.md**](Md%20files/ARCHITECTURE.md) | Deep technical architecture, data models, rendering engines & lip-sync mechanics. |
+| 🏛️ [**TECHNICAL_SYSTEM_ARCHITECTURE.md**](Md%20files/TECHNICAL_SYSTEM_ARCHITECTURE.md) | Production Virtual News Studio architecture, multi-backend renderer, camera, lighting & layer-based rendering specs. |
+| 🏗️ [**ARCHITECTURE.md**](Md%20files/ARCHITECTURE.md) | Legacy technical architecture & baseline specifications. |
 | 🤖 [**AGENT_SYSTEM_GUIDE.md**](Md%20files/AGENT_SYSTEM_GUIDE.md) | Detailed specification of all 10 autonomous agents and their tasks. |
 | ⚙️ [**SETUP_AND_USAGE.md**](Md%20files/SETUP_AND_USAGE.md) | Complete installation, API key configuration, customization, and troubleshooting guide. |
 
