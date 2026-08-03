@@ -532,7 +532,13 @@ def main_fixed():
     """Run the live producer/consumer engine; old concat main is retained for compatibility."""
     stream_key = sys.argv[1].strip() if len(sys.argv) > 1 else YOUTUBE_STREAM_KEY
     rtmp_url = f"rtmp://a.rtmp.youtube.com/live2/{stream_key}"
-    add_video_to_playlist(render_quick_startup_clip())
+    # Reuse a valid startup clip so a restart does not block live output for
+    # minutes while rendering. The background worker immediately prepares a
+    # fresh unseen story afterwards.
+    startup_clip = VIDEOS_DIR / "live_startup_30s.mp4"
+    if not startup_clip.exists() or startup_clip.stat().st_size < 100_000:
+        startup_clip = render_quick_startup_clip()
+    add_video_to_playlist(startup_clip)
     threading.Thread(target=bg_producer_thread, daemon=True).start()
     while True:
         try:
