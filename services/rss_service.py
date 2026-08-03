@@ -6,11 +6,36 @@ from utils.exceptions import NewsFetchError
 import hashlib
 import re
 import datetime as dt
+import json
+import threading
+import os
+from pathlib import Path
 from time import mktime
 
-# Persistent Seen News Tracking (0 Repetition across 24/7 continuous stream)
-SEEN_NEWS_HASHES = set()
-SEEN_NEWS_TITLES = set()
+# Persist the seen set so a process/container restart does not replay the same
+# RSS items from the top of every feed.
+SEEN_NEWS_FILE = Path(__file__).resolve().parent.parent / "data" / "seen_news.json"
+SEEN_NEWS_LOCK = threading.Lock()
+try:
+    _seen_data = json.loads(SEEN_NEWS_FILE.read_text(encoding="utf-8"))
+except (FileNotFoundError, json.JSONDecodeError, OSError):
+    _seen_data = {"titles": [], "hashes": []}
+SEEN_NEWS_HASHES = set(_seen_data.get("hashes", []))
+SEEN_NEWS_TITLES = set(_seen_data.get("titles", []))
+
+RSS_CACHE_TTL_SECONDS = int(os.getenv("RSS_CACHE_TTL_SECONDS", "300"))
+RSS_CACHE = {}
+RSS_CACHE_LOCK = threading.Lock()
+
+
+def _save_seen_news():
+    SEEN_NEWS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    tmp_file = SEEN_NEWS_FILE.with_suffix(".tmp")
+    tmp_file.write_text(json.dumps({
+        "titles": sorted(SEEN_NEWS_TITLES),
+        "hashes": sorted(SEEN_NEWS_HASHES),
+    }, ensure_ascii=False), encoding="utf-8")
+    tmp_file.replace(SEEN_NEWS_FILE)
 
 # Multi-source RSS feeds covering trusted global & Indian news outlets
 RSS_FEEDS = {
@@ -34,10 +59,12 @@ RSS_FEEDS = {
 
 def mark_news_as_seen(title: str, unique_hash: str = ""):
     """Registers a news story as broadcasted so it will never be repeated."""
-    if title:
-        SEEN_NEWS_TITLES.add(title.strip().lower())
-    if unique_hash:
-        SEEN_NEWS_HASHES.add(unique_hash)
+    with SEEN_NEWS_LOCK:
+        if title:
+            SEEN_NEWS_TITLES.add(title.strip().lower())
+        if unique_hash:
+            SEEN_NEWS_HASHES.add(unique_hash)
+        _save_seen_news()
 
 
 def is_news_seen(title: str, unique_hash: str = "") -> bool:
@@ -76,6 +103,26 @@ def _is_similar_title(t1: str, t2: str) -> bool:
     intersection = words1.intersection(words2)
     jaccard = len(intersection) / max(1, len(words1.union(words2)))
     return jaccard > 0.40
+
+
+def _get_feed_entries(category: str, url: str):
+    """Return RSS entries from a short-lived cache to avoid repeat downloads."""
+    now = dt.datetime.now(dt.timezone.utc).timestamp()
+    with RSS_CACHE_LOCK:
+        cached = RSS_CACHE.get(category)
+        if cached and now - cached[0] < RSS_CACHE_TTL_SECONDS:
+            return cached[1]
+
+    try:
+        feed = feedparser.parse(url)
+        entries = list(feed.entries)
+    except Exception as error:
+        logger.warning(f"Failed to parse RSS feed for '{category}': {error}")
+        return []
+
+    with RSS_CACHE_LOCK:
+        RSS_CACHE[category] = (now, entries)
+    return entries
 
 
 def calculate_trending_score(title: str, summary: str, category: str) -> tuple:
@@ -121,14 +168,10 @@ def fetch_news(limit_per_category: int = 5) -> List[NewsArticle]:
 
     try:
         for category, url in RSS_FEEDS.items():
-            try:
-                feed = feedparser.parse(url)
-            except Exception as fe:
-                logger.warning(f"Failed to parse RSS feed for '{category}': {fe}")
-                continue
+            entries = _get_feed_entries(category, url)
 
             count_for_category = 0
-            for entry in feed.entries:
+            for entry in entries:
                 if count_for_category >= limit_per_category:
                     break
 
@@ -194,10 +237,7 @@ def get_fresh_unseen_news(count: int = 5) -> List[NewsArticle]:
     unseen = [art for art in all_news if not is_news_seen(art.title, art.unique_hash)]
 
     if len(unseen) < count:
-        logger.warning(f"Seen articles cache full ({len(SEEN_NEWS_TITLES)} titles). Clearing oldest entries for recycling...")
-        SEEN_NEWS_TITLES.clear()
-        SEEN_NEWS_HASHES.clear()
-        unseen = all_news
+        logger.warning("Not enough unseen RSS stories available; keeping seen cache to prevent replay.")
 
     selected = unseen[:count]
     for art in selected:

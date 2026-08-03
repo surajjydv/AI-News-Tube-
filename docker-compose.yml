@@ -9,9 +9,15 @@ services:
     restart: always
     env_file:
       - .env
+    environment:
+      - PYTHONUNBUFFERED=1
     volumes:
       - ./videos:/app/videos
       - ./voice:/app/voice
       - ./logs:/app/logs
       - ./assets:/app/assets
+      - ./agents:/app/agents
+      - ./services:/app/services
+      - ./scripts:/app/scripts
+      - ./config:/app/config
     command: ["python", "scripts/continuous_live_stream.py", "${YOUTUBE_STREAM_KEY:-qa16-ey2s-xzpc-hw57-1rc2}"]

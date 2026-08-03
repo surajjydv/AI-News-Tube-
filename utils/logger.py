@@ -1,4 +1,5 @@
 import logging
+from logging.handlers import RotatingFileHandler
 import sys
 import io
 from pathlib import Path
@@ -42,7 +43,9 @@ def setup_logger(name: str = "AI-NewsTube", level: int = logging.INFO) -> loggin
 
     # File Handler
     try:
-        file_handler = logging.FileHandler(LOG_FILE, encoding="utf-8")
+        file_handler = RotatingFileHandler(
+            LOG_FILE, maxBytes=10 * 1024 * 1024, backupCount=3, encoding="utf-8"
+        )
         file_handler.setLevel(level)
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)

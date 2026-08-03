@@ -18,7 +18,7 @@ load_dotenv(ENV_FILE, override=True)
 CHANNEL_NAME = os.getenv("CHANNEL_NAME", "NewsTube")
 OWNER = os.getenv("OWNER", "Suraj")
 VERSION = "1.1.0"
-YOUTUBE_STREAM_KEY = os.getenv("YOUTUBE_STREAM_KEY", "qa16-ey2s-xzpc-hw57-1rc2")
+YOUTUBE_STREAM_KEY = os.getenv("YOUTUBE_STREAM_KEY", "cm6x-59y6-26vm-f5pb-dp8c")
 
 # Directories Management
 LOGS_DIR = BASE_DIR / "logs"
@@ -39,8 +39,9 @@ for directory in [LOGS_DIR, VOICE_DIR, VIDEOS_DIR, THUMBNAILS_DIR, DATA_DIR, UPL
 BLENDER_PATH = os.getenv("BLENDER_PATH", None)
 
 # LLM & API Configuration
-DEFAULT_GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
-DEFAULT_TTS_VOICE = os.getenv("DEFAULT_TTS_VOICE", "hi-IN-MadhurNeural")  # Hindi Male Anchor Voice (Deep Authoritative TV News Presenter)
+DEFAULT_GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+BROADCAST_FPS = int(os.getenv("BROADCAST_FPS", "24"))
+DEFAULT_TTS_VOICE = os.getenv("DEFAULT_TTS_VOICE", "hi-IN-SwaraNeural")  # Hindi Female Anchor Voice (Swara Neural TV News Presenter)
 PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
 PIXABAY_API_KEY = os.getenv("PIXABAY_API_KEY", "")
 UNSPLASH_API_KEY = os.getenv("UNSPLASH_API_KEY", "")
