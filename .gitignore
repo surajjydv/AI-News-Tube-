@@ -20,3 +20,10 @@ thumbnails/
 videos/
 voice/
 assets/
+
+# Temporary generated files
+frame_*.jpg
+*TEMP_MPY*
+*.tar.gz
+*.tmp
+*.tmp.mp4

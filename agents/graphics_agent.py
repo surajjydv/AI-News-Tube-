@@ -180,11 +180,6 @@ class BroadcastLayerSystem:
              (w // 2 + 500 + angle_shift, h), (w // 2 - 300 + angle_shift, h)],
             fill=(255, 215, 0, 18)
         )
-        draw.polygon(
-            [(100 - angle_shift // 2, 0), (320 - angle_shift // 2, 0),
-             (750 - angle_shift // 2, h), (-50 - angle_shift // 2, h)],
-            fill=(220, 38, 38, 22)
-        )
         frame = Image.alpha_composite(frame.convert("RGBA"), overlay).convert("RGB")
         if self.config.get("enable_floor_reflection", True):
             frame = VisualEffects2D.render_floor_reflection(frame, desk_y=h - 280)
@@ -490,9 +485,6 @@ def render_tv_broadcast_frame(
 
     # Check if Breaking News for Red Alert Strobe
     is_brk_event = "break" in category.lower() or "ताज़ा" in category or "dhamaka" in category.lower()
-    if is_brk_event:
-        strobe_alpha = int(70 + 40 * math.sin(global_t * 6.0))
-        v_draw.rectangle([(0, 0), (w, h)], fill=(220, 15, 20, strobe_alpha))
 
     # Top & Bottom Gradient Shadows
     for y in range(160):
@@ -572,15 +564,46 @@ def render_tv_broadcast_frame(
         draw.text((38, banner_y + 18), act_title1, fill=(255, 235, 100), font=_load_font(28 if is_brk_event else 32, bold=True))
         draw.text((38, banner_y + 60), act_title2, fill=(255, 235, 100), font=_load_font(28 if is_brk_event else 32, bold=True))
 
-        # Center Devanagari Hindi Main Headline (Large 2.5D Extruded Text)
+        # Center Devanagari Hindi Main Headline (Scaled & Wrapped to Prevent Overlap)
         hclean = headline_text.split(" - ")[0].strip() if " - " in headline_text else headline_text
-        hfont_size = 38 if len(hclean) > 55 else 44
+        max_w = w - 630  # 1290px max text width boundary (from x=330 to x=1620)
+
+        if len(hclean) > 75:
+            hfont_size = 26
+        elif len(hclean) > 50:
+            hfont_size = 30
+        else:
+            hfont_size = 36
+
         hfont = _load_font(hfont_size, bold=True)
 
-        # 3D Extruded Shadow Layer behind Headline Text
-        for ext in range(5, 0, -1):
-            draw.text((330 + ext, banner_y + 30 + ext), hclean, fill=(15, 5, 10), font=hfont)
-        draw.text((330, banner_y + 30), hclean, fill=(255, 255, 255), font=hfont)
+        words = hclean.split()
+        lines = []
+        curr = ""
+        for word in words:
+            test = f"{curr} {word}".strip()
+            try:
+                tw = draw.textlength(test, font=hfont)
+            except Exception:
+                tw = len(test) * (hfont_size * 0.6)
+            if tw > max_w and curr:
+                lines.append(curr)
+                curr = word
+            else:
+                curr = test
+        if curr:
+            lines.append(curr)
+
+        lines = lines[:2]
+        line_h = hfont_size + 6
+        total_h = len(lines) * line_h
+        start_y = banner_y + (banner_h - total_h) // 2
+
+        for i, line in enumerate(lines):
+            y_pos = start_y + i * line_h
+            for ext in range(3, 0, -1):
+                draw.text((330 + ext, y_pos + ext), line, fill=(15, 5, 10), font=hfont)
+            draw.text((330, y_pos), line, fill=(255, 255, 255), font=hfont)
 
         # Right CTA Box Text
         draw.text((w - 255, banner_y + 24), "🔴 LIVE NOW", fill=(255, 255, 255), font=_load_font(21, bold=True))

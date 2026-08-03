@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  newstube-live:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: newstube_247_stream
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./videos:/app/videos
+      - ./voice:/app/voice
+      - ./logs:/app/logs
+      - ./assets:/app/assets
+    command: ["python", "scripts/continuous_live_stream.py", "${YOUTUBE_STREAM_KEY:-qa16-ey2s-xzpc-hw57-1rc2}"]

@@ -1,0 +1,10 @@
+.git
+.gitignore
+__pycache__
+*.pyc
+*.pyo
+venv
+.env.local
+videos/*.mp4
+voice/*.mp3
+logs/*.log

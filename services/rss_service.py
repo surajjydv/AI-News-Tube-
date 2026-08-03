@@ -3,6 +3,14 @@ from typing import List
 from models.news_models import NewsArticle
 from utils.logger import logger
 from utils.exceptions import NewsFetchError
+import hashlib
+import re
+import datetime as dt
+from time import mktime
+
+# Persistent Seen News Tracking (0 Repetition across 24/7 continuous stream)
+SEEN_NEWS_HASHES = set()
+SEEN_NEWS_TITLES = set()
 
 # Multi-source RSS feeds covering trusted global & Indian news outlets
 RSS_FEEDS = {
@@ -17,13 +25,32 @@ RSS_FEEDS = {
     "Technology": "https://news.google.com/rss/headlines/section/topic/TECHNOLOGY?hl=en-IN&gl=IN&ceid=IN:en",
     "Sports": "https://news.google.com/rss/headlines/section/topic/SPORTS?hl=en-IN&gl=IN&ceid=IN:en",
     "Science": "https://news.google.com/rss/headlines/section/topic/SCIENCE?hl=en-IN&gl=IN&ceid=IN:en",
+    "Entertainment": "https://news.google.com/rss/headlines/section/topic/ENTERTAINMENT?hl=en-IN&gl=IN&ceid=IN:en",
+    "Health": "https://news.google.com/rss/headlines/section/topic/HEALTH?hl=en-IN&gl=IN&ceid=IN:en",
+    "Google India Hindi": "https://news.google.com/rss?hl=hi&gl=IN&ceid=IN:hi",
+    "BBC Hindi": "https://feeds.bbci.co.uk/hindi/rss.xml",
 }
 
 
-import hashlib
-import re
-import datetime as dt
-from time import mktime
+def mark_news_as_seen(title: str, unique_hash: str = ""):
+    """Registers a news story as broadcasted so it will never be repeated."""
+    if title:
+        SEEN_NEWS_TITLES.add(title.strip().lower())
+    if unique_hash:
+        SEEN_NEWS_HASHES.add(unique_hash)
+
+
+def is_news_seen(title: str, unique_hash: str = "") -> bool:
+    """Checks if a story has already been broadcasted."""
+    if unique_hash and unique_hash in SEEN_NEWS_HASHES:
+        return True
+    t_clean = title.strip().lower()
+    if t_clean in SEEN_NEWS_TITLES:
+        return True
+    for seen_t in list(SEEN_NEWS_TITLES):
+        if _is_similar_title(t_clean, seen_t):
+            return True
+    return False
 
 
 def _is_within_freshness_window(entry, max_hours: float = 24.0) -> bool:
@@ -144,7 +171,6 @@ def fetch_news(limit_per_category: int = 5) -> List[NewsArticle]:
             for existing in deduped_articles:
                 if _is_similar_title(candidate.title, existing.title):
                     duplicate_found = True
-                    # Keep the higher score article
                     if candidate.trending_score > existing.trending_score:
                         existing.trending_score = candidate.trending_score
                     break
@@ -160,6 +186,25 @@ def fetch_news(limit_per_category: int = 5) -> List[NewsArticle]:
     except Exception as e:
         logger.error(f"Error fetching news: {e}")
         raise NewsFetchError(f"Failed to fetch news feeds: {e}") from e
+
+
+def get_fresh_unseen_news(count: int = 5) -> List[NewsArticle]:
+    """Fetches and returns 100% unseen, unique fresh news articles."""
+    all_news = fetch_news(limit_per_category=10)
+    unseen = [art for art in all_news if not is_news_seen(art.title, art.unique_hash)]
+
+    if len(unseen) < count:
+        logger.warning(f"Seen articles cache full ({len(SEEN_NEWS_TITLES)} titles). Clearing oldest entries for recycling...")
+        SEEN_NEWS_TITLES.clear()
+        SEEN_NEWS_HASHES.clear()
+        unseen = all_news
+
+    selected = unseen[:count]
+    for art in selected:
+        mark_news_as_seen(art.title, art.unique_hash)
+
+    print(f"[FRESH NEWS ENGINE] 🆕 Selected {len(selected)} 100% unique unseen news articles!")
+    return selected
 
 
 def get_realtime_ticker_headlines(limit: int = 12) -> List[str]:
@@ -193,21 +238,15 @@ def get_realtime_ticker_headlines(limit: int = 12) -> List[str]:
 def get_dynamic_hindi_news_data(main_title_eng: str, main_category: str) -> dict:
     """
     Fetches live current news across categories and translates titles into simple, natural Devanagari Hindi.
-    Populates:
-    - Main headline & sub-takeaways in simple Hindi.
-    - 4-column quick news cards across 4 different categories (India, Business, Tech, Sports).
-    - Bottom ticker marquee & secondary gold strip in simple Hindi.
     """
     from services.groq_service import generate_text
 
-    # Translate main title to simple Hindi
     try:
         prompt = f"Translate this news headline into 1 simple, natural Devanagari Hindi news headline suitable for reading: '{main_title_eng}'. Return ONLY the Hindi text."
         main_hindi = generate_text(prompt, temperature=0.2).strip().replace('"', '')
     except Exception:
         main_hindi = main_title_eng
 
-    # Fetch live articles for 4 quick cards
     all_articles = fetch_news(limit_per_category=2)
     categories_needed = ["India", "Business", "Technology", "Sports"]
     quick_hindi_cards = []
@@ -225,7 +264,6 @@ def get_dynamic_hindi_news_data(main_title_eng: str, main_category: str) -> dict
         else:
             quick_hindi_cards.append(f"[{cat.upper()}]\nताज़ा समाचार अपडेट")
 
-    # Fetch ticker headlines
     raw_tickers = get_realtime_ticker_headlines(limit=10)
     ticker_hindi_list = []
     for rt in raw_tickers[:6]:
@@ -245,6 +283,3 @@ def get_dynamic_hindi_news_data(main_title_eng: str, main_category: str) -> dict
         "quick_cards": quick_hindi_cards[:4],
         "ticker_headlines": ticker_hindi_list if ticker_hindi_list else ["सरकार ने किसानों के लिए नई योजना का किया ऐलान", "भारत की अर्थव्यवस्था में रिकॉर्ड वृद्धि दर्ज"]
     }
-
-
-

@@ -15,9 +15,10 @@ ENV_FILE = BASE_DIR / ".env"
 load_dotenv(ENV_FILE, override=True)
 
 # Application Details
-CHANNEL_NAME = os.getenv("CHANNEL_NAME", "AI-NewsTube")
+CHANNEL_NAME = os.getenv("CHANNEL_NAME", "NewsTube")
 OWNER = os.getenv("OWNER", "Suraj")
 VERSION = "1.1.0"
+YOUTUBE_STREAM_KEY = os.getenv("YOUTUBE_STREAM_KEY", "qa16-ey2s-xzpc-hw57-1rc2")
 
 # Directories Management
 LOGS_DIR = BASE_DIR / "logs"
