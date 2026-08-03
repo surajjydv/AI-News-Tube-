@@ -202,7 +202,10 @@ def feed_clip_into_continuous_stream(video_path: Path, stream_state) -> bool:
                 chunk = decoders[index].stdout.read(256 * 1024)
                 if not chunk:
                     break
-                os.write(target_fd, chunk)
+                view = memoryview(chunk)
+                while view:
+                    written = os.write(target_fd, view)
+                    view = view[written:]
             results[index] = True
         except (BrokenPipeError, OSError):
             results[index] = False
