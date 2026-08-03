@@ -163,9 +163,9 @@ def start_continuous_raw_stream(rtmp_url: str):
     audio_read, audio_write = os.pipe()
     cmd = [
         get_ffmpeg_binary(), "-loglevel", "warning",
-        "-re", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", "1280x720",
+        "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", "1280x720",
         "-r", str(BROADCAST_FPS), "-i", f"pipe:{video_read}",
-        "-re", "-f", "s16le", "-ar", "44100", "-ac", "2", "-i", f"pipe:{audio_read}",
+        "-f", "s16le", "-ar", "44100", "-ac", "2", "-i", f"pipe:{audio_read}",
         "-map", "0:v:0", "-map", "1:a:0", "-c:v", "libx264", "-preset", "ultrafast",
         "-tune", "zerolatency", "-b:v", "2500k", "-maxrate", "2800k",
         "-bufsize", "5600k", "-pix_fmt", "yuv420p", "-g", "30",
@@ -183,13 +183,13 @@ def feed_clip_into_continuous_stream(video_path: Path, stream_state) -> bool:
     process, video_fd, audio_fd = stream_state
     decoders = [
         subprocess.Popen(
-            [get_ffmpeg_binary(), "-loglevel", "error", "-i", str(video_path),
+            [get_ffmpeg_binary(), "-loglevel", "error", "-re", "-i", str(video_path),
              "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", "1280x720",
              "-r", str(BROADCAST_FPS), "pipe:1"], stdout=subprocess.PIPE,
              stderr=subprocess.DEVNULL,
         ),
         subprocess.Popen(
-            [get_ffmpeg_binary(), "-loglevel", "error", "-i", str(video_path),
+            [get_ffmpeg_binary(), "-loglevel", "error", "-re", "-i", str(video_path),
              "-f", "s16le", "-ar", "44100", "-ac", "2", "pipe:1"],
             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
         ),
