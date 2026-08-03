@@ -547,10 +547,11 @@ def main_fixed():
             if stream_clip_to_rtmp(clip_path, rtmp_url):
                 # The clip is immutable and has already been broadcast; keep
                 # the 24/7 process from filling the disk over time.
-                try:
-                    clip_path.unlink()
-                except OSError:
-                    pass
+                if clip_path.name != "live_startup_30s.mp4":
+                    try:
+                        clip_path.unlink()
+                    except OSError:
+                        pass
         except KeyboardInterrupt:
             try:
                 pass
