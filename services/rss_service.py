@@ -4,22 +4,40 @@ from models.news_models import NewsArticle
 from utils.logger import logger
 from utils.exceptions import NewsFetchError
 
-# RSS feeds covering all major current-affairs categories
+# Multi-source RSS feeds covering trusted global & Indian news outlets
 RSS_FEEDS = {
     "Top Stories": "https://news.google.com/rss?hl=en-IN&gl=IN&ceid=IN:en",
+    "BBC World": "http://feeds.bbci.co.uk/news/world/rss.xml",
+    "NDTV Top": "https://feeds.feedburner.com/ndtvnews-top-stories",
+    "Times of India": "https://timesofindia.indiatimes.com/rssfeedstopstories.cms",
+    "India Today": "https://www.indiatoday.in/rss/1206578",
     "India": "https://news.google.com/rss/headlines/section/topic/NATION?hl=en-IN&gl=IN&ceid=IN:en",
     "World": "https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-IN&gl=IN&ceid=IN:en",
     "Business": "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=en-IN&gl=IN&ceid=IN:en",
     "Technology": "https://news.google.com/rss/headlines/section/topic/TECHNOLOGY?hl=en-IN&gl=IN&ceid=IN:en",
-    "Entertainment": "https://news.google.com/rss/headlines/section/topic/ENTERTAINMENT?hl=en-IN&gl=IN&ceid=IN:en",
     "Sports": "https://news.google.com/rss/headlines/section/topic/SPORTS?hl=en-IN&gl=IN&ceid=IN:en",
     "Science": "https://news.google.com/rss/headlines/section/topic/SCIENCE?hl=en-IN&gl=IN&ceid=IN:en",
-    "Health": "https://news.google.com/rss/headlines/section/topic/HEALTH?hl=en-IN&gl=IN&ceid=IN:en",
 }
 
 
 import hashlib
 import re
+import datetime as dt
+from time import mktime
+
+
+def _is_within_freshness_window(entry, max_hours: float = 24.0) -> bool:
+    """Checks if published date is within allowed freshness window (default 24h)."""
+    parsed_time = getattr(entry, "published_parsed", None) or getattr(entry, "updated_parsed", None)
+    if not parsed_time:
+        return True  # If feed omits timestamp, allow article
+    try:
+        entry_dt = dt.datetime.fromtimestamp(mktime(parsed_time), tz=dt.timezone.utc)
+        now_dt   = dt.datetime.now(dt.timezone.utc)
+        age_hours = (now_dt - entry_dt).total_seconds() / 3600.0
+        return age_hours <= max_hours
+    except Exception:
+        return True
 
 
 def _is_similar_title(t1: str, t2: str) -> bool:
@@ -30,7 +48,7 @@ def _is_similar_title(t1: str, t2: str) -> bool:
         return False
     intersection = words1.intersection(words2)
     jaccard = len(intersection) / max(1, len(words1.union(words2)))
-    return jaccard > 0.45
+    return jaccard > 0.40
 
 
 def calculate_trending_score(title: str, summary: str, category: str) -> tuple:
@@ -91,6 +109,9 @@ def fetch_news(limit_per_category: int = 5) -> List[NewsArticle]:
                 if not title:
                     continue
 
+                if not _is_within_freshness_window(entry, max_hours=24.0):
+                    continue
+
                 summary = ""
                 if hasattr(entry, "summary"):
                     summary = entry.summary.strip()
@@ -149,7 +170,6 @@ def get_realtime_ticker_headlines(limit: int = 12) -> List[str]:
     try:
         articles = fetch_news(limit_per_category=2)
         for art in articles:
-            # Clean headline title
             clean_t = art.title.split(" - ")[0].strip()
             if clean_t and clean_t not in headlines:
                 headlines.append(f"[{art.category.upper()}] {clean_t}")
@@ -168,4 +188,63 @@ def get_realtime_ticker_headlines(limit: int = 12) -> List[str]:
         ]
 
     return headlines
+
+
+def get_dynamic_hindi_news_data(main_title_eng: str, main_category: str) -> dict:
+    """
+    Fetches live current news across categories and translates titles into simple, natural Devanagari Hindi.
+    Populates:
+    - Main headline & sub-takeaways in simple Hindi.
+    - 4-column quick news cards across 4 different categories (India, Business, Tech, Sports).
+    - Bottom ticker marquee & secondary gold strip in simple Hindi.
+    """
+    from services.groq_service import generate_text
+
+    # Translate main title to simple Hindi
+    try:
+        prompt = f"Translate this news headline into 1 simple, natural Devanagari Hindi news headline suitable for reading: '{main_title_eng}'. Return ONLY the Hindi text."
+        main_hindi = generate_text(prompt, temperature=0.2).strip().replace('"', '')
+    except Exception:
+        main_hindi = main_title_eng
+
+    # Fetch live articles for 4 quick cards
+    all_articles = fetch_news(limit_per_category=2)
+    categories_needed = ["India", "Business", "Technology", "Sports"]
+    quick_hindi_cards = []
+
+    for cat in categories_needed:
+        match = next((a for a in all_articles if a.category == cat), None)
+        if match:
+            raw_t = match.title.split(" - ")[0].strip()
+            try:
+                p = f"Shorten and translate this news headline into 4 to 6 simple Devanagari Hindi words: '{raw_t}'. Return ONLY the Hindi text."
+                h_text = generate_text(p, temperature=0.2).strip().replace('"', '')
+                quick_hindi_cards.append(f"[{cat.upper()}]\n{h_text[:35]}")
+            except Exception:
+                quick_hindi_cards.append(f"[{cat.upper()}]\n{raw_t[:30]}")
+        else:
+            quick_hindi_cards.append(f"[{cat.upper()}]\nताज़ा समाचार अपडेट")
+
+    # Fetch ticker headlines
+    raw_tickers = get_realtime_ticker_headlines(limit=10)
+    ticker_hindi_list = []
+    for rt in raw_tickers[:6]:
+        try:
+            p_t = f"Translate this news title into 1 short simple Devanagari Hindi ticker phrase: '{rt}'. Return ONLY Hindi text."
+            ht = generate_text(p_t, temperature=0.2).strip().replace('"', '')
+            ticker_hindi_list.append(ht)
+        except Exception:
+            ticker_hindi_list.append(rt)
+
+    return {
+        "main_headline": main_hindi,
+        "sub_takeaways": [
+            "• प्रमुख बिंदु और मुख्य समाचार अपडेट्स",
+            "• निष्पक्ष जांच और ताज़ा रिपोर्ट"
+        ],
+        "quick_cards": quick_hindi_cards[:4],
+        "ticker_headlines": ticker_hindi_list if ticker_hindi_list else ["सरकार ने किसानों के लिए नई योजना का किया ऐलान", "भारत की अर्थव्यवस्था में रिकॉर्ड वृद्धि दर्ज"]
+    }
+
+
 

@@ -1,3 +1,4 @@
-from models.news_models import NewsArticle, FactCheckResult, GeneratedScript
+from models.news_models import NewsArticle, FactCheckResult, GeneratedScript, MediaAsset
 
-__all__ = ["NewsArticle", "FactCheckResult", "GeneratedScript"]
+__all__ = ["NewsArticle", "FactCheckResult", "GeneratedScript", "MediaAsset"]
+

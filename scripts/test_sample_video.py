@@ -128,9 +128,9 @@ def get_anchor_image() -> Path:
 # Step 3: Compose & Render 10-second Video
 # ─────────────────────────────────────────
 def render_sample_video(voice_path: Path) -> Path:
-    from moviepy import VideoClip, AudioFileClip, CompositeVideoClip
+    from moviepy import VideoClip, AudioFileClip
 
-    logger.info("  Video: Compositing 10-second sample broadcast video...")
+    logger.info("  Video: Compositing 10-second Aaj Tak style sample broadcast video...")
 
     # Load audio
     audio_clip = None
@@ -144,111 +144,51 @@ def render_sample_video(voice_path: Path) -> Path:
     # Load studio background
     bg_path = STUDIO_DIR / "studio_background.png"
     anchor_path = get_anchor_image()
-    logo_path = STUDIO_DIR / "channel_logo_3d.png"
 
     anchor_img = Image.open(str(anchor_path)).convert("RGBA")
 
     def make_frame(t: float):
-        # ── Background ──────────────────────────────────
+        from agents.graphics_agent import BroadcastLayerSystem
+        layer_sys = BroadcastLayerSystem(width=W, height=H)
+
         if bg_path.exists():
             bg = Image.open(str(bg_path)).convert("RGB").resize((W, H), Image.LANCZOS)
         else:
-            bg = Image.new("RGB", (W, H), (8, 10, 28))
+            bg = Image.new("RGB", (W, H), (10, 12, 28))
 
-        frame = bg.copy()
-        draw = ImageDraw.Draw(frame)
+        # Layer 0 & Layer 1: Base & Volumetric Depth
+        frame = layer_sys.render_layer_0_background(bg)
+        frame = layer_sys.render_layer_1_depth(frame, t)
 
-        # ── Animated gradient overlay ─────────────────
-        pulse = 0.5 + 0.5 * np.sin(t * 2.0)
-        overlay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-        ov_draw = ImageDraw.Draw(overlay)
-        ov_draw.rectangle([(0, 0), (W, H)], fill=(10, 15, 40, int(30 + 10 * pulse)))
-        frame = Image.alpha_composite(frame.convert("RGBA"), overlay).convert("RGB")
-
-        # ── AI Anchor (right side) ────────────────────
-        aw = 380
+        # 2. Presenter (Right side anchor position)
+        aw = 340
         ah = int(anchor_img.height * aw / anchor_img.width)
         anch_resized = anchor_img.resize((aw, ah), Image.LANCZOS)
 
-        # Subtle breathe animation
-        breathe = int(3 * np.sin(t * 1.2))
-        ax, ay = W - aw - 30, H - ah + breathe
-        frame.paste(anch_resized, (ax, ay), anch_resized.split()[3])
-
-        frame_draw = ImageDraw.Draw(frame)
-
-        # ── LIVE badge ────────────────────────────────
-        badge_x, badge_y = 30, 30
-        live_pulse = int(200 + 55 * np.sin(t * 3.0))
-        frame_draw.rounded_rectangle(
-            [(badge_x, badge_y), (badge_x + 90, badge_y + 36)],
-            radius=6, fill=(live_pulse, 20, 20)
-        )
-        font_sm = _load_font(20, bold=True)
-        frame_draw.text((badge_x + 10, badge_y + 7), "● LIVE", font=font_sm, fill=(255, 255, 255))
-
-        # ── Channel name ──────────────────────────────
-        font_ch = _load_font(28, bold=True)
-        frame_draw.text((30, 72), CHANNEL_NAME.upper(), font=font_ch, fill=(0, 200, 255))
-
-        # ── Sample label ─────────────────────────────
-        font_sample = _load_font(18)
-        frame_draw.text((30, 106), "SAMPLE TEST — 10 SECOND PREVIEW", font=font_sample, fill=(255, 180, 0))
-
-        # ── Ticker strip ─────────────────────────────
-        ticker_y = H - 54
-        frame_draw.rectangle([(0, ticker_y), (W, ticker_y + 54)], fill=(0, 140, 220))
-        frame_draw.rectangle([(0, ticker_y), (120, ticker_y + 54)], fill=(220, 30, 30))
-        font_ticker_label = _load_font(22, bold=True)
-        frame_draw.text((8, ticker_y + 14), "BREAKING", font=font_ticker_label, fill=(255, 255, 255))
-
-        # Scrolling ticker text
-        ticker_text = "  AI-NewsTube Pipeline Test  ✓  Blender 5.2 Avatar Active  ✓  GLB Model Loaded  ✓  Full Pipeline Verified  "
-        font_ticker = _load_font(20)
-        scroll_speed = 120  # px/sec
-        offset = int((t * scroll_speed) % (len(ticker_text) * 12))
-        frame_draw.text((125 - offset, ticker_y + 16), ticker_text * 3, font=font_ticker, fill=(255, 255, 255))
-
-        # ── Lower third ───────────────────────────────
-        lt_y = H - 130
-        lt_alpha = int(210 + 30 * np.sin(t * 1.5))
-        lt_overlay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-        lt_draw = ImageDraw.Draw(lt_overlay)
-        lt_draw.rectangle([(0, lt_y), (600, lt_y + 68)], fill=(5, 10, 35, lt_alpha))
-        lt_draw.rectangle([(0, lt_y), (6, lt_y + 68)], fill=(0, 200, 255, 255))
-        frame = Image.alpha_composite(frame.convert("RGBA"), lt_overlay).convert("RGB")
-        frame_draw = ImageDraw.Draw(frame)
-
-        font_lt1 = _load_font(26, bold=True)
-        font_lt2 = _load_font(18)
-        frame_draw.text((18, lt_y + 8), "AI News Anchor", font=font_lt1, fill=(255, 255, 255))
-        frame_draw.text((18, lt_y + 38), "Blender 5.2  |  Ch33_nonPBR.fbx  |  processed_anchor.glb", font=font_lt2, fill=(180, 220, 255))
-
-        # ── Lip-sync mouth indicator ─────────────────
-        if audio_clip:
-            try:
-                frame_arr = audio_clip.get_frame(min(t, audio_clip.duration - 0.01))
-                rms = float(np.sqrt(np.mean(np.square(np.array(frame_arr, dtype=np.float32)))))
-            except Exception:
-                rms = 0.2
+        sway_x = int(3 * np.sin(t * 1.5))
+        breathe = int(3 * np.sin(t * 2.8))
+        ax, ay = W - aw - 20 + sway_x, H - ah - 30 + breathe
+        if anch_resized.mode == "RGBA":
+            frame.paste(anch_resized, (ax, ay), anch_resized.split()[3])
         else:
-            rms = 0.3 * abs(np.sin(t * 4.0))
+            frame.paste(anch_resized, (ax, ay))
 
-        mouth_open = min(int(rms * 800), 30)
-        mx, my = ax + aw // 2 - 15, ay + int(ah * 0.62)
-        frame_draw.ellipse([(mx, my), (mx + 30, my + mouth_open + 4)], fill=(50, 20, 20))
+        # 3. Render Broadcast Overlays
+        frame = layer_sys.render_layer_3_headline(frame, "AI-NEWSTUBE 2.5D BROADCAST ENGINE ACTIVE", "AI EXCLUSIVE", t, t)
+        frame = layer_sys.render_layer_4_hud(frame, t, cam_mode=int(t // 3.5) % 3)
+        frame = layer_sys.render_layer_5_ticker(frame, t, ticker_headlines=[
+            "2.5D Broadcast Engine Active", "Aaj Tak Red & Gold Metallic Aesthetics Applied", "3D Extruded Lower Third Cards Rendered", "Specular Glass Light Sweeps Active"
+        ])
+        frame = layer_sys.render_layer_6_effects(frame, t)
 
-        # ── Progress bar ─────────────────────────────
-        progress = t / DURATION
-        bar_w = int(W * progress)
-        frame_draw.rectangle([(0, H - 58), (bar_w, H - 55)], fill=(0, 200, 255))
-
-        # ── Timestamp ─────────────────────────────────
+        # Timestamp
+        frame_draw = ImageDraw.Draw(frame)
         ts = f"{t:.1f}s / {DURATION:.0f}s"
-        font_ts = _load_font(16)
-        frame_draw.text((W - 100, 10), ts, font=font_ts, fill=(150, 150, 150))
-
+        font_ts = _load_font(14)
+        frame_draw.text((W - 90, 8), ts, font=font_ts, fill=(180, 180, 180))
         return np.array(frame.convert("RGB"))
+
+
 
     # Create clip
     video = VideoClip(make_frame, duration=DURATION)

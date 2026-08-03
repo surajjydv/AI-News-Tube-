@@ -39,4 +39,34 @@ BLENDER_PATH = os.getenv("BLENDER_PATH", None)
 
 # LLM & API Configuration
 DEFAULT_GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
-DEFAULT_TTS_VOICE = os.getenv("DEFAULT_TTS_VOICE", "hi-IN-SwaraNeural")  # Hindi Female Anchor Voice
+DEFAULT_TTS_VOICE = os.getenv("DEFAULT_TTS_VOICE", "hi-IN-MadhurNeural")  # Hindi Male Anchor Voice (Deep Authoritative TV News Presenter)
+PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
+PIXABAY_API_KEY = os.getenv("PIXABAY_API_KEY", "")
+UNSPLASH_API_KEY = os.getenv("UNSPLASH_API_KEY", "")
+
+
+# Graphics Engine Configuration
+CONFIG_DIR = BASE_DIR / "config"
+GRAPHICS_CONFIG_PATH = CONFIG_DIR / "graphics_config.json"
+
+
+def load_graphics_config() -> dict:
+    """Loads graphics_config.json or provides default fallback settings."""
+    import json
+    if GRAPHICS_CONFIG_PATH.exists():
+        try:
+            with open(GRAPHICS_CONFIG_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {
+        "theme": "premium_news",
+        "headline_style": "breaking_news",
+        "camera_motion": "push_in",
+        "lighting": "studio_volumetric",
+        "parallax_intensity": 1.0,
+        "glass_opacity": 220,
+        "enable_perspective_warp": True,
+        "enable_light_sweeps": True,
+        "enable_particles": True,
+    }

@@ -1,0 +1,53 @@
+{
+  "theme": "premium_news",
+  "headline_style": "breaking_news",
+  "camera_motion": "slow_push_in",
+  "lighting": "volumetric_rays",
+  "perspective_tilt_angle": 18,
+  "floor_reflection_opacity": 90,
+  "volumetric_ray_speed": 1.2,
+  "parallax_intensity": 1.5,
+  "glass_opacity": 220,
+  "enable_perspective_warp": true,
+  "enable_floor_reflection": true,
+  "enable_light_sweeps": true,
+  "enable_particles": true,
+  "palettes": {
+    "breaking_news": {
+      "header_bg": [190, 18, 18],
+      "header_text": [255, 255, 255],
+      "tag_bg": [234, 179, 8],
+      "tag_text": [10, 15, 30],
+      "border_accent": [255, 215, 0],
+      "box_bg": [12, 16, 32],
+      "alert_glow": [255, 30, 30]
+    },
+    "top_story": {
+      "header_bg": [15, 118, 110],
+      "header_text": [255, 255, 255],
+      "tag_bg": [6, 182, 212],
+      "tag_text": [255, 255, 255],
+      "border_accent": [45, 212, 191],
+      "box_bg": [10, 25, 40],
+      "alert_glow": [6, 182, 212]
+    },
+    "exclusive": {
+      "header_bg": [126, 34, 206],
+      "header_text": [255, 255, 255],
+      "tag_bg": [234, 179, 8],
+      "tag_text": [10, 15, 30],
+      "border_accent": [192, 132, 252],
+      "box_bg": [20, 12, 35],
+      "alert_glow": [192, 132, 252]
+    },
+    "live_update": {
+      "header_bg": [220, 38, 38],
+      "header_text": [255, 255, 255],
+      "tag_bg": [16, 185, 129],
+      "tag_text": [255, 255, 255],
+      "border_accent": [52, 211, 153],
+      "box_bg": [15, 20, 30],
+      "alert_glow": [220, 38, 38]
+    }
+  }
+}

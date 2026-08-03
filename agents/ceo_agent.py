@@ -13,10 +13,9 @@ from config.settings import CHANNEL_NAME, OWNER, VERSION
 from agents.news_hunter import news_hunter
 from agents.fact_checker import fact_checker
 from agents.script_writer import script_writer
-from agents.voice_agent import voice_agent
-from agents.avatar_agent import avatar_agent
-from agents.lip_sync_agent import lip_sync_agent
+from agents.visuals_agent import visuals_agent
 from agents.graphics_agent import graphics_agent
+from agents.voice_agent import voice_agent
 from agents.video_agent import video_agent
 from agents.thumbnail_agent import thumbnail_agent
 from agents.uploader_agent import uploader_agent
@@ -28,12 +27,12 @@ from utils.exceptions import AINewsTubeException
 
 def ceo_agent() -> Optional[GeneratedScript]:
     """
-    CEO Agent: Orchestrates the complete 11-Agent AI-NewsTube Autonomous Pipeline.
+    CEO Agent: Orchestrates the Production AI-NewsTube Autonomous Pipeline.
     Sequence:
-    News Hunter -> Fact Checker -> Script Writer -> Voice Agent -> Avatar Agent -> Lip-Sync Agent -> Graphics Agent -> Video Agent -> Thumbnail Agent -> Uploader Agent -> Analytics Agent
+    News Hunter -> Fact Checker -> Script Writer -> Visuals Agent -> Graphics Agent -> Voice Agent -> Video Agent -> Thumbnail Agent -> Uploader Agent -> Analytics Agent
     """
     logger.info("=" * 50)
-    logger.info("🤖 CEO AGENT (Orchestrator)")
+    logger.info("🤖 CEO AGENT (Production Orchestrator)")
     logger.info("=" * 50)
 
     logger.info(f"Channel : {CHANNEL_NAME}")
@@ -72,36 +71,32 @@ def ceo_agent() -> Optional[GeneratedScript]:
         logger.info("\n📢 CEO: 3. High-Retention Script Writer, generate 6-stage script...")
         script_obj = script_writer(selected_news)
 
-        # 4. Voice Agent
-        logger.info("\n📢 CEO: 4. Emotional Voice Agent, generate Hindi Neural Voiceover...")
-        script_obj = voice_agent(script_obj)
+        # 4. Visuals Agent
+        logger.info("\n📢 CEO: 4. Visuals Agent, generate studio assets & fetch PiP news photos...")
+        script_obj = visuals_agent(script_obj)
 
-        # 5. Avatar Agent
-        logger.info("\n📢 CEO: 5. Avatar Agent, render 3D AI Presenter Avatar...")
-        script_obj = avatar_agent(script_obj)
-
-        # 6. Lip-Sync Agent
-        logger.info("\n📢 CEO: 6. Lip-Sync Agent, analyze speech RMS & initialize mouth keyframes...")
-        script_obj = lip_sync_agent(script_obj)
-
-        # 7. Graphics Agent
-        logger.info("\n📢 CEO: 7. Graphics Agent, generate studio background, 3D logo, PiP photos & ticker...")
+        # 5. Graphics Agent
+        logger.info("\n📢 CEO: 5. Graphics Agent, generate studio background, 3D logo, & ticker...")
         script_obj = graphics_agent(script_obj)
 
-        # 8. Video Editor Agent
-        logger.info("\n📢 CEO: 8. Video Editor Agent, render 1080p MP4 multi-camera broadcast video...")
+        # 6. Voice Agent
+        logger.info("\n📢 CEO: 6. Emotional Voice Agent, generate Neural Voiceover...")
+        script_obj = voice_agent(script_obj)
+
+        # 7. Video Editor Agent
+        logger.info("\n📢 CEO: 7. Video Editor Agent, render 1080p MP4 broadcast video...")
         script_obj = video_agent(script_obj)
 
-        # 9. Thumbnail & SEO Agent
-        logger.info("\n📢 CEO: 9. Thumbnail Agent, generate High-CTR Thumbnail & SEO metadata...")
+        # 8. Thumbnail & SEO Agent
+        logger.info("\n📢 CEO: 8. Thumbnail Agent, generate High-CTR Thumbnail & SEO metadata...")
         script_obj = thumbnail_agent(script_obj)
 
-        # 10. Uploader Agent
-        logger.info("\n📢 CEO: 10. Uploader Agent, stage & publish video package...")
+        # 9. Uploader Agent
+        logger.info("\n📢 CEO: 9. Uploader Agent, stage & publish video package...")
         script_obj = uploader_agent(script_obj)
 
-        # 11. Analytics Agent
-        logger.info("\n📢 CEO: 11. Analytics Agent, update performance logs & feedback loop...")
+        # 10. Analytics Agent
+        logger.info("\n📢 CEO: 10. Analytics Agent, update performance logs & feedback loop...")
         script_obj = analytics_agent(script_obj)
 
         logger.info("=" * 50)

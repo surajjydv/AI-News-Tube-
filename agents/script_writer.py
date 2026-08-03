@@ -6,8 +6,8 @@ from utils.logger import logger
 
 
 def build_prompt(title: str, context: str, category: str = "General", is_breaking: bool = False) -> str:
-    breaking_prefix = "🚨 BREAKING NEWS! " if is_breaking else ""
-    return f"""Tum ek top-tier YouTube High-Retention News Scriptwriter ho aur {CHANNEL_NAME} channel ki lead news anchor ho.
+    breaking_prefix = "🚨 बड़ी खबर! " if is_breaking else ""
+    return f"""आप एक आदरणीय हिंदी न्यूज़ एंकर हैं। {CHANNEL_NAME} के लिए ऐसी हिंदी न्यूज़ स्क्रिप्ट लिखें जो इतनी सरल, स्पष्ट और सहज हो कि 80 साल के बुजुर्ग दादाजी भी एक-एक बात आसानी से समझ सकें।
 
 Category: {category}
 Topic: {breaking_prefix}{title}
@@ -17,21 +17,22 @@ Article Context:
 {context}
 \"\"\"
 
-YouTube Audience Retention ke liye 6-Stage High-Retention Spoken Hindi News Script likho.
+स्क्रिप्ट संरचना (MUST FOLLOW):
+1. हुक (HOOK - 5 सेकंड): आसान भाषा में सबसे महत्वपूर्ण और ध्यान खींचने वाली बात।
+2. समस्या (PROBLEM): मामला क्या है, इसे बेहद सरल शब्दों में समझाएं।
+3. मुख्य समाचार (WHAT HAPPENED): आसान उदाहरणों और साफ़ हिंदी में मुख्य तथ्य दें।
+4. प्रभाव (IMPACT): यह ख़बर हमारे आम जीवन और परिवार के लिए क्यों ज़रूरी है।
+5. भविष्य (FUTURE): आगे क्या होगा या क्या ध्यान रखना चाहिए।
+6. सब्सक्राइब अपील (CTA): {CHANNEL_NAME} चैनल को सब्सक्राइब करने का विनम्र अनुरोध।
 
-SCRIPT STRUCTURE (MUST FOLLOW):
-1. HOOK (First 5 seconds): High-intensity shocker ya curiosity statement se shuru karo.
-2. PROBLEM / CONFLICT: Asli tension ya suspense spasht karo.
-3. WHAT HAPPENED: Main news facts aur details batayein.
-4. IMPACT: Yeh khabar audience aur duniya ke liye kyo mahtvapurna hai.
-5. FUTURE PREDICTION: Aage kya expected hai ya kya badlav aayega.
-6. CTA: {CHANNEL_NAME} ko subscribe aur video ko like karne ki urgent appeal.
-
-RULES:
-- Continuous spoken script text likho (no markdown headings, no bracket labels like [HOOK]).
-- High-retention conversational Hindi tone (jaise TV broadcast presenter bolti ho).
-- Word count: 180-240 words.
+अति आवश्यक नियम (CRITICAL RULES FOR ELDERLY ACCESSIBILITY):
+- 100% शुद्ध देवनागरी हिंदी में लिखें।
+- भाषा 'सरल और बोलचाल वाली हिंदी' (Saral Hindi) होनी चाहिए—कोई भी कठिन अंग्रेज़ी शब्द या भारी भरकम संस्कृत शब्द न इस्तेमाल करें।
+- वाक्य छोटे, साफ़ और स्पष्ट रखें ताकि सुनने में कोई भ्रम न हो।
+- कोई ब्रैकेट, हेडिंग या ब्रैकेट लेबल ([HOOK] आदि) न लिखें, केवल एंकर के बोलने का लगातार सहज हिंदी टेक्स्ट।
+- शब्द सीमा: 180-240 शब्द।
 """
+
 
 
 def script_writer(news_item: NewsArticle) -> GeneratedScript:

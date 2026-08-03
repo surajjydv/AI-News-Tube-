@@ -1,7 +1,7 @@
 {
-  "total_videos_created": 1,
+  "total_videos_created": 15,
   "categories_covered": {
-    "Top Stories": 1
+    "Top Stories": 15
   },
   "video_history": [
     {
@@ -10,6 +10,104 @@
       "word_count": 168,
       "video_file": "studio_broadcast_1785182031.mp4",
       "created_at": "2026-07-28T01:22:17.247577"
+    },
+    {
+      "title": "'Modiji clocked it': BJP MP's Gen Z-style praise for PM during anti-paper leak Bill debate - The Times of India",
+      "category": "Top Stories",
+      "word_count": 191,
+      "video_file": "studio_broadcast_1785260917.mp4",
+      "created_at": "2026-07-28T23:17:14.468234"
+    },
+    {
+      "title": "'Modiji clocked it': BJP MP's Gen Z-style praise for PM during anti-paper leak Bill debate - The Times of India",
+      "category": "Top Stories",
+      "word_count": 201,
+      "video_file": "studio_broadcast_1785269096.mp4",
+      "created_at": "2026-07-29T01:33:30.432200"
+    },
+    {
+      "title": "'Modiji clocked it': BJP MP's Gen Z-style praise for PM during anti-paper leak Bill debate - The Times of India",
+      "category": "Top Stories",
+      "word_count": 202,
+      "video_file": "studio_broadcast_1785269229.mp4",
+      "created_at": "2026-07-29T01:35:59.122734"
+    },
+    {
+      "title": "Donald Trump, Netanyahu hold 'excellent' White House meeting as Iran differences come into focus - The Times of India",
+      "category": "Top Stories",
+      "word_count": 174,
+      "video_file": "studio_broadcast_1785277453.mp4",
+      "created_at": "2026-07-29T03:52:51.436389"
+    },
+    {
+      "title": "Trump’s two-front challenge: Shades of 1914 as Zelenskyy and Netanyahu converge on Washington - The Times of India",
+      "category": "Top Stories",
+      "word_count": 190,
+      "video_file": "studio_broadcast_1785278369.mp4",
+      "created_at": "2026-07-29T04:08:29.820237"
+    },
+    {
+      "title": "Trump’s two-front challenge: Shades of 1914 as Zelenskyy and Netanyahu converge on Washington - The Times of India",
+      "category": "Top Stories",
+      "word_count": 173,
+      "video_file": "studio_broadcast_1785278563.mp4",
+      "created_at": "2026-07-29T04:11:23.861087"
+    },
+    {
+      "title": "Trump’s two-front challenge: Shades of 1914 as Zelenskyy and Netanyahu converge on Washington - The Times of India",
+      "category": "Top Stories",
+      "word_count": 193,
+      "video_file": "studio_broadcast_1785278679.mp4",
+      "created_at": "2026-07-29T04:13:47.132467"
+    },
+    {
+      "title": "India's top court orders no coercive action against youth protesters and release of minors, media reports say - Reuters",
+      "category": "Top Stories",
+      "word_count": 214,
+      "video_file": "studio_broadcast_1785279582.mp4",
+      "created_at": "2026-07-29T04:28:40.842041"
+    },
+    {
+      "title": "India's top court orders no coercive action against youth protesters and release of minors, media reports say - Reuters",
+      "category": "Top Stories",
+      "word_count": 164,
+      "video_file": "studio_broadcast_1785280248.mp4",
+      "created_at": "2026-07-29T04:39:52.427678"
+    },
+    {
+      "title": "People feared dead in Japan after magnitude 7.1 quake causes blast at mall - Al Jazeera",
+      "category": "Top Stories",
+      "word_count": 221,
+      "video_file": "studio_broadcast_1785310500.mp4",
+      "created_at": "2026-07-29T13:02:29.374217"
+    },
+    {
+      "title": "People feared dead in Japan after magnitude 7.1 quake causes blast at mall - Al Jazeera",
+      "category": "Top Stories",
+      "word_count": 193,
+      "video_file": "studio_broadcast_1785310701.mp4",
+      "created_at": "2026-07-29T13:07:00.303065"
+    },
+    {
+      "title": "India’s Cockroach Party Threatens New Protest After Court Order - Bloomberg.com",
+      "category": "Top Stories",
+      "word_count": 170,
+      "video_file": "studio_broadcast_1785311438.mp4",
+      "created_at": "2026-07-29T13:19:27.529785"
+    },
+    {
+      "title": "Japan Kumamoto earthquake: What happened, damage, victims, latest updates - Al Jazeera",
+      "category": "Top Stories",
+      "word_count": 206,
+      "video_file": "studio_broadcast_1785312023.mp4",
+      "created_at": "2026-07-29T13:29:06.685200"
+    },
+    {
+      "title": "Bihar bypoll: Bankipur byelection counting begins, Prashant Kishor’s electoral debut in focus - The Hindu",
+      "category": "Top Stories",
+      "word_count": 187,
+      "video_file": "studio_broadcast_1785736378.mp4",
+      "created_at": "2026-08-03T11:19:40.108515"
     }
   ]
 }

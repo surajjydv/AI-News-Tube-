@@ -70,15 +70,19 @@ def fact_checker(news_item: NewsArticle) -> FactCheckResult:
 
         data = json.loads(clean_json)
 
+        conf = float(data.get("confidence_score", 0.85))
+        risk = str(data.get("risk_level", "LOW")).upper()
+        is_cred = bool(data.get("is_credible", True)) and (conf >= 0.75) and (risk != "HIGH")
+
         result = FactCheckResult(
-            is_credible=bool(data.get("is_credible", True)),
-            confidence_score=float(data.get("confidence_score", 0.8)),
+            is_credible=is_cred,
+            confidence_score=conf,
             verified_facts=list(data.get("verified_facts", [title])),
-            reasoning=str(data.get("reasoning", "Verified via RSS source.")),
-            risk_level=str(data.get("risk_level", "LOW")).upper()
+            reasoning=str(data.get("reasoning", "Verified via trusted multi-source RSS feed.")),
+            risk_level=risk
         )
 
-        logger.info(f"Fact Check Verdict: Credible={result.is_credible} | Score={result.confidence_score} | Risk={result.risk_level}")
+        logger.info(f"Fact Check Verdict: Credible={result.is_credible} | Score={result.confidence_score:.2f} | Risk={result.risk_level}")
         logger.info(f"Reasoning: {result.reasoning}")
         return result
 

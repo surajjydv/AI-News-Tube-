@@ -14,11 +14,14 @@ AI-NewsTube is an autonomous, end-to-end multi-agent AI video production engine 
 The platform transforms raw multi-category RSS news feeds into 1080p 60FPS Full HD broadcast packages featuring virtual newsroom environments, dynamic curved LED displays, specular floor reflections, dynamic camera trajectories, atmospheric lighting, kinetic lower thirds, and breaking news graphical packages—operating with zero manual intervention.
 
 ### 1.1 Architectural Goals
+- **100% Spatial 3D Background Graphics**: All graphics elements (headline panels, LED walls, lower thirds, side displays, tickers, and branding badges) exist as physical 3D mesh geometry spatialized inside the 3D virtual studio background environment, fully integrated with studio lighting and floor reflections.
+- **80-Year-Old Elderly Hindi Accessibility Standard**: Enforces crystal-clear, hyper-accessible spoken and written Hindi across the entire pipeline:
+  - **Saral Hindi (सरल और सहज हिंदी)**: Everyday conversational Hindi phrasing without heavy technical jargon or obscure bookish terms, so an 80-year-old grandfather can understand every word effortlessly.
+  - **Elderly-Accessible Devanagari Typography**: High-contrast, large-scale Devanagari rendering (Min 48pt headlines, 36pt lower-thirds, $>12:1$ contrast ratio) for zero-eye-strain readability.
+  - **Unhurried Neural Voice Pacing**: Speech rate set to unhurried, natural pacing with clear pause markers for elder auditory clarity.
 - **Decoupled Planning vs. Rendering**: Eliminate inline rendering logic from business agents. The rendering engine operates as a pure execution pipeline consuming immutable declarative render plans.
-- **Modular Virtual Studio Environment**: Shift graphics from flat post-processing overlays to fully spatialized, 3D broadcast elements anchored inside a virtual studio space.
 - **Strict Data Contracts**: Replace monolithic state payloads with single-responsibility, immutable data models representing specific pipeline lifecycle stages.
 - **Backend-Agnostic Render Abstraction**: Decouple visual scene descriptions from the underlying graphics backend, enabling multi-backend rendering (WebGL, Canvas, or Headless Fallbacks).
-- **High-Retention Motion Graphics**: Enforce timing-synchronized motion keyframes aligned with neural audio RMS and script segment transitions.
 
 ---
 
@@ -45,12 +48,12 @@ graph TD
 | Agent | Core Responsibility | Input Artifact | Output Artifact |
 | :--- | :--- | :--- | :--- |
 | **CEO Agent** | Pipeline lifecycle management, error propagation control, and state machine orchestration. | System Trigger / Cron | Published Broadcast Package |
-| **News Hunter** | Ingests RSS feeds across 9 categories; ranks virality via Jaccard overlap and keyword scoring. | RSS Source Feeds | `NewsArticle` |
-| **Fact Checker** | Verifies news credibility, checks source authenticity, and evaluates risk profiles. | `NewsArticle` | `VerifiedStory` |
+| **News Hunter** | Ingests 15+ multi-source RSS feeds; filters 24h freshness window; merges duplicate stories. | RSS Source Feeds | `NewsArticle` |
+| **Fact Checker** | Cross-verifies news authenticity across feeds; computes confidence score ($\ge 0.75$ threshold). | `NewsArticle` | `VerifiedStory` |
 | **Script Writer** | Generates a 6-stage broadcast news script (Hook, Intro, Context, Deep-Dive, Climax, Outro). | `VerifiedStory` | `ScenePlan` |
-| **Visual Research** | Procures real-world HD news photography via 5-tier API fallbacks (Wikimedia, NASA, Pexels, etc.). | `ScenePlan` | Media Enriched `ScenePlan` |
-| **Graphics Agent** | Orchestrates spatial studio composition, camera trajectories, lighting, and motion graphic packages. | Enriched `ScenePlan` | `RenderPlan` (`GraphicsPlan` + `CameraPlan` + `LightingPlan`) |
-| **Voice Agent** | Synthesizes neural audio voiceovers with expressive vocal direction and speed control. | `ScenePlan` Text | Master Audio Stream + Subtitles |
+| **Visual Research** | Procures 100% real topic-matched photography via 5-tier API fallbacks (Press, Wikimedia, NASA, Pexels). | `ScenePlan` | Media Enriched `ScenePlan` |
+| **Graphics Agent** | Orchestrates 2.5D/3D motion graphics, specular sheen light sweeps, and breaking news alert packages. | Enriched `ScenePlan` | `RenderPlan` (`GraphicsPlan` + `CameraPlan` + `LightingPlan`) |
+| **Voice & Audio** | Synthesizes neural voiceover, category BGM tracks with dynamic audio ducking, and SFX stings. | `ScenePlan` Text | Master Audio Stream + Subtitles |
 | **Video Agent** | Executes multi-backend frame rendering and composite encoding into 1080p MP4. | `RenderPlan` + Master Audio | Final Broadcast MP4 |
 | **Thumbnail & SEO**| Generates high-CTR thumbnails and YouTube-ready SEO metadata (Title, Description, Tags). | Broadcast MP4 + `VerifiedStory` | Thumbnail PNG + SEO Package |
 | **Uploader Agent**| Stages final broadcast artifacts for publishing and distribution networks. | Broadcast Package | Publishing Confirmation |

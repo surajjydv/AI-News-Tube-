@@ -1,84 +1,108 @@
-import asyncio
+import os
+import sys
 import re
-from datetime import datetime
+import time
+import asyncio
 from pathlib import Path
-from edge_tts import Communicate
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
 from config.settings import VOICE_DIR, DEFAULT_TTS_VOICE
-from services.groq_service import generate_speech_groq
 from models.news_models import GeneratedScript
+from services.groq_service import generate_speech_groq
 from utils.logger import logger
-from utils.exceptions import VoiceGenerationError
 
 
-def format_ssml_script(text: str) -> str:
+def _clean_text_for_tts(raw_text: str) -> str:
+    """Cleans markdown symbols, tags, and formatting so TTS reads clean spoken Hindi."""
+    if not raw_text:
+        return ""
+    # Remove markdown bold/italics/headings/symbols
+    cleaned = re.sub(r'[\*#_`~]', '', raw_text)
+    # Remove section brackets like [HOOK], [PROBLEM] if present
+    cleaned = re.sub(r'\[.*?\]', '', cleaned)
+    # Normalize multiple whitespace
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+    return cleaned
+
+
+def voice_agent(script_obj: GeneratedScript) -> GeneratedScript:
     """
-    Cleans and inserts prosody pause points for natural human news anchor cadence.
-    """
-    cleaned = re.sub(r'[*#_`~]', '', text)
-    cleaned = re.sub(r'\s+', ' ', cleaned)
-    # Add slight pause punctuation for natural anchor rhythm
-    cleaned = cleaned.replace("!", "! ").replace("?", "? ").replace(".", ". ")
-    cleaned = re.sub(r'\s+', ' ', cleaned)
-    return cleaned.strip()
-
-
-async def _generate_voice_async(text: str, output_path: Path, voice: str, rate: str = "+3%", pitch: str = "+0Hz") -> None:
-    communicate = Communicate(text, voice, rate=rate, pitch=pitch)
-    await communicate.save(str(output_path))
-
-
-def voice_agent(script_obj: GeneratedScript, voice: str = DEFAULT_TTS_VOICE) -> GeneratedScript:
-    """
-    Emotional Voice Agent: Converts retention script into high-impact AI Voice MP3.
-    Primary Engine: Groq CanopyLabs Orpheus model (`canopylabs/orpheus-v1-english`)
-    Fallback Engine: Edge TTS / gTTS
+    Voice Agent: Generates Neural TTS voiceover for the news script.
+    Robust fallback hierarchy:
+      1. Edge-TTS (Microsoft Neural Voice)
+      2. Groq CanopyLabs Orpheus TTS
+      3. gTTS (Google Text-To-Speech Fallback)
     """
     logger.info("=" * 50)
-    logger.info("🎙️ EMOTIONAL VOICE AGENT (Groq CanopyLabs Orpheus & Neural TTS Engine)")
+    logger.info("🎙️ VOICE AGENT (Neural TTS Engine)")
     logger.info("=" * 50)
 
+    ts = int(time.time())
+    voice_path = VOICE_DIR / f"voice_{ts}.mp3"
+    
+    raw_text = script_obj.script_text if script_obj.script_text else script_obj.topic_title
+    full_text = _clean_text_for_tts(raw_text)
+
+    if not full_text:
+        full_text = "नमस्कार! AI-NewsTube में आपका स्वागत है।"
+
+    # 1. Try Microsoft Edge-TTS
     try:
-        script_text = format_ssml_script(script_obj.script_text)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"voice_{timestamp}.mp3"
-        output_file = VOICE_DIR / filename
+        import edge_tts
 
-        # 1. Try Groq CanopyLabs Orpheus (`canopylabs/orpheus-v1-english`)
-        #    Requires GROQ_ORPHEUS_ENABLED=true in .env after accepting terms:
-        #    https://console.groq.com/playground?model=canopylabs%2Forpheus-v1-english
-        groq_success = generate_speech_groq(
-            text=script_text,
-            output_path=str(output_file),
-            model="canopylabs/orpheus-v1-english",
-            voice="daniel"
-        )
+        async def _run_tts():
+            communicate = edge_tts.Communicate(full_text, voice=DEFAULT_TTS_VOICE, rate="+0%")
+            await communicate.save(str(voice_path))
 
-        if groq_success and output_file.exists() and output_file.stat().st_size > 1000:
-            logger.info(f"✅ Voiceover generated via Groq Orpheus: {output_file.name} ({output_file.stat().st_size} bytes)")
-            script_obj.audio_path = str(output_file)
+        try:
+            asyncio.run(_run_tts())
+        except RuntimeError:
+            # Handle case where an event loop is already running in current thread
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(_run_tts())
+
+        if voice_path.exists() and voice_path.stat().st_size > 1000:
+            logger.info(f"  ✅ Voice Agent: Generated Neural Edge-TTS voiceover ({voice_path.name})")
+            script_obj.audio_path = str(voice_path)
             return script_obj
-
-        # 2. Fallback: Edge TTS
-        logger.info("  🔄 Falling back to Neural Edge-TTS voice engine...")
-        if "breaking" in script_obj.topic_title.lower() or "dhamaka" in script_text.lower():
-            rate = "+5%"
-            pitch = "+2Hz"
-            logger.info("  ⚡ Prosody mode: URGENT BREAKING NEWS (+5% rate, +2Hz pitch)")
-        else:
-            rate = "+2%"
-            pitch = "+0Hz"
-            logger.info("  🎙️ Prosody mode: HIGH-RETENTION ANCHOR CADENCE (+2% rate)")
-
-        logger.info(f"Generating AI Voiceover (Voice: {voice}, Rate: {rate}, Pitch: {pitch})...")
-        asyncio.run(_generate_voice_async(script_text, output_file, voice, rate=rate, pitch=pitch))
-
-        if output_file.exists() and output_file.stat().st_size > 0:
-            logger.info(f"✅ Voiceover generated successfully: {output_file.name} ({output_file.stat().st_size} bytes)")
-            script_obj.audio_path = str(output_file)
-            return script_obj
-        else:
-            raise VoiceGenerationError("Audio file was not generated or is 0 bytes.")
-
     except Exception as e:
-        logger.error(f"Error in Voice Agent: {e}")
-        raise VoiceGenerationError(f"Failed to generate voiceover: {e}") from e
+        logger.warning(f"  ⚠️ Voice Agent Edge-TTS note: {e}")
+
+    # 2. Try Groq CanopyLabs Orpheus TTS
+    try:
+        success = generate_speech_groq(full_text, str(voice_path))
+        if success and voice_path.exists() and voice_path.stat().st_size > 1000:
+            logger.info(f"  ✅ Voice Agent: Generated Groq Orpheus voiceover ({voice_path.name})")
+            script_obj.audio_path = str(voice_path)
+            return script_obj
+    except Exception as e:
+        logger.warning(f"  ⚠️ Voice Agent Groq Orpheus note: {e}")
+
+    # 3. Fallback: gTTS
+    try:
+        from gtts import gTTS
+        tts = gTTS(text=full_text, lang="hi" if "hi-" in DEFAULT_TTS_VOICE else "en", slow=False)
+        tts.save(str(voice_path))
+        if voice_path.exists() and voice_path.stat().st_size > 500:
+            logger.info(f"  ✅ Voice Agent: Generated gTTS fallback voiceover ({voice_path.name})")
+            script_obj.audio_path = str(voice_path)
+            return script_obj
+    except (ImportError, ModuleNotFoundError):
+        logger.warning("  ⚠️ Voice Agent note: 'gTTS' package is not installed. Run 'pip install gtts' to enable gTTS fallback.")
+    except Exception as e:
+        logger.error(f"  ❌ Voice Agent gTTS error: {e}")
+
+    return script_obj
+
+
+if __name__ == "__main__":
+    test_script = GeneratedScript(
+        topic_title="टेस्ट न्यूज़",
+        category="General",
+        script_text="**बड़ी खबर!** भारत ने टेक्नोलॉजी के क्षेत्र में एक नया मील का पत्थर हासिल किया है।",
+        word_count=15
+    )
+    voice_agent(test_script)
