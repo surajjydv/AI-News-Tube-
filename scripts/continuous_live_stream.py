@@ -160,65 +160,44 @@ def start_continuous_raw_stream(rtmp_url: str):
     if os.name == "nt":
         return None
     video_read, video_write = os.pipe()
-    audio_read, audio_write = os.pipe()
     cmd = [
         get_ffmpeg_binary(), "-loglevel", "warning",
         "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", "1280x720",
         "-r", str(BROADCAST_FPS), "-i", f"pipe:{video_read}",
-        "-f", "s16le", "-ar", "44100", "-ac", "2", "-i", f"pipe:{audio_read}",
+        "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
         "-map", "0:v:0", "-map", "1:a:0", "-c:v", "libx264", "-preset", "ultrafast",
         "-tune", "zerolatency", "-b:v", "2500k", "-maxrate", "2800k",
         "-bufsize", "5600k", "-pix_fmt", "yuv420p", "-g", "30",
         "-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-ac", "2",
         "-flvflags", "no_duration_filesize", "-f", "flv", rtmp_url,
     ]
-    process = subprocess.Popen(cmd, pass_fds=(video_read, audio_read))
+    process = subprocess.Popen(cmd, pass_fds=(video_read,))
     os.close(video_read)
-    os.close(audio_read)
-    return process, video_write, audio_write
+    return process, video_write
 
 
 def feed_clip_into_continuous_stream(video_path: Path, stream_state) -> bool:
     """Decode one MP4 and append its frames/audio to persistent pipes."""
-    process, video_fd, audio_fd = stream_state
-    decoders = [
-        subprocess.Popen(
-            [get_ffmpeg_binary(), "-loglevel", "error", "-re", "-i", str(video_path),
-             "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", "1280x720",
-             "-r", str(BROADCAST_FPS), "pipe:1"], stdout=subprocess.PIPE,
-             stderr=subprocess.DEVNULL,
-        ),
-        subprocess.Popen(
-            [get_ffmpeg_binary(), "-loglevel", "error", "-re", "-i", str(video_path),
-             "-f", "s16le", "-ar", "44100", "-ac", "2", "pipe:1"],
-            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-        ),
-    ]
-    results = [False, False]
-
-    def copy_stream(index, target_fd):
-        try:
-            while True:
-                chunk = decoders[index].stdout.read(256 * 1024)
-                if not chunk:
-                    break
-                view = memoryview(chunk)
-                while view:
-                    written = os.write(target_fd, view)
-                    view = view[written:]
-            results[index] = True
-        except (BrokenPipeError, OSError):
-            results[index] = False
-
-    threads = [threading.Thread(target=copy_stream, args=(0, video_fd)),
-               threading.Thread(target=copy_stream, args=(1, audio_fd))]
-    for thread in threads:
-        thread.start()
-    for thread in threads:
-        thread.join()
-    for decoder in decoders:
+    process, video_fd = stream_state
+    decoder = subprocess.Popen(
+        [get_ffmpeg_binary(), "-loglevel", "error", "-re", "-i", str(video_path),
+         "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", "1280x720",
+         "-r", str(BROADCAST_FPS), "pipe:1"], stdout=subprocess.PIPE,
+         stderr=subprocess.DEVNULL,
+    )
+    try:
+        while True:
+            chunk = decoder.stdout.read(256 * 1024)
+            if not chunk:
+                break
+            view = memoryview(chunk)
+            while view:
+                written = os.write(video_fd, view)
+                view = view[written:]
         decoder.wait()
-    return all(results) and process.poll() is None
+        return decoder.returncode == 0 and process.poll() is None
+    except (BrokenPipeError, OSError):
+        return False
 
 
 def render_quick_startup_clip() -> Path:
@@ -630,7 +609,6 @@ def main_fixed():
             if stream_state:
                 try:
                     os.close(stream_state[1])
-                    os.close(stream_state[2])
                     stream_state[0].terminate()
                 except OSError:
                     pass
