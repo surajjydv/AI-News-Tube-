@@ -155,6 +155,69 @@ def stream_clip_to_rtmp(video_path: Path, rtmp_url: str) -> bool:
         return False
 
 
+def start_continuous_raw_stream(rtmp_url: str):
+    """Start one RTMP process fed by continuous raw video/audio pipes."""
+    if os.name == "nt":
+        return None
+    video_read, video_write = os.pipe()
+    audio_read, audio_write = os.pipe()
+    cmd = [
+        get_ffmpeg_binary(), "-loglevel", "warning",
+        "-re", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", "1280x720",
+        "-r", str(BROADCAST_FPS), "-i", f"pipe:{video_read}",
+        "-re", "-f", "s16le", "-ar", "44100", "-ac", "2", "-i", f"pipe:{audio_read}",
+        "-map", "0:v:0", "-map", "1:a:0", "-c:v", "libx264", "-preset", "ultrafast",
+        "-tune", "zerolatency", "-b:v", "2500k", "-maxrate", "2800k",
+        "-bufsize", "5600k", "-pix_fmt", "yuv420p", "-g", "30",
+        "-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-ac", "2",
+        "-flvflags", "no_duration_filesize", "-f", "flv", rtmp_url,
+    ]
+    process = subprocess.Popen(cmd, pass_fds=(video_read, audio_read))
+    os.close(video_read)
+    os.close(audio_read)
+    return process, video_write, audio_write
+
+
+def feed_clip_into_continuous_stream(video_path: Path, stream_state) -> bool:
+    """Decode one MP4 and append its frames/audio to persistent pipes."""
+    process, video_fd, audio_fd = stream_state
+    decoders = [
+        subprocess.Popen(
+            [get_ffmpeg_binary(), "-loglevel", "error", "-i", str(video_path),
+             "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", "1280x720",
+             "-r", str(BROADCAST_FPS), "pipe:1"], stdout=subprocess.PIPE,
+             stderr=subprocess.DEVNULL,
+        ),
+        subprocess.Popen(
+            [get_ffmpeg_binary(), "-loglevel", "error", "-i", str(video_path),
+             "-f", "s16le", "-ar", "44100", "-ac", "2", "pipe:1"],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+        ),
+    ]
+    results = [False, False]
+
+    def copy_stream(index, target_fd):
+        try:
+            while True:
+                chunk = decoders[index].stdout.read(256 * 1024)
+                if not chunk:
+                    break
+                os.write(target_fd, chunk)
+            results[index] = True
+        except (BrokenPipeError, OSError):
+            results[index] = False
+
+    threads = [threading.Thread(target=copy_stream, args=(0, video_fd)),
+               threading.Thread(target=copy_stream, args=(1, audio_fd))]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    for decoder in decoders:
+        decoder.wait()
+    return all(results) and process.poll() is None
+
+
 def render_quick_startup_clip() -> Path:
     """Renders a fresh 30-second breaking news clip for instant 5-second stream start."""
     output_path = VIDEOS_DIR / "live_startup_30s.mp4"
@@ -540,11 +603,16 @@ def main_fixed():
         startup_clip = render_quick_startup_clip()
     add_video_to_playlist(startup_clip)
     threading.Thread(target=bg_producer_thread, daemon=True).start()
+    stream_state = start_continuous_raw_stream(rtmp_url)
     while True:
         try:
             clip_path = next_video_from_queue()
             print(f"[STREAM] Broadcasting fresh clip: {clip_path.name}")
-            if stream_clip_to_rtmp(clip_path, rtmp_url):
+            clip_ok = (
+                feed_clip_into_continuous_stream(clip_path, stream_state)
+                if stream_state else stream_clip_to_rtmp(clip_path, rtmp_url)
+            )
+            if clip_ok:
                 # The clip is immutable and has already been broadcast; keep
                 # the 24/7 process from filling the disk over time.
                 if clip_path.name != "live_startup_30s.mp4":
@@ -552,11 +620,17 @@ def main_fixed():
                         clip_path.unlink()
                     except OSError:
                         pass
+            elif stream_state:
+                stream_state[0].terminate()
+                stream_state = start_continuous_raw_stream(rtmp_url)
         except KeyboardInterrupt:
-            try:
-                pass
-            except Exception:
-                pass
+            if stream_state:
+                try:
+                    os.close(stream_state[1])
+                    os.close(stream_state[2])
+                    stream_state[0].terminate()
+                except OSError:
+                    pass
             break
         except Exception as e:
             print(f"[STREAM RECOVERY] {e}")
