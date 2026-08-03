@@ -200,6 +200,40 @@ def feed_clip_into_continuous_stream(video_path: Path, stream_state) -> bool:
         return False
 
 
+def build_broadcast_keyframe_clip(
+    headline: str,
+    category: str,
+    photo_paths: list[str],
+    ticker_headlines: list[str],
+    duration: float,
+):
+    """Build a polished clip from three rendered keyframes instead of 15 FPS Python drawing.
+
+    Rendering the full graphics stack for every frame made a 30-second update
+    take several minutes. Three broadcast-quality keyframes keep the same
+    newsroom look while FFmpeg performs the inexpensive video encoding.
+    """
+    from moviepy import ImageClip, concatenate_videoclips
+    import numpy as np
+
+    keyframe_count = 3
+    segment_duration = duration / keyframe_count
+    segments = []
+    for index in range(keyframe_count):
+        photo_path = photo_paths[index % len(photo_paths)] if photo_paths else None
+        frame = render_tv_broadcast_frame(
+            headline_text=headline,
+            news_photo_path=photo_path,
+            global_t=index * segment_duration,
+            category=category,
+            ticker_headlines=ticker_headlines,
+        )
+        if frame.size != (1280, 720):
+            frame = frame.resize((1280, 720), Image.Resampling.BILINEAR)
+        segments.append(ImageClip(np.array(frame), duration=segment_duration))
+    return concatenate_videoclips(segments, method="compose")
+
+
 def render_quick_startup_clip() -> Path:
     """Renders a fresh 30-second breaking news clip for instant 5-second stream start."""
     output_path = VIDEOS_DIR / "live_startup_30s.mp4"
@@ -249,26 +283,14 @@ def render_quick_startup_clip() -> Path:
 
     tickers = get_realtime_ticker_headlines()
 
-    from moviepy import VideoClip, AudioFileClip
-    import numpy as np
+    from moviepy import AudioFileClip
 
     audio_clip = AudioFileClip(str(audio_path)) if audio_path and audio_path.exists() else None
     duration = max(25.0, (audio_clip.duration + 4.0) if audio_clip else 30.0)
 
-    def make_frame(t):
-        current_photo = photo_paths[int(t / 7.0) % len(photo_paths)] if photo_paths else None
-        frame_pil = render_tv_broadcast_frame(
-            headline_text=hindi_headline,
-            news_photo_path=current_photo,
-            global_t=t,
-            category=category,
-            ticker_headlines=tickers
-        )
-        if frame_pil.size != (1280, 720):
-            frame_pil = frame_pil.resize((1280, 720), Image.Resampling.BILINEAR)
-        return np.array(frame_pil)
-
-    clip = VideoClip(make_frame, duration=duration)
+    clip = build_broadcast_keyframe_clip(
+        hindi_headline, category, photo_paths, tickers, duration
+    )
     if audio_clip:
         clip = clip.with_audio(audio_clip)
 
@@ -431,26 +453,14 @@ def render_single_30s_story_clip(clip_index: int) -> Path:
 
     tickers = get_realtime_ticker_headlines()
 
-    from moviepy import VideoClip, AudioFileClip
-    import numpy as np
+    from moviepy import AudioFileClip
 
     audio_clip = AudioFileClip(str(audio_path)) if audio_path and audio_path.exists() else None
     duration = max(25.0, (audio_clip.duration + 2.0) if audio_clip else 30.0)
 
-    def make_frame(t):
-        current_photo = photo_paths[int(t / 7.0) % len(photo_paths)] if photo_paths else None
-        frame_pil = render_tv_broadcast_frame(
-            headline_text=headline_hindi,
-            news_photo_path=current_photo,
-            global_t=t,
-            category=category,
-            ticker_headlines=tickers
-        )
-        if frame_pil.size != (1280, 720):
-            frame_pil = frame_pil.resize((1280, 720), Image.Resampling.BILINEAR)
-        return np.array(frame_pil)
-
-    clip = VideoClip(make_frame, duration=duration)
+    clip = build_broadcast_keyframe_clip(
+        headline_hindi, category, photo_paths, tickers, duration
+    )
     if audio_clip:
         clip = clip.with_audio(audio_clip)
 
