@@ -134,6 +134,27 @@ def stream_clip_to_process(video_path: Path, stream_process: subprocess.Popen) -
         remux.wait()
 
 
+def stream_clip_to_rtmp(video_path: Path, rtmp_url: str) -> bool:
+    """Broadcast one complete clip with clean timestamps, then return.
+
+    Feeding multiple independent MPEG-TS streams into one stdin caused DTS
+    discontinuities and could leave the feeder blocked after the first clip.
+    A bounded ffmpeg process per clip is reliable for YouTube reconnects and
+    guarantees the next queued story is actually reached.
+    """
+    cmd = [
+        get_ffmpeg_binary(), "-loglevel", "warning", "-re", "-i", str(video_path),
+        "-c:v", "copy", "-bsf:v", "h264_mp4toannexb", "-c:a", "aac",
+        "-b:a", "128k", "-ar", "44100", "-ac", "2", "-avoid_negative_ts", "make_zero",
+        "-flvflags", "no_duration_filesize", "-f", "flv", rtmp_url,
+    ]
+    try:
+        return subprocess.run(cmd).returncode == 0
+    except OSError as error:
+        logger.error(f"Could not start clip streamer: {error}")
+        return False
+
+
 def render_quick_startup_clip() -> Path:
     """Renders a fresh 30-second breaking news clip for instant 5-second stream start."""
     output_path = VIDEOS_DIR / "live_startup_30s.mp4"
@@ -513,14 +534,11 @@ def main_fixed():
     rtmp_url = f"rtmp://a.rtmp.youtube.com/live2/{stream_key}"
     add_video_to_playlist(render_quick_startup_clip())
     threading.Thread(target=bg_producer_thread, daemon=True).start()
-    stream_process = start_persistent_ffmpeg_process(rtmp_url)
     while True:
         try:
             clip_path = next_video_from_queue()
             print(f"[STREAM] Broadcasting fresh clip: {clip_path.name}")
-            if not stream_clip_to_process(clip_path, stream_process):
-                stream_process = start_persistent_ffmpeg_process(rtmp_url)
-            else:
+            if stream_clip_to_rtmp(clip_path, rtmp_url):
                 # The clip is immutable and has already been broadcast; keep
                 # the 24/7 process from filling the disk over time.
                 try:
@@ -529,8 +547,7 @@ def main_fixed():
                     pass
         except KeyboardInterrupt:
             try:
-                stream_process.stdin.close()
-                stream_process.terminate()
+                pass
             except Exception:
                 pass
             break
