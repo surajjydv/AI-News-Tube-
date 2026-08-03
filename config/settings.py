@@ -40,7 +40,7 @@ BLENDER_PATH = os.getenv("BLENDER_PATH", None)
 
 # LLM & API Configuration
 DEFAULT_GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
-BROADCAST_FPS = int(os.getenv("BROADCAST_FPS", "24"))
+BROADCAST_FPS = int(os.getenv("BROADCAST_FPS", "15"))
 DEFAULT_TTS_VOICE = os.getenv("DEFAULT_TTS_VOICE", "hi-IN-SwaraNeural")  # Hindi Female Anchor Voice (Swara Neural TV News Presenter)
 PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
 PIXABAY_API_KEY = os.getenv("PIXABAY_API_KEY", "")
