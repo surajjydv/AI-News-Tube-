@@ -474,17 +474,26 @@ def video_agent(script_obj: GeneratedScript) -> GeneratedScript:
 
         logger.info("  ✅ Pre-Export Quality Validation Passed: 100% Devanagari Hindi text ready, real news photos ready.")
 
-        # Slideshow Frame Animation function (changes photo every 5 seconds with dynamic text)
+
+        # 3D Virtual Newsroom Studio Frame Compositor
+        # Changes news photo every 5s, animates 3D anchor, EQ desk, camera cuts
         def make_frame(t):
             photo_idx = int(t / 5.0) % max(1, len(photo_list))
             current_photo = photo_list[photo_idx] if photo_list else None
-            img_frame = render_tv_broadcast_frame(
+            speech = 0.3 + 0.4 * abs(math.sin(t * 5.0))
+            from agents.broadcast_enhancements import render_production_3d_studio_frame
+            img_frame = render_production_3d_studio_frame(
                 headline_text=main_hindi_headline,
                 news_photo_path=current_photo,
                 global_t=t,
                 category=script_obj.category,
                 ticker_headlines=ticker_hindi_list,
-                quick_cards=quick_hindi_cards
+                quick_cards=quick_hindi_cards,
+                enable_ken_burns=True,
+                clip_duration=duration,
+                enable_subtitles=False,
+                enable_emotion_theme=True,
+                speech_level=speech,
             )
             return np.array(img_frame)
 
