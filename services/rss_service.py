@@ -30,12 +30,20 @@ RSS_CACHE_LOCK = threading.Lock()
 
 def _save_seen_news():
     SEEN_NEWS_FILE.parent.mkdir(parents=True, exist_ok=True)
-    tmp_file = SEEN_NEWS_FILE.with_suffix(".tmp")
-    tmp_file.write_text(json.dumps({
-        "titles": sorted(SEEN_NEWS_TITLES),
-        "hashes": sorted(SEEN_NEWS_HASHES),
-    }, ensure_ascii=False), encoding="utf-8")
-    tmp_file.replace(SEEN_NEWS_FILE)
+    tmp_file = SEEN_NEWS_FILE.with_name(
+        f"{SEEN_NEWS_FILE.stem}.{os.getpid()}.{threading.get_ident()}.tmp"
+    )
+    try:
+        tmp_file.write_text(json.dumps({
+            "titles": sorted(SEEN_NEWS_TITLES),
+            "hashes": sorted(SEEN_NEWS_HASHES),
+        }, ensure_ascii=False), encoding="utf-8")
+        tmp_file.replace(SEEN_NEWS_FILE)
+    finally:
+        try:
+            tmp_file.unlink(missing_ok=True)
+        except OSError:
+            pass
 
 # Multi-source RSS feeds covering trusted global & Indian news outlets
 RSS_FEEDS = {
