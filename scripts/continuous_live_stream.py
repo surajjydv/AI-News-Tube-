@@ -33,6 +33,20 @@ from agents.voice_agent import voice_agent
 from agents.graphics_agent import render_tv_broadcast_frame, fetch_news_photo
 from utils.logger import logger
 
+# ── NEWSFORGEAI Enhancement Pack ──────────────────────────────
+try:
+    from agents.broadcast_enhancements import (
+        DualAnchorVoice, render_enhanced_broadcast_frame,
+        StoryDeduplicator, CategoryGraphicsEngine,
+        MotionStinger, KenBurnsMotion
+    )
+    ENHANCEMENTS_ACTIVE = True
+    logger.info("[ENHANCEMENTS] All 6 NEWSFORGEAI broadcast features ACTIVE")
+except Exception as _e:
+    ENHANCEMENTS_ACTIVE = False
+    render_enhanced_broadcast_frame = None
+    logger.warning(f"[ENHANCEMENTS] Could not load broadcast_enhancements: {_e}")
+
 # A live queue is required here. ffmpeg reads a concat manifest once, so a
 # manifest-based loop never picked up newly rendered clips.
 RENDERED_VIDEOS = []
@@ -216,18 +230,33 @@ def build_broadcast_keyframe_clip(
     from moviepy import ImageClip, concatenate_videoclips
     import numpy as np
 
-    keyframe_count = 3
+    keyframe_count = 5  # Increased from 3 to 5 for smoother Ken Burns motion
     segment_duration = duration / keyframe_count
     segments = []
+    # Pick camera mode once per clip for consistency
+    cam_mode = KenBurnsMotion.get_mode_for_category(category) if ENHANCEMENTS_ACTIVE else "push_in"
     for index in range(keyframe_count):
         photo_path = photo_paths[index % len(photo_paths)] if photo_paths else None
-        frame = render_tv_broadcast_frame(
-            headline_text=headline,
-            news_photo_path=photo_path,
-            global_t=index * segment_duration,
-            category=category,
-            ticker_headlines=ticker_headlines,
-        )
+        g_t = index * segment_duration
+        if ENHANCEMENTS_ACTIVE and render_enhanced_broadcast_frame:
+            frame = render_enhanced_broadcast_frame(
+                headline_text=headline,
+                news_photo_path=photo_path,
+                global_t=g_t,
+                category=category,
+                ticker_headlines=ticker_headlines,
+                enable_ken_burns=True,
+                clip_duration=duration,
+                ken_burns_mode=cam_mode,
+            )
+        else:
+            frame = render_tv_broadcast_frame(
+                headline_text=headline,
+                news_photo_path=photo_path,
+                global_t=g_t,
+                category=category,
+                ticker_headlines=ticker_headlines,
+            )
         if frame.size != (1280, 720):
             frame = frame.resize((1280, 720), Image.Resampling.BILINEAR)
         segments.append(ImageClip(np.array(frame), duration=segment_duration))
@@ -441,15 +470,29 @@ def render_single_30s_story_clip(clip_index: int) -> Path:
         photo_paths = photos_future.result()
         script_text = script_future.result()
 
-    # Voice generation depends on the script, so it starts after the parallel prep.
+    # Voice generation: Use DualAnchorVoice (Male/Female alternation) if available
     script_obj = GeneratedScript(
         topic_title=headline_hindi[:60],
         category=category,
         script_text=script_text,
         word_count=len(script_text.split())
     )
-    res_script = voice_agent(script_obj)
-    audio_path = Path(res_script.audio_path) if res_script.audio_path else None
+    if ENHANCEMENTS_ACTIVE:
+        # Dual Anchor: alternate male/female voice per story
+        voice = DualAnchorVoice.get_next_voice()
+        ts_v = int(time.time())
+        dual_audio_path = VOICE_DIR / f"voice_{ts_v}.mp3"
+        ok = DualAnchorVoice.generate_dual_voiceover(script_text, dual_audio_path, force_voice=voice)
+        if ok and dual_audio_path.exists() and dual_audio_path.stat().st_size > 1000:
+            script_obj.audio_path = str(dual_audio_path)
+            logger.info(f"  [DUAL ANCHOR] Voice: {voice}")
+        else:
+            res_script = voice_agent(script_obj)
+            script_obj = res_script
+    else:
+        res_script = voice_agent(script_obj)
+        script_obj = res_script
+    audio_path = Path(script_obj.audio_path) if script_obj.audio_path else None
 
     tickers = get_realtime_ticker_headlines()
 
