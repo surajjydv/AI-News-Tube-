@@ -640,73 +640,8 @@ def bg_producer_thread():
 
 
 def main():
-    if len(sys.argv) > 1:
-        stream_key = sys.argv[1].strip()
-    else:
-        stream_key = YOUTUBE_STREAM_KEY
-
-    rtmp_url = f"rtmp://a.rtmp.youtube.com/live2/{stream_key}"
-    ffmpeg_bin = get_ffmpeg_binary()
-
-    print("\n==================================================")
-    print(" 🔴 NewsTube HINDI 24/7 PERSISTENT STREAM ENGINE")
-    print(f" Target: rtmp://a.rtmp.youtube.com/live2/******")
-    print(f" Stream Key: {stream_key}")
-    print(" Strategy: Persistent FFmpeg Concat Stream (-stream_loop -1)")
-    print("==================================================\n")
-
-    # 1. Check existing clips & render initial 30s clip if empty
-    existing_videos = [v for v in VIDEOS_DIR.glob("*.mp4") if v.stat().st_size > 100000 and "tmp" not in v.name]
-    if existing_videos:
-        for v in existing_videos[:3]:
-            add_video_to_playlist(v)
-    else:
-        startup_clip = render_quick_startup_clip()
-        add_video_to_playlist(startup_clip)
-
-    # 2. Launch background producer thread
-    t = threading.Thread(target=bg_producer_thread, daemon=True)
-    t.start()
-    print("[STARTUP] 🚀 Background news producer thread active.")
-
-    # 3. Persistent FFmpeg Concat Command (Never drops RTMP connection)
-    cmd = [
-        ffmpeg_bin,
-        "-re",
-        "-f", "concat",
-        "-safe", "0",
-        "-stream_loop", "-1",
-        "-i", str(PLAYLIST_TXT.resolve()),
-        "-c:v", "libx264",
-        "-preset", "ultrafast",
-        "-tune", "zerolatency",
-        "-b:v", "2500k",
-        "-maxrate", "2800k",
-        "-bufsize", "5600k",
-        "-pix_fmt", "yuv420p",
-        "-g", "30",
-        "-keyint_min", "30",
-        "-sc_threshold", "0",
-        "-c:a", "aac",
-        "-b:a", "128k",
-        "-ar", "44100",
-        "-ac", "2",
-        "-max_muxing_queue_size", "1024",
-        "-flvflags", "no_duration_filesize",
-        "-f", "flv",
-        rtmp_url
-    ]
-
-    print("[PERSISTENT STREAM] 🔴 Broadcasting Live 24/7 to YouTube RTMP...")
-    while True:
-        try:
-            subprocess.run(cmd)
-        except KeyboardInterrupt:
-            print("\n[STOPPED] Stream stopped by user.")
-            break
-        except Exception as e:
-            print(f"[STREAM RECOVERY] Connection error: {e}. Retrying in 1s...")
-            time.sleep(1)
+    """Legacy entry point; delegates to main_fixed()."""
+    main_fixed()
 
 
 def main_fixed():
