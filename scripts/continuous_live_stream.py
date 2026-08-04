@@ -53,6 +53,10 @@ except Exception as _e:
 RENDERED_VIDEOS = []
 PLAYLIST_LOCK = threading.Condition()
 LAST_GOOD_CLIP = None
+LIVE_STREAM_FPS = int(os.getenv("LIVE_STREAM_FPS", "30"))
+LIVE_VIDEO_BITRATE = os.getenv("LIVE_VIDEO_BITRATE", "4500k")
+LIVE_MAXRATE = os.getenv("LIVE_MAXRATE", "5000k")
+LIVE_BUFSIZE = os.getenv("LIVE_BUFSIZE", "9000k")
 
 
 def get_ffmpeg_binary() -> str:
@@ -123,14 +127,18 @@ def next_video_from_queue() -> Path:
 def start_persistent_ffmpeg_process(rtmp_url: str) -> subprocess.Popen:
     """Keep one RTMP connection while feeding clips through MPEG-TS stdin."""
     cmd = [
-        get_ffmpeg_binary(), "-loglevel", "warning", "-fflags", "+genpts+igndts",
-        "-f", "mpegts", "-i", "pipe:0", "-map", "0:v:0", "-map", "0:a:0?",
-        "-c:v", "libx264",
-        "-preset", "ultrafast", "-tune", "zerolatency", "-b:v", "2500k",
-        "-maxrate", "2800k", "-bufsize", "5600k", "-pix_fmt", "yuv420p",
-        "-r", str(BROADCAST_FPS), "-g", str(max(1, BROADCAST_FPS * 2)),
-        "-keyint_min", str(max(1, BROADCAST_FPS * 2)), "-sc_threshold", "0",
+        get_ffmpeg_binary(), "-loglevel", "warning", "-hide_banner",
+        "-fflags", "+genpts+igndts+discardcorrupt", "-err_detect", "ignore_err",
+        "-use_wallclock_as_timestamps", "1", "-i", "pipe:0",
+        "-map", "0:v:0", "-map", "0:a:0?", "-vf",
+        f"scale=1280:720,fps={LIVE_STREAM_FPS},format=yuv420p",
+        "-c:v", "libx264", "-preset", "veryfast", "-tune", "zerolatency",
+        "-b:v", LIVE_VIDEO_BITRATE, "-maxrate", LIVE_MAXRATE,
+        "-bufsize", LIVE_BUFSIZE, "-r", str(LIVE_STREAM_FPS),
+        "-g", str(max(1, LIVE_STREAM_FPS * 2)),
+        "-keyint_min", str(max(1, LIVE_STREAM_FPS * 2)), "-sc_threshold", "0",
         "-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-ac", "2",
+        "-af", "aresample=async=1:min_hard_comp=0.100000:first_pts=0",
         "-max_muxing_queue_size", "1024", "-flvflags", "no_duration_filesize",
         "-f", "flv", rtmp_url,
     ]
@@ -141,17 +149,15 @@ def stream_clip_to_process(video_path: Path, stream_process: subprocess.Popen) -
     """Normalize one MP4 into MPEG-TS and feed it without closing RTMP."""
     remux = subprocess.Popen(
         [
-            get_ffmpeg_binary(), "-loglevel", "error", "-re", "-i", str(video_path),
+            get_ffmpeg_binary(), "-loglevel", "error", "-hide_banner", "-re",
+            "-fflags", "+genpts+igndts", "-i", str(video_path),
             "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
             "-map", "0:v:0", "-map", "0:a:0?", "-map", "1:a:0",
-            "-shortest", "-vf", "scale=1280:720,fps="
-            f"{BROADCAST_FPS},format=yuv420p", "-c:v", "libx264", "-preset",
-            "ultrafast", "-tune", "zerolatency", "-b:v", "2500k", "-maxrate",
-            "2800k", "-bufsize", "5600k", "-g", str(max(1, BROADCAST_FPS * 2)),
-            "-keyint_min", str(max(1, BROADCAST_FPS * 2)), "-sc_threshold", "0",
+            "-shortest", "-c:v", "copy", "-bsf:v", "h264_mp4toannexb",
             "-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-ac", "2",
-            "-af", "aresample=async=1:first_pts=0", "-mpegts_flags",
-            "+initial_discontinuity", "-f", "mpegts", "pipe:1"
+            "-af", "aresample=async=1:first_pts=0", "-reset_timestamps", "1",
+            "-mpegts_flags", "+resend_headers", "-muxdelay", "0", "-muxpreload", "0",
+            "-f", "mpegts", "pipe:1"
         ],
         stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
     )
@@ -214,6 +220,57 @@ def start_continuous_raw_stream(rtmp_url: str):
     process = subprocess.Popen(cmd, pass_fds=(video_read,))
     os.close(video_read)
     return process, video_write
+
+
+def start_continuous_video_stream(rtmp_url: str) -> subprocess.Popen:
+    """Start one RTMP process fed by raw video frames through stdin."""
+    cmd = [
+        get_ffmpeg_binary(), "-loglevel", "warning", "-hide_banner",
+        "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", "1280x720",
+        "-r", str(LIVE_STREAM_FPS), "-i", "pipe:0",
+        "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
+        "-map", "0:v:0", "-map", "1:a:0", "-c:v", "libx264",
+        "-preset", "veryfast", "-tune", "zerolatency",
+        "-b:v", LIVE_VIDEO_BITRATE, "-maxrate", LIVE_MAXRATE,
+        "-bufsize", LIVE_BUFSIZE, "-pix_fmt", "yuv420p", "-r", str(LIVE_STREAM_FPS),
+        "-g", str(max(1, LIVE_STREAM_FPS * 2)),
+        "-keyint_min", str(max(1, LIVE_STREAM_FPS * 2)), "-sc_threshold", "0",
+        "-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-ac", "2",
+        "-max_muxing_queue_size", "1024", "-flvflags", "no_duration_filesize",
+        "-f", "flv", rtmp_url,
+    ]
+    return subprocess.Popen(cmd, stdin=subprocess.PIPE)
+
+
+def feed_clip_into_video_stream(video_path: Path, stream_process: subprocess.Popen) -> bool:
+    """Decode one MP4 to raw frames and append it to the persistent encoder."""
+    decoder = subprocess.Popen(
+        [
+            get_ffmpeg_binary(), "-loglevel", "error", "-hide_banner", "-re",
+            "-i", str(video_path), "-an", "-vf",
+            f"scale=1280:720,fps={LIVE_STREAM_FPS}", "-pix_fmt", "rgb24",
+            "-f", "rawvideo", "pipe:1",
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+    )
+    try:
+        while True:
+            chunk = decoder.stdout.read(256 * 1024)
+            if not chunk:
+                break
+            if stream_process.poll() is not None:
+                return False
+            stream_process.stdin.write(chunk)
+        stream_process.stdin.flush()
+        decoder.wait()
+        return decoder.returncode == 0 and stream_process.poll() is None
+    except (BrokenPipeError, OSError):
+        return False
+    finally:
+        if decoder.poll() is None:
+            decoder.terminate()
+            decoder.wait()
 
 
 def feed_clip_into_continuous_stream(video_path: Path, stream_state) -> bool:
@@ -664,17 +721,17 @@ def main_fixed():
         startup_clip = render_quick_startup_clip()
     add_video_to_playlist(startup_clip)
     threading.Thread(target=bg_producer_thread, daemon=True).start()
-    stream_process = start_persistent_ffmpeg_process(rtmp_url)
-    print("[PERSISTENT STREAM] One RTMP connection active; feeding continuous MPEG-TS segments.")
+    stream_process = start_continuous_video_stream(rtmp_url)
+    print("[PERSISTENT STREAM] One RTMP connection active; feeding continuous raw 30fps video.")
     while True:
         try:
             clip_path = next_video_from_queue()
             print(f"[STREAM] Broadcasting fresh clip: {clip_path.name}")
             if stream_process.poll() is not None:
                 print("[STREAM RECOVERY] RTMP process stopped. Reconnecting...")
-                stream_process = start_persistent_ffmpeg_process(rtmp_url)
+                stream_process = start_continuous_video_stream(rtmp_url)
 
-            clip_ok = stream_clip_to_process(clip_path, stream_process)
+            clip_ok = feed_clip_into_video_stream(clip_path, stream_process)
             if clip_ok:
                 # The clip is immutable and has already been broadcast; keep
                 # the 24/7 process from filling the disk over time. Keep the
@@ -694,7 +751,7 @@ def main_fixed():
                 except OSError:
                     pass
                 time.sleep(1)
-                stream_process = start_persistent_ffmpeg_process(rtmp_url)
+                stream_process = start_continuous_video_stream(rtmp_url)
                 add_video_to_playlist(clip_path)
         except KeyboardInterrupt:
             try:

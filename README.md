@@ -92,7 +92,16 @@ Set `YOUTUBE_STREAM_KEY` in `.env`, then start the continuous live engine:
 python scripts/continuous_live_stream.py
 ```
 
-The live engine keeps one RTMP connection open, feeds normalized 720p H.264/AAC segments continuously, and loops the last valid clip while the next fresh news story is rendering.
+The live engine keeps one RTMP connection open, feeds continuous raw 720p frames to a stable FFmpeg encoder, and loops the last valid clip while the next fresh news story is rendering.
+
+Optional stream-health tuning:
+
+```env
+LIVE_STREAM_FPS=30
+LIVE_VIDEO_BITRATE=4500k
+LIVE_MAXRATE=5000k
+LIVE_BUFSIZE=9000k
+```
 
 ---
 
