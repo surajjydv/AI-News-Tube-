@@ -181,17 +181,26 @@ def stream_clip_to_process(video_path: Path, stream_process: subprocess.Popen) -
 
 
 def stream_clip_to_rtmp(video_path: Path, rtmp_url: str) -> bool:
-    """Broadcast one complete clip with clean timestamps, then return.
+    """Broadcast one clip to YouTube RTMP with clean video copy and resynced audio.
 
-    Feeding multiple independent MPEG-TS streams into one stdin caused DTS
-    discontinuities and could leave the feeder blocked after the first clip.
-    A bounded ffmpeg process per clip is reliable for YouTube reconnects and
-    guarantees the next queued story is actually reached.
+    Audio is re-encoded with aresample=async=1 to fix timestamp lag that causes
+    YouTube to drop audio. anullsrc fallback ensures even silent clips stream a
+    valid AAC track so the decoder never goes mute.
     """
     cmd = [
-        get_ffmpeg_binary(), "-loglevel", "warning", "-re", "-i", str(video_path),
-        "-c:v", "copy", "-bsf:v", "h264_mp4toannexb", "-c:a", "aac",
-        "-b:a", "128k", "-ar", "44100", "-ac", "2", "-avoid_negative_ts", "make_zero",
+        get_ffmpeg_binary(), "-loglevel", "warning", "-re",
+        "-fflags", "+genpts+igndts", "-i", str(video_path),
+        "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
+        # video: copy encoded h264 stream directly, no re-encode cost
+        "-map", "0:v:0",
+        # audio: prefer clip audio, fall back to silent source
+        "-map", "0:a:0?", "-map", "1:a:0",
+        "-shortest",
+        "-c:v", "copy", "-bsf:v", "h264_mp4toannexb",
+        "-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-ac", "2",
+        "-af", "aresample=async=1:min_hard_comp=0.100000:first_pts=0",
+        "-avoid_negative_ts", "make_zero",
+        "-max_muxing_queue_size", "1024",
         "-flvflags", "no_duration_filesize", "-f", "flv", rtmp_url,
     ]
     try:
