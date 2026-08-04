@@ -22,15 +22,28 @@ FONT_DIR = Path(__file__).resolve().parent.parent / "assets" / "fonts"
 
 def _load_font(size: int, bold: bool = True) -> ImageFont.FreeTypeFont:
     """Load Devanagari-compatible font with strict fallback chain to prevent square box (□□□□) rendering."""
-    candidates = [
+    bold_candidates = [
         FONT_DIR / "NotoSansDevanagari-Bold.ttf",
-        Path("C:/Windows/Fonts/mangal.ttf"),
+        FONT_DIR / "NotoSansDevanagari-Regular.ttf",
+        Path("C:/Windows/Fonts/Nirmala.ttc"),   # .ttc present on this system
+        Path("C:/Windows/Fonts/NirmalaB.ttc"),
         Path("C:/Windows/Fonts/mangalb.ttf"),
+        Path("C:/Windows/Fonts/mangal.ttf"),
         Path("C:/Windows/Fonts/nirmala.ttf"),
         Path("C:/Windows/Fonts/nirmalab.ttf"),
         Path("C:/Windows/Fonts/seguihis.ttf"),
-        Path("C:/Windows/Fonts/arial.ttf")
+        Path("C:/Windows/Fonts/arial.ttf"),
     ]
+    regular_candidates = [
+        FONT_DIR / "NotoSansDevanagari-Regular.ttf",
+        FONT_DIR / "NotoSansDevanagari-Bold.ttf",
+        Path("C:/Windows/Fonts/Nirmala.ttc"),
+        Path("C:/Windows/Fonts/mangal.ttf"),
+        Path("C:/Windows/Fonts/nirmala.ttf"),
+        Path("C:/Windows/Fonts/seguihis.ttf"),
+        Path("C:/Windows/Fonts/arial.ttf"),
+    ]
+    candidates = bold_candidates if bold else regular_candidates
 
     for fp in candidates:
         try:

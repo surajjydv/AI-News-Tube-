@@ -20,6 +20,8 @@ thumbnails/
 videos/
 voice/
 assets/
+!assets/fonts/
+!assets/fonts/*
 
 # Temporary generated files
 frame_*.jpg
