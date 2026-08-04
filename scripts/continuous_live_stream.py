@@ -710,32 +710,21 @@ def main():
 
 
 def main_fixed():
-    """Run the live producer/consumer engine; old concat main is retained for compatibility."""
+    """Run the 24/7 live stream engine with full video and neural audio voiceover."""
     stream_key = sys.argv[1].strip() if len(sys.argv) > 1 else YOUTUBE_STREAM_KEY
     rtmp_url = f"rtmp://a.rtmp.youtube.com/live2/{stream_key}"
-    # Reuse a valid startup clip so a restart does not block live output for
-    # minutes while rendering. The background worker immediately prepares a
-    # fresh unseen story afterwards.
     startup_clip = VIDEOS_DIR / "live_startup_30s.mp4"
     if not startup_clip.exists() or startup_clip.stat().st_size < 100_000:
         startup_clip = render_quick_startup_clip()
     add_video_to_playlist(startup_clip)
     threading.Thread(target=bg_producer_thread, daemon=True).start()
-    stream_process = start_continuous_video_stream(rtmp_url)
-    print("[PERSISTENT STREAM] One RTMP connection active; feeding continuous raw 30fps video.")
+    print("[PERSISTENT STREAM] 🔴 Live Stream Engine Active (Video + Neural Audio Voiceover)")
     while True:
         try:
             clip_path = next_video_from_queue()
-            print(f"[STREAM] Broadcasting fresh clip: {clip_path.name}")
-            if stream_process.poll() is not None:
-                print("[STREAM RECOVERY] RTMP process stopped. Reconnecting...")
-                stream_process = start_continuous_video_stream(rtmp_url)
-
-            clip_ok = feed_clip_into_video_stream(clip_path, stream_process)
+            print(f"[STREAM] Broadcasting clip with audio: {clip_path.name}")
+            clip_ok = stream_clip_to_rtmp(clip_path, rtmp_url)
             if clip_ok:
-                # The clip is immutable and has already been broadcast; keep
-                # the 24/7 process from filling the disk over time. Keep the
-                # current fallback clip available so there is never dead air.
                 with PLAYLIST_LOCK:
                     can_delete = clip_path != LAST_GOOD_CLIP
                 if clip_path.name != "live_startup_30s.mp4" and can_delete:
@@ -744,22 +733,11 @@ def main_fixed():
                     except OSError:
                         pass
             else:
-                try:
-                    if stream_process.stdin:
-                        stream_process.stdin.close()
-                    stream_process.terminate()
-                except OSError:
-                    pass
+                print(f"[STREAM RECOVERY] Error streaming {clip_path.name}. Retrying in 1s...")
                 time.sleep(1)
-                stream_process = start_continuous_video_stream(rtmp_url)
                 add_video_to_playlist(clip_path)
         except KeyboardInterrupt:
-            try:
-                if stream_process.stdin:
-                    stream_process.stdin.close()
-                stream_process.terminate()
-            except OSError:
-                pass
+            print("\n[STOPPED] Stream stopped by user.")
             break
         except Exception as e:
             print(f"[STREAM RECOVERY] {e}")

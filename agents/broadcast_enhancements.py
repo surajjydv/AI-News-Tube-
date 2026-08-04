@@ -1,4 +1,4 @@
-﻿import os, sys, re, math, time, asyncio, random, hashlib
+import os, sys, re, math, time, asyncio, random, hashlib
 from pathlib import Path
 from typing import List, Optional, Dict, Tuple
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
@@ -178,8 +178,12 @@ class DualAnchorVoice:
             try:
                 asyncio.run(_run())
             except RuntimeError:
-                loop = asyncio.get_event_loop()
-                loop.run_until_complete(_run())
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    loop.run_until_complete(_run())
+                finally:
+                    loop.close()
             if output_path.exists() and output_path.stat().st_size > 1000:
                 logger.info(f"  Dual Anchor: {voice} voiceover generated!")
                 return True

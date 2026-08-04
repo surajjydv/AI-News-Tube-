@@ -60,9 +60,12 @@ def voice_agent(script_obj: GeneratedScript) -> GeneratedScript:
         try:
             asyncio.run(_run_tts())
         except RuntimeError:
-            # Handle case where an event loop is already running in current thread
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(_run_tts())
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                loop.run_until_complete(_run_tts())
+            finally:
+                loop.close()
 
         if voice_path.exists() and voice_path.stat().st_size > 1000:
             logger.info(f"  ✅ Voice Agent: Generated Neural Edge-TTS voiceover ({voice_path.name})")
