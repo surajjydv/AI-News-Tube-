@@ -85,6 +85,15 @@ python main.py
 
 The system will automatically run all 10 agents and output the final video in `videos/` and thumbnail in `thumbnails/`.
 
+### 5. Run 24/7 YouTube Live
+Set `YOUTUBE_STREAM_KEY` in `.env`, then start the continuous live engine:
+
+```bash
+python scripts/continuous_live_stream.py
+```
+
+The live engine keeps one RTMP connection open, feeds normalized 720p H.264/AAC segments continuously, and loops the last valid clip while the next fresh news story is rendering.
+
 ---
 
 ## 📁 Directory Structure
