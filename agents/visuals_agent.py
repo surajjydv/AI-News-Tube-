@@ -12,7 +12,7 @@ if str(BASE_DIR) not in sys.path:
 
 from typing import List, Optional
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
-from config.settings import ASSETS_DIR
+from config.settings import ASSETS_DIR, PEXELS_API_KEY
 from services.groq_service import generate_text
 from services.rss_service import get_realtime_ticker_headlines
 from models.news_models import GeneratedScript, MediaAsset
@@ -25,8 +25,6 @@ STUDIO_ASSETS_DIR.mkdir(parents=True, exist_ok=True)
 ANCHOR_IMAGE_PATH = STUDIO_ASSETS_DIR / "ai_anchor_3d.png"
 STUDIO_BG_PATH = STUDIO_ASSETS_DIR / "studio_background.png"
 CHANNEL_LOGO_PATH = STUDIO_ASSETS_DIR / "channel_logo_3d.png"
-
-PEXELS_API_KEY = "tMiZhafYzUHfNIUQbq5VwDe38aVyJhPjMqj0k5pFufAqBOvXH6b2UcfR"
 
 
 # ─────────────────────────────────────────────────────────────

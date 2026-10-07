@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  ai-newstube:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-newstube-live
+    restart: always
+    ports:
+      - "8080:8080"
+      - "1935:1935"  # RTMP port for streaming
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - APP_ENV=${APP_ENV:-production}
+      - STREAM_QUALITY=${STREAM_QUALITY:-1080p}
+      - STREAM_BITRATE=${STREAM_BITRATE:-5000k}
+      - STREAM_FPS=${STREAM_FPS:-30}
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./assets:/app/assets
+      - ./videos:/app/videos
+      - ./frames:/app/frames
+    networks:
+      - ai-newstube-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "awslogs"
+      options:
+        awslogs-group: "/aws/ecs/ai-newstube"
+        awslogs-region: "${AWS_REGION:-us-east-1}"
+        awslogs-stream-prefix: "ecs"
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 2G
+
+  backup-service:
+    image: mesosphere/aws-cli:latest
+    container_name: ai-newstube-backup
+    restart: daily
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_REGION:-us-east-1}
+      - S3_BUCKET=${S3_BUCKET_NAME}
+    volumes:
+      - ./data:/data:ro
+      - ./logs:/logs:ro
+    entrypoint: >
+      sh -c "while true; do
+        echo 'Backing up to S3...';
+        aws s3 sync /data s3://${S3_BUCKET_NAME}/data --delete;
+        aws s3 sync /logs s3://${S3_BUCKET_NAME}/logs --delete;
+        echo 'Backup complete at' $(date);
+        sleep 86400;
+      done"
+    networks:
+      - ai-newstube-network
+    depends_on:
+      - ai-newstube
+
+networks:
+  ai-newstube-network:
+    driver: bridge
+
+volumes:
+  data:
+  logs:

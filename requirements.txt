@@ -8,3 +8,10 @@ requests
 moviepy
 numpy
 gtts
+google-api-python-client
+google-auth-oauthlib
+google-auth-httplib2
+pyttsx3
+uharfbuzz
+freetype-py
+pywin32; sys_platform == 'win32'

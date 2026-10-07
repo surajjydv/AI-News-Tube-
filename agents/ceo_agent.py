@@ -25,7 +25,7 @@ from utils.logger import logger
 from utils.exceptions import AINewsTubeException
 
 
-def ceo_agent() -> Optional[GeneratedScript]:
+def ceo_agent(topic: Optional[str] = None) -> Optional[GeneratedScript]:
     """
     CEO Agent: Orchestrates the Production AI-NewsTube Autonomous Pipeline.
     Sequence:
@@ -33,6 +33,8 @@ def ceo_agent() -> Optional[GeneratedScript]:
     """
     logger.info("=" * 50)
     logger.info("🤖 CEO AGENT (Production Orchestrator)")
+    if topic:
+        logger.info(f"🎯 Target Topic: {topic}")
     logger.info("=" * 50)
 
     logger.info(f"Channel : {CHANNEL_NAME}")
@@ -41,8 +43,11 @@ def ceo_agent() -> Optional[GeneratedScript]:
 
     try:
         # 1. News Hunter
-        logger.info("\n📢 CEO: 1. Smart News Hunter, find today's top virality-ranked news!")
-        news_items = news_hunter()
+        if topic:
+            logger.info(f"\n📢 CEO: 1. Smart News Hunter, search specifically for topic: '{topic}'")
+        else:
+            logger.info("\n📢 CEO: 1. Smart News Hunter, find today's top virality-ranked news!")
+        news_items = news_hunter(topic=topic)
         if not news_items:
             logger.warning("No news items found. Pipeline stopping.")
             return None

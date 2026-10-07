@@ -49,7 +49,7 @@ def voice_agent(script_obj: GeneratedScript) -> GeneratedScript:
     if not full_text:
         full_text = "नमस्कार! AI-NewsTube में आपका स्वागत है।"
 
-    # 1. Try Microsoft Edge-TTS
+    # 1. Try Microsoft Edge-TTS (with retry backoff)
     try:
         import edge_tts
 
@@ -57,20 +57,27 @@ def voice_agent(script_obj: GeneratedScript) -> GeneratedScript:
             communicate = edge_tts.Communicate(full_text, voice=DEFAULT_TTS_VOICE, rate="+0%")
             await communicate.save(str(voice_path))
 
-        try:
-            asyncio.run(_run_tts())
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+        max_retries = 3
+        for attempt in range(1, max_retries + 1):
             try:
-                loop.run_until_complete(_run_tts())
-            finally:
-                loop.close()
+                try:
+                    asyncio.run(_run_tts())
+                except RuntimeError:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    try:
+                        loop.run_until_complete(_run_tts())
+                    finally:
+                        loop.close()
 
-        if voice_path.exists() and voice_path.stat().st_size > 1000:
-            logger.info(f"  ✅ Voice Agent: Generated Neural Edge-TTS voiceover ({voice_path.name})")
-            script_obj.audio_path = str(voice_path)
-            return script_obj
+                if voice_path.exists() and voice_path.stat().st_size > 1000:
+                    logger.info(f"  ✅ Voice Agent: Generated Neural Edge-TTS voiceover ({voice_path.name})")
+                    script_obj.audio_path = str(voice_path)
+                    return script_obj
+            except Exception as retry_err:
+                logger.warning(f"  ⚠️ Voice Agent Edge-TTS attempt {attempt}/{max_retries} failed: {retry_err}")
+                if attempt < max_retries:
+                    time.sleep( attempt * 1.5 )
     except Exception as e:
         logger.warning(f"  ⚠️ Voice Agent Edge-TTS note: {e}")
 
@@ -97,6 +104,19 @@ def voice_agent(script_obj: GeneratedScript) -> GeneratedScript:
         logger.warning("  ⚠️ Voice Agent note: 'gTTS' package is not installed. Run 'pip install gtts' to enable gTTS fallback.")
     except Exception as e:
         logger.error(f"  ❌ Voice Agent gTTS error: {e}")
+
+    # 4. Offline Fallback: pyttsx3
+    try:
+        import pyttsx3
+        engine = pyttsx3.init()
+        engine.save_to_file(full_text, str(voice_path))
+        engine.runAndWait()
+        if voice_path.exists() and voice_path.stat().st_size > 500:
+            logger.info(f"  ✅ Voice Agent: Generated offline pyttsx3 fallback voiceover ({voice_path.name})")
+            script_obj.audio_path = str(voice_path)
+            return script_obj
+    except Exception as e:
+        logger.error(f"  ❌ Voice Agent pyttsx3 error: {e}")
 
     return script_obj
 

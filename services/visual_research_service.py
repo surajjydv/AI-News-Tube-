@@ -269,19 +269,19 @@ class VisualResearchService:
         draw.rectangle([(10, 10), (w - 10, h - 10)], outline=(37, 99, 235), width=3)
         draw.rectangle([(20, 20), (w - 20, h - 20)], outline=(30, 64, 175), width=1)
 
-        from agents.video_agent import _load_font
+        from utils.font_utils import load_font as _load_font, sanitize_text
         font_lg = _load_font(32, bold=True)
         font_sm = _load_font(20, bold=True)
 
         # Category Badge
         draw.rounded_rectangle([(50, 50), (320, 95)], radius=8, fill=(220, 38, 38))
-        draw.text((65, 60), f"⚡ {category.upper()} COVERAGE", fill=(255, 255, 255), font=font_sm)
+        draw.text((65, 60), sanitize_text(f"{category.upper()} COVERAGE"), fill=(255, 255, 255), font=font_sm)
 
         # Headline
         draw.text((50, 140), "VISUAL REPORTING", fill=(255, 215, 0), font=font_sm)
         
         # Wrapped Headline
-        words = headline.split()
+        words = sanitize_text(headline).split()
         lines = []
         curr = []
         for word in words:

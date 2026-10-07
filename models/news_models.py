@@ -15,6 +15,7 @@ class NewsArticle:
     trending_score: float = 0.0
     is_breaking: bool = False
     unique_hash: str = ""
+    image_url: Optional[str] = None
 
     def to_dict(self) -> dict:
         return {
@@ -27,6 +28,7 @@ class NewsArticle:
             "trending_score": self.trending_score,
             "is_breaking": self.is_breaking,
             "unique_hash": self.unique_hash,
+            "image_url": self.image_url,
         }
 
 

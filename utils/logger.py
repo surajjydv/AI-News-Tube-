@@ -41,10 +41,10 @@ def setup_logger(name: str = "AI-NewsTube", level: int = logging.INFO) -> loggin
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
-    # File Handler
+    # File Handler (Safe append mode without Windows lock contention)
     try:
-        file_handler = RotatingFileHandler(
-            LOG_FILE, maxBytes=10 * 1024 * 1024, backupCount=3, encoding="utf-8"
+        file_handler = logging.FileHandler(
+            LOG_FILE, mode="a", encoding="utf-8"
         )
         file_handler.setLevel(level)
         file_handler.setFormatter(formatter)

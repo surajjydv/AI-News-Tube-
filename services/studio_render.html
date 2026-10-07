@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI-NewsTube Studio Renderer</title>
+<style>
+  /* Bundled locally so headline text (Hindi/Devanagari) always renders
+     correctly with zero dependency on internet access or system fonts.
+     Browsers automatically fall back to Arial for any Latin characters
+     this font doesn't cover, so mixed Hindi/English text works too. */
+  @font-face { font-family:'AINewsText'; src:url('../assets/fonts/NotoSansDevanagari-Regular.ttf') format('truetype'); font-weight:400; }
+  @font-face { font-family:'AINewsText'; src:url('../assets/fonts/NotoSansDevanagari-Bold.ttf') format('truetype'); font-weight:700; }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:1920px; height:1080px; background:#000; overflow:hidden; font-family:'AINewsText', Arial, sans-serif; }
+
+  #stage { width:1920px; height:1080px; position:relative; perspective:1900px; perspective-origin:50% 38%; overflow:hidden; background:radial-gradient(ellipse at 50% 30%, #0c1830 0%, #050a16 65%, #020408 100%); }
+  #world { position:absolute; inset:0; transform-style:preserve-3d; transition:none; }
+
+  /* ---------- FLOOR ---------- */
+  #floor {
+    position:absolute; left:-40%; top:56%; width:180%; height:1400px;
+    transform-style:preserve-3d; transform:rotateX(90deg);
+    background:
+      repeating-linear-gradient(90deg, rgba(80,140,220,0.10) 0px, rgba(80,140,220,0.10) 1px, transparent 1px, transparent 90px),
+      repeating-linear-gradient(0deg, rgba(80,140,220,0.10) 0px, rgba(80,140,220,0.10) 1px, transparent 1px, transparent 90px),
+      linear-gradient(180deg, #0a1428 0%, #050a16 55%, #02050c 100%);
+    box-shadow: inset 0 0 400px 100px rgba(0,0,0,0.85);
+  }
+  #floor-glow { position:absolute; left:0; top:0; width:100%; height:100%;
+    background: radial-gradient(ellipse 900px 500px at 50% 8%, rgba(30,90,200,0.35), transparent 70%); }
+
+  /* ---------- BACK CURVED LED WALL ---------- */
+  #ledwall { position:absolute; left:50%; top:8%; width:0; height:0; transform-style:preserve-3d; }
+  .led-seg { position:absolute; width:170px; height:520px; left:-85px; top:-260px;
+    background-size:cover; background-position:center; overflow:hidden;
+    box-shadow: 0 0 40px rgba(20,90,200,0.35);
+    border-left:1px solid rgba(255,255,255,0.02); }
+  .led-seg canvas { width:100%; height:100%; display:block; }
+  #led-top-arch, #led-bot-arch { position:absolute; left:-980px; width:1960px; height:10px;
+    background:linear-gradient(90deg, transparent, #ffcf40 15%, #ff5050 50%, #ffcf40 85%, transparent);
+    box-shadow:0 0 30px 6px rgba(255,90,60,0.7); transform-style:preserve-3d; }
+  #led-top-arch { top:-266px; }
+  #led-bot-arch { top:262px; }
+
+  /* ---------- SIDE PANEL SCREENS ---------- */
+  .side-panel { position:absolute; top:26%; width:380px; height:640px; transform-style:preserve-3d;
+    background:linear-gradient(180deg, #0c1a34, #060d1c); border:2px solid rgba(90,150,230,0.25);
+    box-shadow:0 0 60px rgba(20,80,180,0.25), inset 0 0 60px rgba(0,40,100,0.4); overflow:hidden; }
+  #panel-left { left:1%; transform: rotateY(44deg) translateZ(20px); }
+  #panel-right { right:1%; transform: rotateY(-44deg) translateZ(20px); }
+  .side-panel .headband { height:64px; background:linear-gradient(90deg,#c81e2c,#7a0e18); display:flex; align-items:center; padding:0 18px; color:#fff; font-weight:800; font-size:26px; letter-spacing:1px; }
+  .side-panel .slist { padding:18px; color:#bcd4ff; font-size:20px; line-height:1.9; }
+  .side-panel .slist div { border-bottom:1px solid rgba(120,160,220,0.15); padding:10px 0; }
+
+  /* ---------- CEILING SPOTLIGHT BEAMS ---------- */
+  #lights { position:absolute; left:0; top:-6%; width:100%; height:60%; transform-style:preserve-3d; }
+  .beam { position:absolute; top:0; width:170px; height:640px;
+    background:conic-gradient(from 180deg at 50% 0%, transparent 0deg, rgba(160,200,255,0.22) 12deg, transparent 24deg);
+    filter:blur(1px); mix-blend-mode:screen; transform-origin:50% 0%; }
+  .fixture { position:absolute; top:-6px; width:26px; height:14px; border-radius:4px;
+    background:linear-gradient(180deg,#3a4a66,#12161f); box-shadow:0 0 14px 4px rgba(255,240,210,0.5); }
+
+  /* ---------- ANCHOR DESK (built from faces = pseudo-3D box) ---------- */
+  #desk { position:absolute; left:50%; top:37%; width:1180px; height:340px; margin-left:-590px; transform-style:preserve-3d; }
+  #desk-top { position:absolute; left:0; top:-46px; width:1180px; height:220px; transform:rotateX(90deg); transform-origin:top;
+    background:linear-gradient(180deg,#1c2740,#0c1220); border-radius:14px 14px 0 0;
+    box-shadow:inset 0 0 40px rgba(0,0,0,0.6), 0 0 40px rgba(30,80,180,0.25); }
+  #desk-front { position:absolute; left:0; top:0; width:1180px; height:280px; transform:translateZ(1px);
+    background:linear-gradient(180deg,#141d33 0%,#0a0f1c 100%); border-radius:0 0 18px 18px;
+    box-shadow:0 30px 70px rgba(0,0,0,0.7); }
+  #desk-strip { position:absolute; left:26px; top:14px; width:1128px; height:10px; border-radius:6px;
+    background:linear-gradient(90deg,#ff2c3c,#ffae2c,#ff2c3c); box-shadow:0 0 24px 6px rgba(255,60,40,0.75); }
+  #desk-logo { position:absolute; left:50%; top:70px; transform:translateX(-50%); color:#e8eefc; font-weight:900;
+    font-size:40px; letter-spacing:6px; opacity:0.9; text-shadow:0 0 18px rgba(120,170,255,0.6); }
+  #desk-sublogo { position:absolute; left:50%; top:120px; transform:translateX(-50%); color:#7fa8ff; font-weight:700;
+    font-size:16px; letter-spacing:8px; opacity:0.8; }
+
+  /* ---------- ANCHOR SLOT (talking anchor video/png gets composited by python, this is just placement guide) ---------- */
+  #anchor-slot { position:absolute; left:64%; top:20%; width:34%; height:64%; }
+
+  /* ---------- TOP HUD ---------- */
+  #top-hud { position:absolute; left:0; top:0; width:100%; z-index:50; }
+  #live-badge { position:absolute; left:24px; top:22px; display:flex; align-items:center; gap:10px;
+    background:linear-gradient(90deg,#c8102e,#8a0a1e); padding:10px 22px; border-radius:6px; box-shadow:0 4px 18px rgba(200,20,40,0.5); }
+  #live-dot { width:14px; height:14px; border-radius:50%; background:#fff; animation:blink 1.4s infinite; }
+  @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.25;} }
+  #live-text { color:#fff; font-weight:800; font-size:24px; letter-spacing:1px; }
+  #brand-text { color:#ffd23f; font-weight:800; font-size:22px; letter-spacing:2px; margin-left:14px; }
+  #breaking-badge { position:absolute; left:290px; top:22px; background:#0d1a33; border:1px solid rgba(255,255,255,0.15);
+    padding:10px 20px; border-radius:6px; color:#ffcf40; font-weight:800; font-size:22px; letter-spacing:1px; }
+  #datetime-badge { position:absolute; right:24px; top:22px; text-align:right; color:#dce8ff; }
+  #clock-text { font-size:26px; font-weight:800; color:#ffd23f; }
+  #date-text { font-size:18px; font-weight:600; opacity:0.85; }
+
+  /* ---------- LOWER THIRD: 3D ANIMATED HEADLINE ---------- */
+  #lower-third-zone { position:absolute; left:0; bottom:118px; width:100%; height:190px; z-index:60; perspective:1400px; }
+  #headline-card { position:absolute; left:0; top:36px; width:100%; height:120px; transform-style:preserve-3d;
+    transform:rotateX(-90deg) translateZ(0px); transform-origin:50% 100%; opacity:0; }
+  #headline-tag { position:absolute; left:0; top:0; width:230px; height:120px; background:linear-gradient(160deg,#e0122b,#8a0a1e);
+    display:flex; align-items:center; justify-content:center; clip-path:polygon(0 0,100% 0,84% 100%,0% 100%); }
+  #headline-tag span { color:#fff; font-weight:900; font-size:30px; letter-spacing:2px; transform:translateX(-14px); }
+  #headline-body { position:absolute; left:212px; top:0; right:0; height:120px; background:linear-gradient(90deg,#0a1226 0%,#0d1730 100%);
+    border-top:3px solid #ffcf40; display:flex; align-items:center; padding:0 42px; }
+  #headline-text { color:#fff; font-size:46px; font-weight:800; line-height:1.15; text-shadow:0 2px 10px rgba(0,0,0,0.6); }
+  #headline-sub { position:absolute; left:212px; top:120px; right:0; height:46px; background:rgba(6,12,26,0.92);
+    display:flex; align-items:center; padding:0 42px; opacity:0; transform:translateY(-10px); }
+  #headline-sub span { color:#9fc0ff; font-size:22px; font-weight:600; letter-spacing:0.5px; }
+
+  /* ---------- TICKER ---------- */
+  #ticker-bar { position:absolute; left:0; bottom:0; width:100%; height:118px; z-index:55; }
+  #ticker-top-line { height:3px; background:linear-gradient(90deg,transparent,#ffcf40,#ff5050,#ffcf40,transparent); }
+  #ticker-row { position:relative; height:64px; background:#070d1c; display:flex; align-items:center; overflow:hidden; }
+  #ticker-label { flex:0 0 auto; background:linear-gradient(90deg,#c8102e,#8a0a1e); color:#fff; font-weight:900;
+    font-size:24px; padding:0 30px; height:100%; display:flex; align-items:center; letter-spacing:1px; z-index:2; }
+  #ticker-track-wrap { flex:1 1 auto; overflow:hidden; height:100%; position:relative; }
+  #ticker-track { position:absolute; left:0; top:0; height:100%; display:flex; align-items:center; white-space:nowrap;
+    color:#eaf1ff; font-size:24px; font-weight:600; }
+  #ticker-track span { margin-right:60px; }
+  #market-row { height:51px; background:#0c1428; display:flex; align-items:center; padding:0 30px; gap:40px;
+    color:#8fb0e6; font-size:19px; font-weight:600; }
+  #market-row b { color:#ffd23f; }
+
+  #vignette { position:absolute; inset:0; z-index:80; pointer-events:none;
+    background: radial-gradient(ellipse at 50% 45%, transparent 45%, rgba(0,0,0,0.55) 100%); }
+  #grain { position:absolute; inset:0; z-index:81; pointer-events:none; opacity:0.035;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>"); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="world">
+    <div id="floor"><div id="floor-glow"></div></div>
+    <div id="ledwall"></div>
+    <div id="led-top-arch"></div>
+    <div id="led-bot-arch"></div>
+    <div class="side-panel" id="panel-left">
+      <div class="headband">TOP STORIES</div>
+      <div class="slist" id="panel-left-list"></div>
+    </div>
+    <div class="side-panel" id="panel-right">
+      <div class="headband">LIVE UPDATES</div>
+      <div class="slist" id="panel-right-list"></div>
+    </div>
+    <div id="lights"></div>
+    <div id="desk">
+      <div id="desk-top"></div>
+      <div id="desk-front">
+        <div id="desk-strip"></div>
+        <div id="desk-logo">AI-NEWSTUBE</div>
+        <div id="desk-sublogo">L I V E &nbsp; B R O A D C A S T</div>
+      </div>
+    </div>
+    <div id="anchor-slot"></div>
+  </div>
+
+  <div id="top-hud">
+    <div id="live-badge"><div id="live-dot"></div><div id="live-text">LIVE</div><div id="brand-text">NEWSTUBE HD</div></div>
+    <div id="breaking-badge">BREAKING NEWS</div>
+    <div id="datetime-badge"><div id="clock-text">00:00 IST</div><div id="date-text">-- --- ----</div></div>
+  </div>
+
+  <div id="lower-third-zone">
+    <div id="headline-card">
+      <div id="headline-tag"><span>BREAKING</span></div>
+      <div id="headline-body"><div id="headline-text">Headline goes here</div></div>
+    </div>
+    <div id="headline-sub"><span id="headline-sub-text"></span></div>
+  </div>
+
+  <div id="ticker-bar">
+    <div id="ticker-top-line"></div>
+    <div id="ticker-row">
+      <div id="ticker-label">BREAKING</div>
+      <div id="ticker-track-wrap"><div id="ticker-track" id="ticker-track"></div></div>
+    </div>
+    <div id="market-row" id="market-row"></div>
+  </div>
+
+  <div id="vignette"></div>
+  <div id="grain"></div>
+</div>
+
+<script>
+/* ============================================================
+   AI-NewsTube Studio Renderer — pure CSS3D, zero external deps.
+   Exposes a small JS API the Python capture service drives.
+   ============================================================ */
+(function(){
+  const CATEGORY_THEMES = {
+    DEFAULT:        { c1:'#0b3c7a', c2:'#0b2144', accent:'#4fa8ff' },
+    FINANCE_MARKETS:{ c1:'#064a34', c2:'#031a12', accent:'#25d38a' },
+    TECH_AI_CYBER:  { c1:'#2a0b6b', c2:'#0a0a28', accent:'#7f4bff' },
+    POLITICS_GOVT:  { c1:'#5a4009', c2:'#241a05', accent:'#ffcf40' },
+    WEATHER_SPACE:  { c1:'#053a4a', c2:'#021620', accent:'#22c8d8' },
+    SPORTS:         { c1:'#7a0e18', c2:'#26060a', accent:'#ff5050' },
+    ENTERTAINMENT:  { c1:'#6b0b52', c2:'#22041b', accent:'#ff4bd8' }
+  };
+  let currentCategory = 'DEFAULT';
+
+  // ---- Build curved LED wall out of flat segments arranged in an arc ----
+  const SEGMENTS = 14, RADIUS = 880, FOV = 92;
+  const ledWall = document.getElementById('ledwall');
+  const segCanvases = [];
+  for (let i=0;i<SEGMENTS;i++){
+    const seg = document.createElement('div');
+    seg.className = 'led-seg';
+    const angle = -FOV/2 + (i+0.5) * (FOV/SEGMENTS);
+    const rad = angle * Math.PI/180;
+    const x = RADIUS * Math.sin(rad);
+    const z = RADIUS * Math.cos(rad) - RADIUS;
+    seg.style.transform = `translate3d(${x}px,0,${z}px) rotateY(${angle}deg)`;
+    const cv = document.createElement('canvas');
+    cv.width = 340; cv.height = 1040;
+    seg.appendChild(cv);
+    ledWall.appendChild(seg);
+    segCanvases.push({cv, i});
+  }
+  document.getElementById('led-top-arch').style.transform = `translateZ(${-RADIUS*0.14}px)`;
+  document.getElementById('led-bot-arch').style.transform = `translateZ(${-RADIUS*0.14}px)`;
+
+  function drawLedWallTheme(theme, t){
+    segCanvases.forEach(({cv,i})=>{
+      const ctx = cv.getContext('2d');
+      const w = cv.width, h = cv.height;
+      const grad = ctx.createLinearGradient(0,0,0,h);
+      grad.addColorStop(0, theme.c1);
+      grad.addColorStop(1, theme.c2);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0,0,w,h);
+
+      // fine grid
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 1;
+      for (let gx=0; gx<w; gx+=34){ ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,h); ctx.stroke(); }
+      for (let gy=0; gy<h; gy+=34){ ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(w,gy); ctx.stroke(); }
+
+      // animated data pulse lines (per-segment phase offset -> travels across whole wall)
+      ctx.strokeStyle = theme.accent;
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = 0.55;
+      for (let li=0; li<3; li++){
+        const phase = (t*0.12 + li*0.33 + i*0.05) % 1;
+        const y = phase * h;
+        ctx.beginPath();
+        ctx.moveTo(0,y);
+        for (let px=0; px<=w; px+=20){
+          ctx.lineTo(px, y + Math.sin(px*0.05 + t*2 + i)*8);
+        }
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+
+      // soft vertical glow center-weighted (simulates world-map / broadcast glow)
+      const rg = ctx.createRadialGradient(w/2,h*0.35,10,w/2,h*0.35,w*1.4);
+      rg.addColorStop(0, 'rgba(255,255,255,0.10)');
+      rg.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = rg;
+      ctx.fillRect(0,0,w,h);
+    });
+  }
+
+  // ---- Ceiling spotlight beams ----
+  const lightsRoot = document.getElementById('lights');
+  const NUM_LIGHTS = 7;
+  for (let i=0;i<NUM_LIGHTS;i++){
+    const beam = document.createElement('div');
+    beam.className = 'beam';
+    const x = (i/(NUM_LIGHTS-1)) * 1700 + 110;
+    beam.style.left = (x-85)+'px';
+    beam.style.transform = `rotateZ(${(i-(NUM_LIGHTS-1)/2)*3}deg)`;
+    lightsRoot.appendChild(beam);
+    const fx = document.createElement('div');
+    fx.className='fixture'; fx.style.left=(x-13)+'px';
+    lightsRoot.appendChild(fx);
+  }
+
+  // ---- Side panel headline lists ----
+  function setSideLists(items){
+    const l = document.getElementById('panel-left-list');
+    const r = document.getElementById('panel-right-list');
+    l.innerHTML = ''; r.innerHTML = '';
+    (items||[]).slice(0,4).forEach((txt,idx)=>{
+      const d = document.createElement('div'); d.textContent = txt;
+      (idx%2===0?l:r).appendChild(d);
+    });
+    if (!items || items.length===0){
+      l.innerHTML = '<div>Loading top stories…</div><div>Stay tuned</div>';
+      r.innerHTML = '<div>Live coverage</div><div>Updated every hour</div>';
+    }
+  }
+  setSideLists([]);
+
+  // ---- Ticker ----
+  function setTicker(items){
+    const track = document.getElementById('ticker-track');
+    const text = (items && items.length ? items : ['Welcome to AI-NewsTube — fully autonomous news broadcast']).join('   •   ');
+    track.innerHTML = '';
+    for (let r=0;r<4;r++){ const s = document.createElement('span'); s.textContent = text; track.appendChild(s); }
+  }
+  setTicker([]);
+
+  function setMarketRow(items){
+    const row = document.getElementById('market-row');
+    row.innerHTML = '';
+    (items||['MARKETS: SENSEX 81,420 ▲ +340','NIFTY 24,850 ▲ +95','GOLD ₹72,500']).forEach(txt=>{
+      const s = document.createElement('span');
+      s.innerHTML = txt.replace(/(▲.*|▼.*)/,'<b>$1</b>');
+      row.appendChild(s);
+    });
+  }
+  setMarketRow([]);
+
+  // ---- Public API ----
+  let headlineText = '', headlineSub = '', introStart = null;
+
+  window.NEWS_STUDIO = {
+    setCategory(cat){
+      currentCategory = CATEGORY_THEMES[cat] ? cat : 'DEFAULT';
+    },
+    setHeadline(text, sub){
+      headlineText = text || '';
+      headlineSub = sub || '';
+      document.getElementById('headline-text').textContent = headlineText;
+      document.getElementById('headline-sub-text').textContent = headlineSub;
+      document.getElementById('headline-tag').querySelector('span').textContent =
+        (currentCategory === 'SPORTS') ? 'SPORTS' : 'BREAKING';
+    },
+    setTickerItems(items){ setTicker(items); },
+    setMarketRow(items){ setMarketRow(items); },
+    setSideLists(items){ setSideLists(items); },
+    setClock(clockStr, dateStr){
+      document.getElementById('clock-text').textContent = clockStr || '';
+      document.getElementById('date-text').textContent = dateStr || '';
+    },
+    playIntro(){ introStart = null; },
+
+    renderFrameAtTime(t){
+      if (introStart === null) introStart = t;
+      const localT = t - introStart;
+
+      // subtle camera parallax drift (pure CSS, no WebGL needed)
+      const stage = document.getElementById('stage');
+      const px = 50 + Math.sin(t*0.25)*2.2;
+      const py = 38 + Math.cos(t*0.18)*1.4;
+      stage.style.perspectiveOrigin = px+'% '+py+'%';
+      const world = document.getElementById('world');
+      world.style.transform = `rotateY(${Math.sin(t*0.22)*1.6}deg) rotateX(${Math.cos(t*0.17)*0.6}deg) translateZ(${Math.sin(t*0.1)*10}px)`;
+
+      // LED wall live animated theme
+      drawLedWallTheme(CATEGORY_THEMES[currentCategory], t);
+
+      // ticker crawl
+      const track = document.getElementById('ticker-track');
+      const trackWidth = track.scrollWidth / 4;
+      track.style.transform = `translateX(${ - (t*140 % trackWidth) }px)`;
+
+      // headline 3D pop-in animation (rotateX flip + translateZ), settles after ~1s
+      const card = document.getElementById('headline-card');
+      const sub = document.getElementById('headline-sub');
+      const p = Math.min(1, Math.max(0, localT/0.9));
+      const ease = 1 - Math.pow(1-p, 3);
+      const rot = -90 * (1-ease);
+      const tz = 40 * (1-ease);
+      card.style.transform = `rotateX(${rot}deg) translateZ(${tz}px)`;
+      card.style.opacity = String(Math.min(1, p*2));
+      const p2 = Math.min(1, Math.max(0, (localT-0.55)/0.5));
+      sub.style.opacity = String(p2);
+      sub.style.transform = `translateY(${(1-p2)*-10}px)`;
+
+      // slight desk / anchor breathing motion for life
+      const desk = document.getElementById('desk');
+      desk.style.transform = `translateZ(${Math.sin(t*1.1)*2}px)`;
+    }
+  };
+
+  drawLedWallTheme(CATEGORY_THEMES.DEFAULT, 0);
+  window.NEWS_STUDIO.renderFrameAtTime(0);
+})();
+</script>
+</body>
+</html>

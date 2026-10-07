@@ -61,14 +61,8 @@ def fact_checker(news_item: NewsArticle) -> FactCheckResult:
     try:
         response_text = generate_text(prompt, temperature=0.2)
 
-        # Parse JSON output from LLM
-        clean_json = response_text.strip()
-        if clean_json.startswith("```json"):
-            clean_json = clean_json.split("```json")[1].split("```")[0].strip()
-        elif clean_json.startswith("```"):
-            clean_json = clean_json.split("```")[1].split("```")[0].strip()
-
-        data = json.loads(clean_json)
+        from utils.json_utils import extract_json_from_llm
+        data = extract_json_from_llm(response_text)
 
         conf = float(data.get("confidence_score", 0.85))
         risk = str(data.get("risk_level", "LOW")).upper()

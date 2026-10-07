@@ -15,13 +15,65 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
-from config.settings import ASSETS_DIR, CHANNEL_NAME, load_graphics_config
+from config.settings import ASSETS_DIR, CHANNEL_NAME, load_graphics_config, PEXELS_API_KEY
 from services.groq_service import generate_text
 from services.rss_service import get_realtime_ticker_headlines
 from models.news_models import GeneratedScript, MediaAsset
 from agents.visuals_agent import VisualResearchEngine
-from agents.video_agent import _load_font
+from utils.font_utils import load_font, sanitize_text, draw_shaped_text
 from utils.logger import logger
+
+render_studio_broadcast_frame = None  # Aliased at bottom of file
+
+# Bilingual (Hindi + Latin) font helpers — backed by Mukta via utils/font_utils.py
+def f_bold(sz: int): return load_font(sz, bold=True,  lang="hi")
+def f_reg(sz: int):  return load_font(sz, bold=False, lang="hi")
+
+# ─────────────────────────────────────────────────────────────
+# CACHED STUDIO BACKDROP (no-photo fallback — generated once)
+# ─────────────────────────────────────────────────────────────
+_STUDIO_BACKDROP_CACHE: dict = {}
+
+def _get_studio_backdrop(w: int, h: int) -> Image.Image:
+    """Returns a cached subtle gradient+grid studio backdrop for when no real photo is available."""
+    key = (w, h)
+    if key in _STUDIO_BACKDROP_CACHE:
+        return _STUDIO_BACKDROP_CACHE[key].copy()
+
+    import math as _math
+    bg = Image.new("RGB", (w, h), (10, 14, 30))
+    draw = ImageDraw.Draw(bg)
+
+    # Diagonal gradient: dark navy center → slightly lighter at corners
+    for y in range(0, h, 4):
+        for x in range(0, w, 4):
+            dist = _math.sqrt(((x - w/2)/w)**2 + ((y - h/2)/h)**2)
+            brightness = int(8 + 18 * dist)
+            draw.rectangle([(x, y), (x+3, y+3)], fill=(brightness, brightness+4, brightness+22))
+
+    # Faint grid lines
+    for x in range(0, w, 80):
+        draw.line([(x, 0), (x, h)], fill=(30, 38, 65, 60), width=1)
+    for y in range(0, h, 80):
+        draw.line([(0, y), (w, y)], fill=(30, 38, 65, 60), width=1)
+
+    # Low-opacity centered channel watermark
+    wm_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    wm_draw  = ImageDraw.Draw(wm_layer)
+    wm_font  = f_bold(96)
+    wm_text  = "AI-NEWSTUBE"
+    try:
+        tw = int(wm_draw.textlength(wm_text, font=wm_font))
+    except Exception:
+        tw = 600
+    wm_x = (w - tw) // 2
+    wm_y = (h - 120) // 2
+    wm_draw.text((wm_x + 3, wm_y + 3), wm_text, fill=(0, 0, 0, 55), font=wm_font)
+    wm_draw.text((wm_x, wm_y), wm_text, fill=(255, 215, 0, 38), font=wm_font)
+    bg = Image.alpha_composite(bg.convert("RGBA"), wm_layer).convert("RGB")
+
+    _STUDIO_BACKDROP_CACHE[key] = bg
+    return bg.copy()
 
 
 STUDIO_ASSETS_DIR = ASSETS_DIR / "studio"
@@ -30,7 +82,6 @@ STUDIO_ASSETS_DIR.mkdir(parents=True, exist_ok=True)
 STUDIO_BG_PATH    = STUDIO_ASSETS_DIR / "studio_background.png"
 CHANNEL_LOGO_PATH = STUDIO_ASSETS_DIR / "channel_logo_3d.png"
 
-PEXELS_API_KEY = "tMiZhafYzUHfNIUQbq5VwDe38aVyJhPjMqj0k5pFufAqBOvXH6b2UcfR"
 
 
 # ─────────────────────────────────────────────────────────────
@@ -217,15 +268,14 @@ class BroadcastLayerSystem:
         box_bg       = tuple(palette["box_bg"])
         alert_glow   = tuple(palette.get("alert_glow", [255, 30, 30]))
         template_labels = {
-            "breaking_news": ("🚨 ताज़ा ख़बर", "BREAKING STORY"),
-            "top_story":     ("📌 मुख्य समाचार", "TOP STORY"),
-            "exclusive":     ("⭐ विशेष एक्सक्लूसिव", "EXCLUSIVE REPORT"),
-            "live_update":   ("⚡ लाइव अपडेट", "LIVE COVERAGE")
+            "breaking_news": ("TAZA KHABAR", "BREAKING STORY"),
+            "top_story":     ("MUKHYA SAMACHAR", "TOP STORY"),
+            "exclusive":     ("VISHESH REPORT", "EXCLUSIVE REPORT"),
+            "live_update":   ("LIVE UPDATE", "LIVE COVERAGE")
         }
-        main_label, sub_label = template_labels.get(style, ("🚨 ताज़ा ख़बर", "BREAKING STORY"))
-        from agents.video_agent import _load_font
-        brk_font = _load_font(24, bold=True)
-        cat_font = _load_font(22, bold=True)
+        main_label, sub_label = template_labels.get(style, ("TAZA KHABAR", "BREAKING STORY"))
+        brk_font = f_bold(24)
+        cat_font = f_bold(22)
         pulse     = abs(math.sin(global_t * 3.5))
         glow_alpha= int(140 * pulse)
         glow_overlay = Image.new("RGBA", (w, h), (0, 0, 0, 0))
@@ -241,7 +291,7 @@ class BroadcastLayerSystem:
         draw.text((50, banner_y + 10), f"{main_label} | {sub_label}",
                   fill=tuple(palette["header_text"]), font=brk_font)
         draw.rectangle([(420, banner_y), (740, banner_y + 48)], fill=tag_bg)
-        draw.text((435, banner_y + 10), f"⚡ {category.upper()}",
+        draw.text((435, banner_y + 10), f">> {category.upper()}",
                   fill=tuple(palette["tag_text"]), font=cat_font)
         headline_top    = banner_y + 48
         headline_bottom = banner_y + 165
@@ -265,7 +315,7 @@ class BroadcastLayerSystem:
             headline_size = 46
         else:
             headline_size = 52
-        headline_font = _load_font(headline_size, bold=True)
+        headline_font = f_bold(headline_size)
         max_text_w = self.w - 160
         words = clean_headline.split()
         lines, current = [], ""
@@ -291,8 +341,7 @@ class BroadcastLayerSystem:
         """Layer 4: Live 4K Badge & Clock Widget."""
         import datetime as _dt
         draw = ImageDraw.Draw(frame)
-        from agents.video_agent import _load_font
-        live_font  = _load_font(26, bold=True)
+        live_font  = f_bold(26)
         live_pulse = abs(math.sin(global_t * 4.0))
         aura_r = int(14 + 8 * live_pulse)
         draw.ellipse(
@@ -303,7 +352,7 @@ class BroadcastLayerSystem:
             [(36, 26), (410, 90)],
             radius=12, fill=(200, 20, 20), outline=(255, 215, 0), width=3
         )
-        draw.text((76, 42), f"🚨 LIVE 4K  |  {CHANNEL_NAME}", fill=(255, 255, 255), font=live_font)
+        draw.text((76, 42), f"LIVE 4K  |  {CHANNEL_NAME}", fill=(255, 255, 255), font=live_font)
         now      = _dt.datetime.now()
         time_str = now.strftime('%H:%M') + " IST"
         time_box_x1 = self.w - 380
@@ -311,31 +360,31 @@ class BroadcastLayerSystem:
             [(time_box_x1, 26), (self.w - 40, 90)],
             radius=10, fill=(10, 15, 30), outline=(255, 215, 0), width=2
         )
-        draw.text((time_box_x1 + 18, 36), f"⏰ {time_str}", fill=(255, 215, 0),
-                  font=_load_font(22, bold=True))
+        draw.text((time_box_x1 + 18, 36), f"{sanitize_text(time_str)}", fill=(255, 215, 0),
+                  font=f_bold(22))
         draw.text((time_box_x1 + 18, 64),
-                  f"📍 NEW DELHI  •  {now.strftime('%d %b %Y').upper()}",
-                  fill=(220, 230, 245), font=_load_font(15, bold=True))
+                  sanitize_text(f"NEW DELHI  |  {now.strftime('%d %b %Y').upper()}"),
+                  fill=(220, 230, 245), font=f_bold(15))
         return frame
 
     def render_layer_5_ticker(
         self, frame: Image.Image, global_t: float,
         ticker_headlines: Optional[List[str]]
     ) -> Image.Image:
-        """Layer 5: Bottom Scrolling News Ticker Marquee (seamless, no ×4 bleed)."""
+        """Layer 5: Bottom Scrolling News Ticker Marquee (seamless, no x4 bleed)."""
         draw = ImageDraw.Draw(frame)
-        from agents.video_agent import _load_font
         ticker_y   = self.h - 85
-        ticker_font= _load_font(21, bold=True)
+        ticker_font= f_bold(21)
         draw.rectangle([(40, ticker_y), (self.w - 40, ticker_y + 48)], fill=(10, 14, 26))
         draw.rectangle([(40, ticker_y), (self.w - 40, ticker_y + 3)],  fill=(255, 215, 0))
         draw.rectangle([(40, ticker_y), (240, ticker_y + 48)],         fill=(220, 38, 38))
-        draw.text((52, ticker_y + 12), "🔥 ताज़ा खबर", fill=(255, 255, 255),
-                  font=_load_font(19, bold=True))
-        concat_str = ("   ⚡   ".join(ticker_headlines)
-                      if ticker_headlines and len(ticker_headlines) > 0
-                      else "AI-NewsTube 2.5D Broadcast Active — Real-Time Processing Operational")
-        scroll_text = f"   ⚡ {concat_str}   ►   "
+        draw.text((52, ticker_y + 12), "TAZA KHABAR", fill=(255, 255, 255),
+                  font=f_bold(19))
+        safe_headlines = [sanitize_text(h) for h in (ticker_headlines or [])]
+        concat_str = ("   |   ".join(safe_headlines)
+                      if safe_headlines
+                      else "AI-NewsTube 2.5D Broadcast Active - Real-Time Processing Operational")
+        scroll_text = f"  >> {concat_str}  >> "
         try:
             txt_w = int(draw.textlength(scroll_text, font=ticker_font))
         except Exception:
@@ -503,11 +552,11 @@ def render_tv_broadcast_frame(
             crop_y = (new_h - h) // 2
             frame  = p_resized.crop((0, crop_y, w, crop_y + h))
     else:
-        # Dark Broadcast Studio Background Fallback
+        # Animated studio backdrop fallback (cached gradient + grid + watermark)
         if STUDIO_BG_PATH.exists():
             frame = Image.open(str(STUDIO_BG_PATH)).convert("RGB").resize((w, h), Image.Resampling.LANCZOS)
         else:
-            frame = Image.new("RGB", (w, h), (10, 14, 30))
+            frame = _get_studio_backdrop(w, h)
 
     # Dark Studio Vignette Overlay (Ensures UI & Text Readability)
     vignette = Image.new("RGBA", (w, h), (0, 0, 0, 0))
@@ -533,9 +582,9 @@ def render_tv_broadcast_frame(
     draw  = ImageDraw.Draw(frame)
 
     # ─── LAYER 1: TOP BROADCAST HUD HEADER ────────────────────────────────────
-    live_font  = _load_font(22, bold=True)
-    hud_font   = _load_font(18, bold=True)
-    clock_font = _load_font(21, bold=True)
+    live_font  = f_bold(22)
+    hud_font   = f_bold(18)
+    clock_font = f_bold(21)
 
     # 1A. Top-Left Slanted Live Channel Badge (Fixed Emoji Box -> Clean Glowing Red Dot)
     live_pulse = abs(math.sin(global_t * 3.5))
@@ -544,7 +593,7 @@ def render_tv_broadcast_frame(
     draw.polygon([(20, 18), (380, 18), (380, 22), (20, 22)], fill=(255, 215, 0))
     dot_r = int(6 + 3 * live_pulse)
     draw.ellipse([(44 - dot_r, 41 - dot_r), (44 + dot_r, 41 + dot_r)], fill=(255, 255, 255))
-    draw.text((62, 27), f"LIVE 4K  |  {CHANNEL_NAME}", fill=(255, 255, 255), font=live_font)
+    draw.text((62, 27), sanitize_text(f"LIVE 4K  |  {CHANNEL_NAME}"), fill=(255, 255, 255), font=live_font)
 
     # 1B. Top-Center Category Tag Pill
     draw.polygon([(390, 18), (680, 18), (660, 64), (370, 64)], fill=(12, 18, 36))
@@ -557,8 +606,8 @@ def render_tv_broadcast_frame(
     time_str = now.strftime('%H:%M') + " IST"
     city_name, city_weather = INDIAN_CITIES_WEATHER[int(global_t / 3.0) % len(INDIAN_CITIES_WEATHER)]
     draw.polygon([(w - 520, 18), (w - 20, 18), (w - 20, 64), (w - 500, 64)], fill=(10, 14, 28), outline=(255, 215, 0), width=2)
-    draw.text((w - 495, 26), f"{time_str}", fill=(255, 215, 0), font=clock_font)
-    draw.text((w - 305, 26), f"{city_name} | {city_weather}", fill=(220, 230, 245), font=_load_font(16, bold=True))
+    draw.text((w - 495, 26), sanitize_text(f"{time_str}"), fill=(255, 215, 0), font=clock_font)
+    draw.text((w - 305, 26), sanitize_text(f"{city_name} | {city_weather}"), fill=(220, 230, 245), font=f_bold(16))
 
     # ─── LAYER 1.5: LEFT-SIDE 2.5D ANIMATED GLASSMORPHIC KEY FACT CARDS ──────
     if not quick_cards:
@@ -594,11 +643,22 @@ def render_tv_broadcast_frame(
             ], fill=(255, 215, 0, 255))
             frame = Image.alpha_composite(frame.convert("RGBA"), c_layer).convert("RGB")
             draw = ImageDraw.Draw(frame)
-            draw.text((58 + c_offset_x, card_y + 12), card_txt[:32], fill=(255, 255, 255), font=_load_font(16, bold=True))
+            draw.text((58 + c_offset_x, card_y + 12), sanitize_text(card_txt[:32]), fill=(255, 255, 255), font=f_bold(16))
         card_y += 56
 
-    # ─── LAYER 2: 2.5D IMPACTFUL HIGH-DEF HEADLINE BANNER (POP-UP ANIMATED) ───
-    pop_t   = min(1.0, global_t / 0.5)
+    # ─── LAYER 2: 3D IMPACTFUL KINETIC MOTION HEADLINE BANNER (CONTINUOUS ROTATION) ───
+    from services.rss_service import get_all_day_breaking_headlines
+    all_headlines_pool = ticker_headlines if (ticker_headlines and len(ticker_headlines) > 1) else get_all_day_breaking_headlines()
+    if headline_text and headline_text not in all_headlines_pool:
+        all_headlines_pool = [headline_text] + all_headlines_pool
+
+    # Dynamic Headline Cycling across full day (Changes smoothly every 7.5s)
+    cycle_dur = 7.5
+    h_idx = int(global_t / cycle_dur) % max(1, len(all_headlines_pool))
+    cur_headline = all_headlines_pool[h_idx]
+    local_t = global_t % cycle_dur
+
+    pop_t   = min(1.0, global_t / 0.4)
     scale_y = math.sin(pop_t * math.pi / 2)
     banner_h = int(145 * scale_y)
     banner_y = h - 90 - banner_h
@@ -607,32 +667,38 @@ def render_tv_broadcast_frame(
         b_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
         b_draw  = ImageDraw.Draw(b_layer)
 
-        # Dynamic Action Badges (ONLY show EXCLUSIVE for Breaking News)
-        if is_brk_event:
-            act_title1, act_title2 = "EXCLUSIVE", "BREAKING"
+        # 3D Extruded Base Drop-Shadow
+        b_draw.rectangle([(305, banner_y + 8), (w - 275, banner_y + banner_h + 8)], fill=(0, 0, 0, 180))
+
+        # Dynamic Action Badges (EXCLUSIVE / BREAKING / LIVE / TRENDING)
+        badge_cycle = int(global_t / 4.0) % 4
+        if is_brk_event or badge_cycle == 0:
+            act_title1, act_title2 = "बड़ी ख़बर", "BREAKING"
             act_bg = (220, 15, 20, 255)
+        elif badge_cycle == 1:
+            act_title1, act_title2 = "EXCLUSIVE", "24x7 HD"
+            act_bg = (180, 20, 25, 255)
+        elif badge_cycle == 2:
+            act_title1, act_title2 = "TOP STORY", "NATIONAL"
+            act_bg = (15, 75, 160, 255)
         else:
-            badge_cycle = int(global_t / 5.0) % 3
-            if badge_cycle == 0:
-                act_title1, act_title2 = "बड़ी ख़बर", "NEWS"
-                act_bg = (180, 15, 20, 255)
-            elif badge_cycle == 1:
-                act_title1, act_title2 = "TRENDING", "STORY"
-                act_bg = (210, 80, 10, 255)
-            else:
-                act_title1, act_title2 = "TOP STORY", "BULLETIN"
-                act_bg = (10, 110, 180, 255)
+            act_title1, act_title2 = "SRJ UNDERRATED", ""
+            act_bg = (210, 80, 10, 255)
 
+        # 3D Slanted Left Emblem Block
         b_draw.polygon([(0, banner_y), (310, banner_y), (250, banner_y + banner_h), (0, banner_y + banner_h)], fill=act_bg)
-        b_draw.polygon([(0, banner_y), (310, banner_y), (310, banner_y + 5), (0, banner_y + 5)], fill=(255, 215, 0, 255))
-
-        # 3D Slanted Divider Chevron
+        # Top Gold Specular Bevel
+        b_draw.polygon([(0, banner_y), (310, banner_y), (310, banner_y + 5), (0, banner_y + 5)], fill=(255, 225, 60, 255))
+        # 3D White Slanted Chevron Divider
         b_draw.polygon([(260, banner_y), (305, banner_y), (245, banner_y + banner_h), (200, banner_y + banner_h)], fill=(255, 255, 255, 240))
 
-        # Main 2.5D Headline Glassmorphic Center Slab
-        b_draw.rectangle([(310, banner_y), (w - 280, banner_y + banner_h)], fill=(10, 15, 32, 248))
+        # Main 3D Headline Glassmorphic Center Slab
+        b_draw.rectangle([(310, banner_y), (w - 280, banner_y + banner_h)], fill=(10, 16, 34, 250))
+        # 3D Gold Top & Bottom Chamfer Rails
         b_draw.rectangle([(310, banner_y), (w - 280, banner_y + 5)], fill=(255, 215, 0, 255))
-        b_draw.rectangle([(310, banner_y + banner_h - 4), (w - 280, banner_y + banner_h)], fill=(255, 215, 0, 255))
+        b_draw.rectangle([(310, banner_y + 1), (w - 280, banner_y + 3)], fill=(255, 255, 220, 255))
+        b_draw.rectangle([(310, banner_y + banner_h - 5), (w - 280, banner_y + banner_h)], fill=(255, 215, 0, 255))
+        b_draw.rectangle([(310, banner_y + banner_h - 2), (w - 280, banner_y + banner_h)], fill=(180, 140, 0, 255))
 
         # Right Action Box ("LIVE NOW")
         b_draw.rectangle([(w - 280, banner_y), (w, banner_y + banner_h)], fill=(200, 20, 20, 255))
@@ -641,22 +707,29 @@ def render_tv_broadcast_frame(
         frame = Image.alpha_composite(frame.convert("RGBA"), b_layer).convert("RGB")
         draw  = ImageDraw.Draw(frame)
 
-        # Left Box Text
-        draw.text((25, banner_y + 24), act_title1, fill=(255, 255, 255), font=_load_font(26, bold=True))
-        draw.text((25, banner_y + 75), act_title2, fill=(255, 235, 100), font=_load_font(28, bold=True))
+        # Left Emblem Text
+        draw.text((25, banner_y + 24), sanitize_text(act_title1), fill=(255, 255, 255), font=f_bold(26))
+        draw.text((25, banner_y + 75), sanitize_text(act_title2), fill=(255, 235, 100), font=f_bold(28))
 
-        # Center Devanagari Hindi Main Headline (Scaled & Wrapped to Prevent Overlap)
-        hclean = headline_text.split(" - ")[0].strip() if " - " in headline_text else headline_text
-        max_w = w - 630  # 1290px max text width boundary (from x=330 to x=1620)
-
-        if len(hclean) > 75:
-            hfont_size = 34
-        elif len(hclean) > 50:
-            hfont_size = 40
+        # Center Devanagari Hindi Kinetic Motion Headline (Smooth Ease-in / Parallax / Gliding Out)
+        hclean = cur_headline.split(" - ")[0].strip() if " - " in cur_headline else cur_headline
+        # Smooth Kinetic Easing Transition:
+        # Phase 1 (0.0 to 0.8s): Slide in from right (+200px -> 0px)
+        # Phase 2 (0.8 to 6.7s): Steady state with gentle 3D parallax drift (+15px)
+        # Phase 3 (6.7 to 7.5s): Slide out to left (0px -> -200px)
+        if local_t < 0.8:
+            slide_prog = local_t / 0.8
+            motion_x_offset = int(180 * ((1.0 - slide_prog) ** 3))
+        elif local_t > 6.7:
+            slide_prog = (local_t - 6.7) / 0.8
+            motion_x_offset = int(-180 * (slide_prog ** 3))
         else:
-            hfont_size = 48
+            mid_prog = (local_t - 0.8) / 5.9
+            motion_x_offset = int(15 * math.sin(mid_prog * math.pi))
 
-        hfont = _load_font(hfont_size, bold=True)
+        max_w = w - 650
+        hfont_size = 42 if len(hclean) <= 50 else (36 if len(hclean) <= 75 else 30)
+        hfont = f_bold(hfont_size)
 
         words = hclean.split()
         lines = []
@@ -676,28 +749,27 @@ def render_tv_broadcast_frame(
             lines.append(curr)
 
         lines = lines[:2]
-        line_h = hfont_size + 6
+        line_h = hfont_size + 8
         total_h = len(lines) * line_h
         start_y = banner_y + (banner_h - total_h) // 2
 
         for i, line in enumerate(lines):
             y_pos = start_y + i * line_h
-            for ext in range(3, 0, -1):
-                draw.text((330 + ext, y_pos + ext), line, fill=(15, 5, 10), font=hfont)
-            draw.text((330, y_pos), line, fill=(255, 255, 255), font=hfont)
+            # 3D Embossed Depth Shadow
+            draw_shaped_text(frame, (340 + motion_x_offset, y_pos), line, font_size=hfont_size, bold=True, text_color=(255, 255, 255), shadow=True)
 
         # Right CTA Box Text
-        draw.text((w - 255, banner_y + 24), "LIVE NOW", fill=(255, 255, 255), font=_load_font(21, bold=True))
-        draw.text((w - 265, banner_y + 64), f"{CHANNEL_NAME.lower().replace(' ', '')}.com", fill=(255, 215, 0), font=_load_font(18, bold=True))
+        draw.text((w - 255, banner_y + 24), "LIVE NOW", fill=(255, 255, 255), font=f_bold(21))
+        draw.text((w - 265, banner_y + 64), sanitize_text(f"{CHANNEL_NAME.lower().replace(' ', '')}.com"), fill=(255, 215, 0), font=f_bold(18))
 
-        # Periodic Specular Sheen Light Sweep Animation (Every 2.5s)
-        sweep_cycle = (global_t * 1.2) % 2.5
-        if sweep_cycle < 0.6:
-            flash_x = int(310 + (sweep_cycle / 0.6) * (w - 590))
+        # 3D Specular Light Sweep Sheen Beam (Sweeps across the headline slab every 2.5s)
+        sweep_cycle = (global_t * 1.3) % 2.5
+        if sweep_cycle < 0.7:
+            flash_x = int(310 + (sweep_cycle / 0.7) * (w - 600))
             flash_l = Image.new("RGBA", (w, h), (0, 0, 0, 0))
             ImageDraw.Draw(flash_l).polygon(
-                [(flash_x, banner_y), (flash_x + 140, banner_y), (flash_x + 70, banner_y + banner_h), (flash_x - 70, banner_y + banner_h)],
-                fill=(255, 255, 255, int(170 * (1 - pop_t)))
+                [(flash_x, banner_y), (flash_x + 120, banner_y), (flash_x + 60, banner_y + banner_h), (flash_x - 60, banner_y + banner_h)],
+                fill=(255, 255, 255, 90)
             )
             frame = Image.alpha_composite(frame.convert("RGBA"), flash_l).convert("RGB")
             draw  = ImageDraw.Draw(frame)
@@ -708,10 +780,11 @@ def render_tv_broadcast_frame(
     draw.rectangle([(0, tick_y), (w, tick_y + 3)], fill=(255, 215, 0))
 
     # Ticker Line 1: Live News Headlines Feed
-    tfont = _load_font(20, bold=True)
-    ctick = ("  ►  ".join(ticker_headlines)
-             if ticker_headlines else "AI-NewsTube 4K Live Broadcast Active — Real-Time News Processing Operational")
-    stxt  = f"  ►  {ctick}  "
+    tfont = f_bold(20)
+    safe_ticks = [sanitize_text(h) for h in (ticker_headlines or [])]
+    ctick = ("  |  ".join(safe_ticks)
+             if safe_ticks else "AI-NewsTube 4K Live Broadcast Active - Real-Time News Processing Operational")
+    stxt  = f"  >>  {ctick}  "
     try:
         tw = max(int(draw.textlength(stxt, font=tfont)), 1)
     except Exception:
@@ -733,18 +806,20 @@ def render_tv_broadcast_frame(
     mkt_y = h - 44
     draw.rectangle([(0, mkt_y), (w - 160, h)], fill=(14, 20, 38))
     draw.rectangle([(0, mkt_y), (w - 160, mkt_y + 2)], fill=(220, 38, 38))
-    mkt_str = f"MARKETS: SENSEX 81,420 ▲ +340  |  NIFTY 24,850 ▲ +95  |  GOLD ₹72,500 ▲  |  WEATHER: {city_name} {city_weather}"
-    draw.text((16, mkt_y + 10), mkt_str, fill=(255, 215, 0), font=_load_font(16, bold=True))
+    mkt_str = f"MARKETS: SENSEX 81,420 +340  |  NIFTY 24,850 +95  |  GOLD Rs.72,500  |  WEATHER: {city_name} {city_weather}"
+    draw.text((16, mkt_y + 10), sanitize_text(mkt_str), fill=(255, 215, 0), font=f_bold(16))
 
     # Bottom Right Category Pill
     draw.rectangle([(w - 160, tick_y), (w, h)], fill=(180, 20, 20))
-    cat_text = category[:8].upper() if category else "NEWS"
-    draw.text((w - 142, tick_y + 30), cat_text, fill=(255, 255, 255), font=_load_font(21, bold=True))
+    cat_text = sanitize_text(category[:8].upper()) if category else "NEWS"
+    draw.text((w - 142, tick_y + 30), cat_text, fill=(255, 255, 255), font=f_bold(21))
 
     if frame.size != (1280, 720):
         frame = frame.resize((1280, 720), Image.Resampling.BILINEAR)
 
     return frame
+
+render_studio_broadcast_frame = render_tv_broadcast_frame
 
 
 def create_3d_channel_logo(force: bool = False) -> Path:
@@ -775,8 +850,7 @@ def create_3d_channel_logo(force: bool = False) -> Path:
     draw.polygon([(46, 52), (68, 65), (46, 78)], fill=(255, 255, 255, 255))
 
     try:
-        from agents.video_agent import _load_font
-        font = _load_font(34, bold=True)
+        font = f_bold(34)
     except Exception:
         font = ImageFont.load_default(size=30)
 
@@ -1054,14 +1128,19 @@ def extract_topic_search_term(headline: str) -> str:
     return "india breaking news"
 
 
-def fetch_news_photo(keyword: str, output_path: Path, idx: int) -> bool:
+def fetch_news_photo(keyword: str, output_path: Path, idx: int, category: str = "NEWS") -> bool:
     """
-    Fetches 100% REAL Topic Photography matching news headline.
-    Search Sequence:
-    1. Wikipedia Official Rest API Lead Image (Real News Photographs)
-    2. Wikimedia Commons Search API
-    3. Picsum Fallback
+    Fetches 100% REAL Topic Photography matching news headline with strict SafeSearch and NSFW filtering.
+    Delegates to VisualAssetManager for multi-tier verified, safe press photography.
     """
+    try:
+        from services.visual_asset_manager import VisualAssetManager
+        asset = VisualAssetManager.get_visual_asset(headline=keyword, category=category, output_path=output_path)
+        if asset and asset.file_path and Path(asset.file_path).exists() and Path(asset.file_path).stat().st_size > 1000:
+            return True
+    except Exception as e:
+        logger.warning(f"VisualAssetManager fetch fallback ({e})")
+
     search_term = extract_topic_search_term(keyword)
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AI-NewsTube/2.0"}
 
@@ -1082,10 +1161,11 @@ def fetch_news_photo(keyword: str, output_path: Path, idx: int) -> bool:
     except Exception as e:
         logger.warning(f"  Wikipedia photo search warning: {e}")
 
-    # ── 2ND PRIORITY: Wikimedia Commons Media Search ──
+    # ── 2ND PRIORITY: Wikimedia Commons Media Search (with negative NSFW keywords) ──
     try:
+        safe_query = f"{search_term} -nudity -naked -nude -erotic -sex -porn -nsfw -adult"
         wiki_url = (f"https://commons.wikimedia.org/w/api.php"
-                    f"?action=query&generator=search&gsrsearch={requests.utils.quote(search_term)}"
+                    f"?action=query&generator=search&gsrsearch={requests.utils.quote(safe_query)}"
                     f"&gsrnamespace=6&prop=imageinfo&iiprop=url&format=json&gsrlimit=10")
         resp = requests.get(wiki_url, headers=headers, timeout=6)
         if resp.status_code == 200:
@@ -1104,35 +1184,7 @@ def fetch_news_photo(keyword: str, output_path: Path, idx: int) -> bool:
     except Exception as e:
         logger.warning(f"  Wikimedia search warning: {e}")
 
-    # ── 3RD PRIORITY: Unsplash Topic-Specific Photo (free tier) ──
-    try:
-        unsplash_query = requests.utils.quote(search_term)
-        # Use the public source endpoint (no API key needed)
-        unsplash_url = f"https://source.unsplash.com/1280x720/?{unsplash_query}"
-        img_resp = requests.get(unsplash_url, headers=headers, timeout=10, allow_redirects=True)
-        if img_resp.status_code == 200 and len(img_resp.content) > 10000:
-            with open(output_path, "wb") as f:
-                f.write(img_resp.content)
-            logger.info(f"  📸 [UNSPLASH PHOTO] Topic image fetched for '{search_term}'")
-            return True
-    except Exception as e:
-        logger.warning(f"  Unsplash search warning: {e}")
-
-    # ── 4TH PRIORITY: Picsum Fallback (random landscape) ──
-    try:
-        url = f"https://picsum.photos/seed/{idx + 10}/1280/720.jpg"
-        resp = requests.get(url, timeout=8)
-        if resp.status_code == 200:
-            with open(output_path, "wb") as f:
-                f.write(resp.content)
-            return True
-    except Exception:
-        pass
-
-    return False
-
-
-    # ── SOURCE 4: Real Pexels / Unsplash HD Photography ──
+    # ── SOURCE 3: Real Pexels HD Photography ──
     try:
         pex_headers = {"Authorization": PEXELS_API_KEY}
         pex_url = f"https://api.pexels.com/v1/search?query={requests.utils.quote(keyword)}&per_page=5&orientation=landscape"

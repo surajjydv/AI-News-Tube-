@@ -14,7 +14,14 @@ from utils.exceptions import APIKeyError, ScriptGenerationError
 LLM_CACHE_FILE = Path(__file__).resolve().parent.parent / "data" / "llm_cache.json"
 LLM_CACHE_LOCK = threading.Lock()
 MODEL_COOLDOWN_UNTIL = {}
-DEFAULT_FALLBACK_MODELS = ["llama-3.1-8b-instant", "gemma2-9b-it"]
+DEFAULT_FALLBACK_MODELS = [
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
+    "qwen/qwen3.8-27b"
+]
+
+
+
 
 
 def _cache_key(prompt: str) -> str:
@@ -30,7 +37,11 @@ def _read_cache() -> dict:
 
 def _cached_response(prompt: str):
     with LLM_CACHE_LOCK:
-        return _read_cache().get(_cache_key(prompt))
+        res = _read_cache().get(_cache_key(prompt))
+        if res and "</think>" in res:
+            res = res.split("</think>")[-1].strip()
+        return res
+
 
 
 def _store_response(prompt: str, result: str):
@@ -87,7 +98,7 @@ def get_client() -> Groq:
     return Groq(api_key=api_key)
 
 
-def generate_text(prompt: str, model: str = DEFAULT_GROQ_MODEL, temperature: float = 0.7, max_tokens: int = 800) -> str:
+def generate_text(prompt: str, model: str = DEFAULT_GROQ_MODEL, temperature: float = 0.7, max_tokens: int = 5000) -> str:
     """
     Generates text with bounded token usage, disk cache, cooldowns, and fallback.
     """
@@ -96,8 +107,6 @@ def generate_text(prompt: str, model: str = DEFAULT_GROQ_MODEL, temperature: flo
         logger.info("Using cached LLM response; skipping Groq request.")
         return cached
 
-    # 70B is opt-in only. The 8B model is sufficient for routine headline and
-    # bulletin copy and avoids exhausting the daily token budget.
     configured_model = model or DEFAULT_GROQ_MODEL
     models_to_try = [configured_model] + DEFAULT_FALLBACK_MODELS
     # De-duplicate while preserving order
@@ -116,14 +125,21 @@ def generate_text(prompt: str, model: str = DEFAULT_GROQ_MODEL, temperature: flo
             logger.info(f"Calling Groq LLM API (Model: {m})...")
             response = client.chat.completions.create(
                 model=m,
-                messages=[{"role": "user", "content": prompt}],
+                messages=[
+                    {"role": "system", "content": "You are an elite prime-time Hindi news anchor. Provide an exhaustive, deeply detailed Hindi news broadcast explaining every factual detail. Do NOT output any thinking, reasoning, or markdown tags."},
+                    {"role": "user", "content": prompt}
+                ],
                 temperature=temperature,
-                max_tokens=min(max_tokens, 500),
+                max_tokens=max_tokens,
             )
+
             result = response.choices[0].message.content.strip()
+            if "</think>" in result:
+                result = result.split("</think>")[-1].strip()
             if result:
                 _store_response(prompt, result)
             return result
+
         except APIKeyError:
             raise
         except Exception as e:

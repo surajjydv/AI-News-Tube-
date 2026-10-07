@@ -1,0 +1,79 @@
+{
+  "youtube": {
+    "name": "YouTube",
+    "icon": "▶",
+    "color": "#FF0000",
+    "enabled": true,
+    "connected": true,
+    "content_types": [
+      "video_169",
+      "shorts_916"
+    ],
+    "interval_hours": 3.0,
+    "token": ""
+  },
+  "instagram": {
+    "name": "Instagram",
+    "icon": "📸",
+    "color": "#E1306C",
+    "enabled": false,
+    "connected": false,
+    "content_types": [
+      "reels_916",
+      "photo_11",
+      "story"
+    ],
+    "interval_hours": 8.0,
+    "token": "",
+    "page_id": ""
+  },
+  "twitter": {
+    "name": "Twitter / X",
+    "icon": "🐦",
+    "color": "#1DA1F2",
+    "enabled": false,
+    "connected": true,
+    "content_types": [
+      "tweet",
+      "thread",
+      "media_tweet"
+    ],
+    "interval_hours": 1.5,
+    "api_key": "dummy_key",
+    "api_secret": "",
+    "access_token": "dummy_access",
+    "access_token_secret": "",
+    "bearer_token": ""
+  },
+  "facebook": {
+    "name": "Facebook",
+    "icon": "📘",
+    "color": "#1877F2",
+    "enabled": false,
+    "connected": false,
+    "content_types": [
+      "post",
+      "video",
+      "reel"
+    ],
+    "interval_hours": 6.0,
+    "token": "",
+    "page_id": ""
+  },
+  "telegram": {
+    "name": "Telegram",
+    "icon": "✈",
+    "color": "#26A5E4",
+    "enabled": true,
+    "connected": false,
+    "content_types": [
+      "text",
+      "photo",
+      "video",
+      "document"
+    ],
+    "interval_hours": 2.0,
+    "bot_token": "",
+    "channel_id": ""
+  }
+}

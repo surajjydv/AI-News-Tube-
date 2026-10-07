@@ -11,13 +11,16 @@ Solves RTMP Discontinuity:
 
 import os
 import sys
+import math
 import shutil
 import time
 import threading
 import subprocess
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
-from PIL import Image
+from PIL import Image, ImageDraw
+
+
 
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -127,9 +130,8 @@ def next_video_from_queue() -> Path:
 def start_persistent_ffmpeg_process(rtmp_url: str) -> subprocess.Popen:
     """Keep one RTMP connection while feeding clips through MPEG-TS stdin."""
     cmd = [
-        get_ffmpeg_binary(), "-loglevel", "warning", "-hide_banner",
-        "-fflags", "+genpts+igndts+discardcorrupt", "-err_detect", "ignore_err",
-        "-use_wallclock_as_timestamps", "1", "-i", "pipe:0",
+        get_ffmpeg_binary(), "-loglevel", "warning",
+        "-fflags", "+genpts+igndts", "-i", "pipe:0",
         "-map", "0:v:0", "-map", "0:a:0?", "-vf",
         f"scale=1280:720,fps={LIVE_STREAM_FPS},format=yuv420p",
         "-c:v", "libx264", "-preset", "veryfast", "-tune", "zerolatency",
@@ -137,9 +139,7 @@ def start_persistent_ffmpeg_process(rtmp_url: str) -> subprocess.Popen:
         "-bufsize", LIVE_BUFSIZE, "-r", str(LIVE_STREAM_FPS),
         "-g", str(max(1, LIVE_STREAM_FPS * 2)),
         "-keyint_min", str(max(1, LIVE_STREAM_FPS * 2)), "-sc_threshold", "0",
-        "-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-ac", "2",
-        "-af", "aresample=async=1:min_hard_comp=0.100000:first_pts=0",
-        "-max_muxing_queue_size", "1024", "-flvflags", "no_duration_filesize",
+        "-c:a", "libvo_aacenc", "-b:a", "128k", "-ar", "44100", "-ac", "2",
         "-f", "flv", rtmp_url,
     ]
     return subprocess.Popen(cmd, stdin=subprocess.PIPE)
@@ -149,14 +149,14 @@ def stream_clip_to_process(video_path: Path, stream_process: subprocess.Popen) -
     """Normalize one MP4 into MPEG-TS and feed it without closing RTMP."""
     remux = subprocess.Popen(
         [
-            get_ffmpeg_binary(), "-loglevel", "error", "-hide_banner", "-re",
+            get_ffmpeg_binary(), "-loglevel", "error", "-re",
             "-fflags", "+genpts+igndts", "-i", str(video_path),
             "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
             "-map", "0:v:0", "-map", "0:a:0?", "-map", "1:a:0",
             "-shortest", "-c:v", "copy", "-bsf:v", "h264_mp4toannexb",
-            "-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-ac", "2",
-            "-af", "aresample=async=1:first_pts=0", "-reset_timestamps", "1",
-            "-mpegts_flags", "+resend_headers", "-muxdelay", "0", "-muxpreload", "0",
+            "-c:a", "libvo_aacenc", "-b:a", "128k", "-ar", "44100", "-ac", "2",
+            "-reset_timestamps", "1",
+            "-muxdelay", "0", "-muxpreload", "0",
             "-f", "mpegts", "pipe:1"
         ],
         stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
@@ -223,8 +223,8 @@ def start_continuous_raw_stream(rtmp_url: str):
         "-map", "0:v:0", "-map", "1:a:0", "-c:v", "libx264", "-preset", "ultrafast",
         "-tune", "zerolatency", "-b:v", "2500k", "-maxrate", "2800k",
         "-bufsize", "5600k", "-pix_fmt", "yuv420p", "-g", "30",
-        "-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-ac", "2",
-        "-flvflags", "no_duration_filesize", "-f", "flv", rtmp_url,
+        "-c:a", "libvo_aacenc", "-b:a", "128k", "-ar", "44100", "-ac", "2",
+        "-f", "flv", rtmp_url,
     ]
     process = subprocess.Popen(cmd, pass_fds=(video_read,))
     os.close(video_read)
@@ -234,7 +234,7 @@ def start_continuous_raw_stream(rtmp_url: str):
 def start_continuous_video_stream(rtmp_url: str) -> subprocess.Popen:
     """Start one RTMP process fed by raw video frames through stdin."""
     cmd = [
-        get_ffmpeg_binary(), "-loglevel", "warning", "-hide_banner",
+        get_ffmpeg_binary(), "-loglevel", "warning",
         "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", "1280x720",
         "-r", str(LIVE_STREAM_FPS), "-i", "pipe:0",
         "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
@@ -244,8 +244,7 @@ def start_continuous_video_stream(rtmp_url: str) -> subprocess.Popen:
         "-bufsize", LIVE_BUFSIZE, "-pix_fmt", "yuv420p", "-r", str(LIVE_STREAM_FPS),
         "-g", str(max(1, LIVE_STREAM_FPS * 2)),
         "-keyint_min", str(max(1, LIVE_STREAM_FPS * 2)), "-sc_threshold", "0",
-        "-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-ac", "2",
-        "-max_muxing_queue_size", "1024", "-flvflags", "no_duration_filesize",
+        "-c:a", "libvo_aacenc", "-b:a", "128k", "-ar", "44100", "-ac", "2",
         "-f", "flv", rtmp_url,
     ]
     return subprocess.Popen(cmd, stdin=subprocess.PIPE)
@@ -255,7 +254,7 @@ def feed_clip_into_video_stream(video_path: Path, stream_process: subprocess.Pop
     """Decode one MP4 to raw frames and append it to the persistent encoder."""
     decoder = subprocess.Popen(
         [
-            get_ffmpeg_binary(), "-loglevel", "error", "-hide_banner", "-re",
+            get_ffmpeg_binary(), "-loglevel", "error", "-re",
             "-i", str(video_path), "-an", "-vf",
             f"scale=1280:720,fps={LIVE_STREAM_FPS}", "-pix_fmt", "rgb24",
             "-f", "rawvideo", "pipe:1",
@@ -313,46 +312,196 @@ def build_broadcast_keyframe_clip(
     ticker_headlines: list[str],
     duration: float,
 ):
-    """Build a polished clip from three rendered keyframes instead of 15 FPS Python drawing.
+    """Build a smooth continuous broadcast clip with zero frame jumps.
 
-    Rendering the full graphics stack for every frame made a 30-second update
-    take several minutes. Three broadcast-quality keyframes keep the same
-    newsroom look while FFmpeg performs the inexpensive video encoding.
+    Strategy:
+    - Render one high-quality static base frame (PIL — background + headline + cards + HUD)
+    - Per video frame, composite only animated layers via NumPy:
+        * Ken Burns zoom/pan on the news photo (continuous f(t))
+        * Scrolling ticker strip
+        * Pulsing live-dot aura
+        * Glass light-sweep sheen across headline
+    This gives real 25fps continuous motion at low CPU cost — no PIL re-render per frame.
     """
-    from moviepy import ImageClip, concatenate_videoclips
+    from moviepy import VideoClip
     import numpy as np
+    import datetime as _dt
 
-    keyframe_count = 5  # Increased from 3 to 5 for smoother Ken Burns motion
-    segment_duration = duration / keyframe_count
-    segments = []
-    # Pick camera mode once per clip for consistency
+    W, H = 1280, 720
+    FPS  = 25
+
+    # ── 1. Load photo and build zoomed photo strip ────────────────────────────
+    photo_np_list = []
+    for pp in (photo_paths or []):
+        try:
+            img = Image.open(pp).convert("RGB")
+            # Oversample for Ken Burns headroom — 30% larger than frame
+            ph_w = int(W * 1.30)
+            ph_h = int(H * 1.30)
+            img  = img.resize((ph_w, ph_h), Image.Resampling.LANCZOS)
+            photo_np_list.append(np.array(img, dtype=np.uint8))
+        except Exception:
+            pass
+    if not photo_np_list:
+        ph_w = int(W * 1.30)
+        ph_h = int(H * 1.30)
+        placeholder = np.zeros((ph_h, ph_w, 3), dtype=np.uint8)
+        placeholder[:, :] = [10, 14, 28]
+        photo_np_list.append(placeholder)
+
+    # ── 2. Pre-render static base (no photo, no animated layers) ─────────────
     cam_mode = KenBurnsMotion.get_mode_for_category(category) if ENHANCEMENTS_ACTIVE else "push_in"
-    for index in range(keyframe_count):
-        photo_path = photo_paths[index % len(photo_paths)] if photo_paths else None
-        g_t = index * segment_duration
-        if ENHANCEMENTS_ACTIVE and render_enhanced_broadcast_frame:
-            frame = render_enhanced_broadcast_frame(
-                headline_text=headline,
-                news_photo_path=photo_path,
-                global_t=g_t,
-                category=category,
-                ticker_headlines=ticker_headlines,
-                enable_ken_burns=True,
-                clip_duration=duration,
-                ken_burns_mode=cam_mode,
-            )
-        else:
-            frame = render_tv_broadcast_frame(
-                headline_text=headline,
-                news_photo_path=photo_path,
-                global_t=g_t,
-                category=category,
-                ticker_headlines=ticker_headlines,
-            )
-        if frame.size != (1280, 720):
-            frame = frame.resize((1280, 720), Image.Resampling.BILINEAR)
-        segments.append(ImageClip(np.array(frame), duration=segment_duration))
-    return concatenate_videoclips(segments, method="compose")
+    if ENHANCEMENTS_ACTIVE and render_enhanced_broadcast_frame:
+        base_pil = render_enhanced_broadcast_frame(
+            headline_text=headline,
+            news_photo_path=None,          # no photo — we composite it per-frame
+            global_t=0.0,
+            category=category,
+            ticker_headlines=[],           # no ticker — composited per-frame
+            enable_ken_burns=False,
+            clip_duration=duration,
+            ken_burns_mode=cam_mode,
+        )
+    else:
+        base_pil = render_tv_broadcast_frame(
+            headline_text=headline,
+            news_photo_path=None,
+            global_t=0.0,
+            category=category,
+            ticker_headlines=[],
+        )
+    if base_pil.size != (W, H):
+        base_pil = base_pil.resize((W, H), Image.Resampling.BILINEAR)
+    base_np = np.array(base_pil, dtype=np.float32)  # H×W×3 float
+
+    # ── 3. Pre-render ticker strip (wide enough to scroll) ────────────────────
+    from utils.font_utils import load_font as _load_font, sanitize_text
+    ticker_font = _load_font(20, bold=True)
+
+    safe_ticks  = [sanitize_text(h) for h in (ticker_headlines or [])]
+    tick_str    = ("  |  ".join(safe_ticks)
+                   if safe_ticks else "AI-NewsTube Live Broadcast - Breaking News Every Minute")
+    scroll_text = f"  >>  {tick_str}  >>  "
+
+    # Measure text width
+    probe = Image.new("RGB", (10, 10))
+    pd    = ImageDraw.Draw(probe)
+    try:
+        txt_w = max(int(pd.textlength(scroll_text, font=ticker_font)), 1)
+    except Exception:
+        txt_w = max(len(scroll_text) * 12, 1)
+
+    # Render 2× width strip for seamless loop
+    strip_w   = txt_w * 2
+    strip_h   = 44
+    tick_strip = Image.new("RGB", (strip_w, strip_h), (8, 12, 24))
+    td         = ImageDraw.Draw(tick_strip)
+    td.text((0,          10), scroll_text, fill=(255, 255, 255), font=ticker_font)
+    td.text((txt_w,      10), scroll_text, fill=(255, 255, 255), font=ticker_font)
+    tick_np   = np.array(tick_strip, dtype=np.uint8)   # strip_h × strip_w × 3
+
+    # Ticker region in the frame
+    TICK_Y  = H - 90 + 4          # paste y offset in frame
+    TICK_X0 = 0                    # left edge
+    TICK_XE = W - 160              # right edge (leave category pill)
+    TICK_PX_W = TICK_XE - TICK_X0
+
+    SCROLL_SPEED = 150.0           # px / second
+
+    # ── 4. Pre-render photo-region mask (right half of frame) ─────────────────
+    # Photo occupies right 680 px × full height in render_tv_broadcast_frame
+    PHOTO_X0, PHOTO_Y0 = 340, 0
+    PHOTO_W,  PHOTO_H  = W - PHOTO_X0, H - 90  # leave ticker area
+
+    # ── 5. make_frame ─────────────────────────────────────────────────────────
+    def make_frame(t: float) -> np.ndarray:
+        frame = base_np.copy()
+
+        # — Ken Burns: smooth continuous zoom & pan over photo ——————————————
+        photo_np = photo_np_list[int(t / max(duration / len(photo_np_list), 1)) % len(photo_np_list)]
+        ph_h_src, ph_w_src = photo_np.shape[:2]
+
+        if cam_mode == "push_in":
+            progress   = t / max(duration, 1)
+            scale      = 1.0 + 0.20 * progress            # 1.0 → 1.20
+            cx, cy     = ph_w_src * 0.50, ph_h_src * 0.50
+        elif cam_mode == "pull_out":
+            progress   = t / max(duration, 1)
+            scale      = 1.20 - 0.20 * progress           # 1.20 → 1.00
+            cx, cy     = ph_w_src * 0.50, ph_h_src * 0.50
+        elif cam_mode == "pan_left":
+            scale      = 1.15
+            progress   = t / max(duration, 1)
+            cx         = ph_w_src * (0.70 - 0.40 * progress)   # right → left
+            cy         = ph_h_src * 0.50
+        elif cam_mode == "pan_right":
+            scale      = 1.15
+            progress   = t / max(duration, 1)
+            cx         = ph_w_src * (0.30 + 0.40 * progress)   # left → right
+            cy         = ph_h_src * 0.50
+        else:  # tilt_up
+            scale      = 1.15
+            progress   = t / max(duration, 1)
+            cx         = ph_w_src * 0.50
+            cy         = ph_h_src * (0.65 - 0.30 * progress)   # bottom → top
+
+        crop_w = int(PHOTO_W / scale)
+        crop_h = int(PHOTO_H / scale)
+        x0 = int(cx - crop_w // 2)
+        y0 = int(cy - crop_h // 2)
+        x0 = max(0, min(x0, ph_w_src - crop_w))
+        y0 = max(0, min(y0, ph_h_src - crop_h))
+
+        cropped    = photo_np[y0:y0 + crop_h, x0:x0 + crop_w]
+        photo_tile = Image.fromarray(cropped).resize((PHOTO_W, PHOTO_H), Image.Resampling.BILINEAR)
+        frame[PHOTO_Y0:PHOTO_Y0 + PHOTO_H, PHOTO_X0:PHOTO_X0 + PHOTO_W] = np.array(photo_tile)
+
+        # — Ticker scroll: vectorised NumPy (fast, pixel-accurate) ─────────────
+        soff     = int(t * SCROLL_SPEED) % max(txt_w, 1)
+        # Build one row of width TICK_PX_W by slicing from the pre-rendered strip
+        src_indices = np.arange(TICK_X0, TICK_XE) + soff
+        src_indices = src_indices % strip_w
+        tick_row    = tick_np[:, src_indices]  # strip_h × TICK_PX_W × 3
+        frame[TICK_Y:TICK_Y + strip_h, TICK_X0:TICK_XE] = tick_row
+
+        # — Pulsing live-dot aura (vectorised) ───────────────────────────────
+        pulse     = (math.sin(t * 4.0 * math.pi) + 1.0) / 2.0
+        aura_r    = int(14 + 8 * pulse)
+        dot_alpha = 0.55 * pulse
+        dot_cx, dot_cy = 56, 58
+        y0d = max(0, dot_cy - aura_r)
+        y1d = min(H, dot_cy + aura_r + 1)
+        x0d = max(0, dot_cx - aura_r)
+        x1d = min(W, dot_cx + aura_r + 1)
+        ys, xs = np.ogrid[y0d:y1d, x0d:x1d]
+        mask   = (ys - dot_cy) ** 2 + (xs - dot_cx) ** 2 <= aura_r * aura_r
+        patch  = frame[y0d:y1d, x0d:x1d].astype(np.float32)
+        red    = np.array([239, 68, 68], dtype=np.float32)
+        patch[mask] = patch[mask] * (1 - dot_alpha) + red * dot_alpha
+        frame[y0d:y1d, x0d:x1d] = np.clip(patch, 0, 255)
+
+        # — Glass light sweep across headline panel ——————————————————————————
+        banner_y   = H - 250
+        sheen_x    = int((t * 650) % (W + 400)) - 200
+        sheen_x2   = sheen_x + 120
+        for row in range(banner_y, H - 85):
+            prog   = (row - banner_y) / max(H - 85 - banner_y, 1)
+            sx_lo  = int(sheen_x + (sheen_x - 60 - sheen_x) * prog)
+            sx_hi  = int(sheen_x2 + (sheen_x2 + 60 - sheen_x2 - 120) * prog) + 120
+            if sx_lo < W and sx_hi > 0:
+                sx_lo_c = max(0, sx_lo)
+                sx_hi_c = min(W, sx_hi)
+                if sx_hi_c > sx_lo_c:
+                    frame[row, sx_lo_c:sx_hi_c] = np.clip(
+                        frame[row, sx_lo_c:sx_hi_c].astype(np.float32) * 1.0 + 22, 0, 255
+                    )
+
+        return frame.astype(np.uint8)
+
+    clip = VideoClip(make_frame, duration=duration)
+    clip = clip.with_fps(FPS)
+    return clip
+
 
 
 def render_quick_startup_clip() -> Path:
@@ -530,7 +679,7 @@ def render_single_30s_story_clip(clip_index: int) -> Path:
 
     articles = get_fresh_unseen_news(count=1)
     if not articles:
-        raise RuntimeError("No unseen fresh news available; waiting for a new RSS item")
+        articles = fetch_news(limit_per_category=2)
 
     art = articles[0] if articles else None
     if art:
@@ -546,7 +695,7 @@ def render_single_30s_story_clip(clip_index: int) -> Path:
     # Photos and script generation are independent; run them concurrently.
     def _fetch_p(p_idx):
         p_file = ASSETS_DIR / f"story_c{clip_index}_p{p_idx}.jpg"
-        if fetch_news_photo(clean_kw, p_file, clip_index * 3 + p_idx):
+        if fetch_news_photo(clean_kw, p_file, clip_index * 3 + p_idx, category=category):
             return str(p_file)
         return None
 
@@ -635,17 +784,26 @@ def render_single_30s_story_clip(clip_index: int) -> Path:
     tmp_path.rename(output_path)
     add_video_to_playlist(output_path)
     return output_path
+
+
 def bg_producer_thread():
-    """Continuously pre-renders fresh 30s story clips into rotating slot files."""
+    """Continuously pre-renders fresh 30s story clips, maintaining a healthy 3-4 clip buffer."""
     clip_idx = 1
+    MAX_BUFFER = 4
     while True:
         try:
+            with PLAYLIST_LOCK:
+                queue_len = len(RENDERED_VIDEOS)
+            if queue_len >= MAX_BUFFER:
+                time.sleep(4)
+                continue
             render_single_30s_story_clip(clip_idx)
             clip_idx += 1
-            time.sleep(1)
+            time.sleep(0.5)
         except Exception as e:
-            print(f"[PRE-RENDER WARN] {e}. Retrying in 3s...")
-            time.sleep(3)
+            print(f"[PRE-RENDER WARN] {e}. Retrying in 2s...")
+            time.sleep(2)
+
 
 
 def main():

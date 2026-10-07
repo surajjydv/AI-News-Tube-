@@ -1,0 +1,13 @@
+{
+  "active_channel_name": "SRJ UNDERRATED",
+  "active_channel_id": "UC7lAXODVk6aGIxE60Qy-9Yg",
+  "video_format": "16:9 Documentary",
+  "voice_id": "hi-IN-MadhurNeural",
+  "narrative_style": "Deep Investigative (Nitish Rajput)",
+  "autopublish_enabled": true,
+  "interval_hours": 3.0,
+  "night_quiet_start_hour": 0,
+  "night_quiet_end_hour": 6,
+  "target_script_minutes": 7.5,
+  "groq_script_model": "openai/gpt-oss-120b"
+}

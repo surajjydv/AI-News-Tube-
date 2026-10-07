@@ -1,5 +1,9 @@
-# Environment variables
+# Environment variables and secrets
 .env
+aws.env
+client_secret.json
+token.json
+*.pem
 
 # Python cache and bytecode
 __pycache__/
@@ -29,3 +33,14 @@ frame_*.jpg
 *.tar.gz
 *.tmp
 *.tmp.mp4
+
+
+neon-storage.env
+*.db
+node_modules/
+.next/
+output/
+
+tools/
+*.zip
+*.gz

@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Social Media Automation Manager</title>
+  <meta name="description" content="100% Autonomous AI Social Media Manager — YouTube, Instagram, Twitter, Facebook, Telegram">
+  <meta name="theme-color" content="#FAF8F5">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="app-root">
+
+  <!-- ─── SIDEBAR ───────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">🤖</div>
+      <div>
+        <div class="brand-name">AI SOCIAL</div>
+        <div class="brand-sub">AUTOMATION MANAGER</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-tab="dashboard">
+        <span class="nav-icon">🏠</span><span>Dashboard</span>
+      </button>
+      <button class="nav-item" data-tab="studio">
+        <span class="nav-icon">🎬</span><span>Content Studio</span>
+      </button>
+      <button class="nav-item" data-tab="scheduler">
+        <span class="nav-icon">📅</span><span>Scheduler</span>
+      </button>
+      <button class="nav-item" data-tab="platforms">
+        <span class="nav-icon">📱</span><span>Platforms</span>
+        <span class="nav-badge" id="connectedBadge">1</span>
+      </button>
+      <button class="nav-item" data-tab="channels">
+        <span class="nav-icon">📺</span><span>YouTube Channel</span>
+      </button>
+      <button class="nav-item" data-tab="strategy">
+        <span class="nav-icon">🧠</span><span>AI Strategy</span>
+      </button>
+      <button class="nav-item" data-tab="analytics">
+        <span class="nav-icon">📊</span><span>Analytics</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-autopilot">
+      <div class="autopilot-label">
+        <span class="status-dot" id="sidebarDot"></span>
+        <span id="sidebarStatus">AUTOPILOT ON</span>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="globalAutopilotToggle" checked onchange="toggleGlobalAutopilot()">
+        <span class="slider round"></span>
+      </label>
+    </div>
+  </aside>
+
+  <!-- ─── MAIN ──────────────────────────────────────────── -->
+  <main class="main-area">
+
+    <!-- ══ TAB: DASHBOARD ══════════════════════════════════ -->
+    <div id="tab-dashboard" class="tab-page active-page">
+      <div class="page-header">
+        <div>
+          <h2>Autopilot Dashboard</h2>
+          <p class="page-sub">All platforms running autonomously · zero manual effort</p>
+        </div>
+        <div class="header-actions">
+          <span id="dashServerTime" class="text-dim"></span>
+          <button class="btn btn-outline" onclick="refreshDashboard()">🔄 Refresh</button>
+          <button class="btn btn-primary" onclick="triggerImmediatePost()">⚡ Publish Now</button>
+        </div>
+      </div>
+
+      <!-- Platform Status Row -->
+      <div class="platform-status-row" id="platformStatusRow"></div>
+
+      <!-- 2-col Grid -->
+      <div class="dash-grid">
+        <div class="glass-card feed-card">
+          <div class="card-header">
+            <h3>📡 Live Publish Activity</h3>
+            <span class="badge badge-live">LIVE</span>
+          </div>
+          <div id="activityFeed" class="activity-feed">
+            <div class="feed-item"><div class="feed-icon">🤖</div>
+              <div class="feed-body"><div class="feed-title">AI Engine initializing...</div>
+              <div class="feed-meta">Connecting to all platforms</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-header">
+            <h3>⏱ Auto-Post Queue</h3>
+            <button class="btn btn-sm btn-outline" onclick="refreshDashboard()">🔄</button>
+          </div>
+          <div id="queueList" class="queue-list"></div>
+          <div class="stats-bar">
+            <div class="stat-box">
+              <div class="stat-val" id="statPostsToday">—</div>
+              <div class="stat-lbl">Today</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val" id="statPlatforms">5</div>
+              <div class="stat-lbl">Platforms</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val" id="statConnected">1</div>
+              <div class="stat-lbl">Connected</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val" id="statNextPost">3h</div>
+              <div class="stat-lbl">Next Post</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Log Console -->
+      <div class="glass-card mt-20">
+        <div class="card-header">
+          <h3>📟 EC2 Engine — Live Log</h3>
+          <span id="logTimestamp" class="text-dim">Live</span>
+        </div>
+        <div id="logConsole" class="log-console"></div>
+      </div>
+    </div>
+
+    <!-- ══ TAB: CONTENT STUDIO ═════════════════════════════ -->
+    <div id="tab-studio" class="tab-page">
+      <div class="page-header">
+        <div>
+          <h2>Content Studio</h2>
+          <p class="page-sub">Manual override — generate &amp; publish custom content instantly</p>
+        </div>
+      </div>
+
+      <div class="studio-grid">
+        <div class="studio-left">
+          <div class="glass-card">
+            <div class="card-header"><h3>📝 Content Brief</h3></div>
+
+            <div class="form-group">
+              <label>Topic / Headline / News URL:</label>
+              <textarea id="studioTopic" rows="3" placeholder="e.g. 'Supreme Court verdict on X case' or paste a news URL..."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Video Format:</label>
+              <div class="format-pills">
+                <button class="pill-btn active" data-format="16:9 Documentary" onclick="selectFormat(this)">
+                  <span>🎥 16:9 Documentary</span><small>7–15 min · Deep-dive</small>
+                </button>
+                <button class="pill-btn" data-format="16:9 Breaking Bulletin" onclick="selectFormat(this)">
+                  <span>⚡ Breaking Bulletin</span><small>2–5 min · Urgent</small>
+                </button>
+                <button class="pill-btn" data-format="9:16 Vertical Short" onclick="selectFormat(this)">
+                  <span>📱 9:16 Short/Reel</span><small>60 sec · Viral</small>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-half">
+                <label>Narrator Voice:</label>
+                <select id="studioVoice">
+                  <option value="hi-IN-MadhurNeural">MadhurNeural (Male Hindi)</option>
+                  <option value="hi-IN-SwaraNeural">SwaraNeural (Female Hindi)</option>
+                  <option value="en-IN-NeerjaNeural">NeerjaNeural (English India)</option>
+                  <option value="en-US-GuyNeural">GuyNeural (English US)</option>
+                </select>
+              </div>
+              <div class="form-group col-half">
+                <label>Length: <b id="studioLenVal">7.5</b> min</label>
+                <input type="range" id="studioLength" min="1" max="15" step="0.5" value="7.5"
+                  oninput="document.getElementById('studioLenVal').innerText=this.value">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Publish To:</label>
+              <div class="platform-checkboxes" id="studioPublishTo">
+                <label class="plat-check yt-check"><input type="checkbox" value="youtube" checked> ▶ YouTube</label>
+                <label class="plat-check tg-check"><input type="checkbox" value="telegram" checked> ✈ Telegram</label>
+                <label class="plat-check tw-check"><input type="checkbox" value="twitter"> 𝕏 Twitter/X</label>
+                <label class="plat-check fb-check"><input type="checkbox" value="facebook"> 📘 Facebook</label>
+                <label class="plat-check ig-check"><input type="checkbox" value="instagram"> 📸 Instagram</label>
+              </div>
+            </div>
+
+            <button class="btn btn-primary btn-block" id="studioPublishBtn" onclick="studioPublish()">
+              🚀 Generate &amp; Publish to Selected Platforms
+            </button>
+          </div>
+        </div>
+
+        <div class="studio-right">
+          <div class="glass-card">
+            <div class="card-header"><h3>👁 Auto-Generated Preview</h3></div>
+            <div class="preview-cards">
+              <div class="preview-card yt-preview">
+                <div class="preview-platform">▶ YouTube</div>
+                <div class="preview-thumb"></div>
+                <div class="preview-title" id="prevYtTitle">Enter a topic above to preview...</div>
+                <div class="preview-meta">16:9 · Hindi AI Voice · Auto-thumbnail</div>
+              </div>
+              <div class="preview-card tg-preview">
+                <div class="preview-platform">✈ Telegram</div>
+                <div class="preview-caption" id="prevTgCaption">Thumbnail + YouTube link will be sent to your Telegram</div>
+              </div>
+              <div class="preview-card tw-preview">
+                <div class="preview-platform">𝕏 Twitter / X</div>
+                <div class="preview-caption" id="prevTwCaption">Tweet with thumbnail auto-generated (max 280 chars)</div>
+                <div class="preview-meta">Auto-hashtags added</div>
+              </div>
+              <div class="preview-card fb-preview">
+                <div class="preview-platform">📘 Facebook</div>
+                <div class="preview-caption" id="prevFbCaption">Page post with link + caption auto-generated</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TAB: SCHEDULER ══════════════════════════════════ -->
+    <div id="tab-scheduler" class="tab-page">
+      <div class="page-header">
+        <div>
+          <h2>Automation Scheduler</h2>
+          <p class="page-sub">Set posting frequency per platform — all run 24/7 without manual input</p>
+        </div>
+        <button class="btn btn-primary" onclick="saveSchedulerSettings()">💾 Save All</button>
+      </div>
+
+      <div class="glass-card mb-20">
+        <div class="card-header"><h3>🌙 Global Settings</h3></div>
+        <div class="form-row">
+          <div class="form-group col-half">
+            <label>Night Quiet Window (no posts):</label>
+            <div class="form-row">
+              <input type="number" id="nightStart" min="0" max="23" value="0" style="width:70px;">
+              <span class="form-sep">:00 to</span>
+              <input type="number" id="nightEnd" min="0" max="23" value="6" style="width:70px;">
+              <span class="form-sep">:00 IST</span>
+            </div>
+          </div>
+          <div class="form-group col-half">
+            <label>AI Script Model:</label>
+            <select id="modelSelect">
+              <option value="openai/gpt-oss-120b" selected>openai/gpt-oss-120b (Best Quality)</option>
+              <option value="openai/gpt-oss-20b">openai/gpt-oss-20b (Fast)</option>
+              <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group col-half">
+            <label>Default Voice:</label>
+            <select id="schedVoice">
+              <option value="hi-IN-MadhurNeural" selected>MadhurNeural (Male Hindi)</option>
+              <option value="hi-IN-SwaraNeural">SwaraNeural (Female Hindi)</option>
+              <option value="en-IN-NeerjaNeural">NeerjaNeural (English India)</option>
+            </select>
+          </div>
+          <div class="form-group col-half">
+            <label>Default Video Length: <b id="schedLenVal">7.5</b> min</label>
+            <input type="range" id="schedLength" min="2" max="20" step="0.5" value="7.5"
+              oninput="document.getElementById('schedLenVal').innerText=this.value">
+          </div>
+        </div>
+      </div>
+
+      <div class="schedule-grid" id="scheduleGrid"></div>
+    </div>
+
+    <!-- ══ TAB: PLATFORMS ══════════════════════════════════ -->
+    <div id="tab-platforms" class="tab-page">
+      <div class="page-header">
+        <div>
+          <h2>Platform Accounts</h2>
+          <p class="page-sub">Connect your social accounts · credentials stored securely on your EC2 server</p>
+        </div>
+        <button class="btn btn-outline" onclick="loadPlatforms()">🔄 Refresh Status</button>
+      </div>
+
+      <div class="info-banner">
+        <span>💡</span>
+        <span>YouTube is already connected via OAuth. For other platforms, paste your API credentials below and click <b>Save &amp; Connect</b>. Once connected, enable the toggle to start auto-posting.</span>
+      </div>
+
+      <div class="platforms-grid" id="platformsGrid">
+        <div class="loading-text">Loading platform status...</div>
+      </div>
+    </div>
+
+    <!-- ══ TAB: YOUTUBE CHANNEL ════════════════════════════ -->
+    <div id="tab-channels" class="tab-page">
+      <div class="page-header">
+        <div>
+          <h2>YouTube Channel</h2>
+          <p class="page-sub">Switch between YouTube channels or upload a new OAuth token</p>
+        </div>
+      </div>
+
+      <div class="glass-card mb-20">
+        <div class="card-header"><h3>📺 Active Channel</h3></div>
+        <div id="activeChannelInfo" class="active-channel-box">
+          <div class="channel-logo">▶</div>
+          <div>
+            <div class="channel-name" id="activeChName">SRJ UNDERRATED</div>
+            <div class="channel-id" id="activeChId">UC7lAXODVk6aGIxE60Qy-9Yg</div>
+            <span class="status-connected" style="font-size:11px;padding:3px 10px;border-radius:10px;">✅ OAuth Connected</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="channels-grid">
+        <div class="glass-card">
+          <div class="card-header"><h3>🔄 Switch Channel</h3></div>
+          <div class="form-group">
+            <label>Channel Name:</label>
+            <input type="text" id="switchChName" placeholder="e.g. My News Channel">
+          </div>
+          <div class="form-group">
+            <label>Channel ID:</label>
+            <input type="text" id="switchChId" placeholder="e.g. UCxxxxxxxxxxxxxxxx">
+          </div>
+          <div class="form-group">
+            <label>OAuth token.json (paste JSON):</label>
+            <textarea id="switchChToken" rows="4" placeholder='{"token": "...", "refresh_token": "...", ...}'></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="switchChannel()">🔀 Switch Channel</button>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-header"><h3>📋 Channel List</h3></div>
+          <div id="channelList" class="channel-list">
+            <div class="loading-text">Loading channels...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TAB: AI STRATEGY ════════════════════════════════ -->
+    <div id="tab-strategy" class="tab-page">
+      <div class="page-header">
+        <div>
+          <h2>AI Content Strategy</h2>
+          <p class="page-sub">Control what topics the AI covers and how content is mixed across platforms</p>
+        </div>
+        <button class="btn btn-primary" onclick="saveStrategy()">💾 Save Strategy</button>
+      </div>
+
+      <div class="strategy-grid">
+        <div class="glass-card">
+          <div class="card-header"><h3>🎯 Content Mix</h3></div>
+          <div class="form-group">
+            <label>Breaking News: <b id="mixBreaking">40</b>%</label>
+            <input type="range" id="mixBreakingSlider" min="0" max="100" value="40"
+              oninput="document.getElementById('mixBreaking').innerText=this.value">
+          </div>
+          <div class="form-group">
+            <label>Investigative Documentary: <b id="mixDoc">35</b>%</label>
+            <input type="range" id="mixDocSlider" min="0" max="100" value="35"
+              oninput="document.getElementById('mixDoc').innerText=this.value">
+          </div>
+          <div class="form-group">
+            <label>Shorts / Reels: <b id="mixShorts">25</b>%</label>
+            <input type="range" id="mixShortsSlider" min="0" max="100" value="25"
+              oninput="document.getElementById('mixShorts').innerText=this.value">
+          </div>
+          <div class="form-group">
+            <label>Narrative Style:</label>
+            <select id="stratNarrative">
+              <option value="investigative">Investigative (Nitish Rajput style)</option>
+              <option value="breaking">Breaking News (Urgent)</option>
+              <option value="educational">Educational Explainer</option>
+              <option value="casual">Casual / Friendly</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-header"><h3>📡 News Categories</h3></div>
+          <div class="category-checks">
+            <label class="checkbox-pill"><input type="checkbox" id="cat_national" checked> 🇮🇳 National Politics</label>
+            <label class="checkbox-pill"><input type="checkbox" id="cat_court" checked> ⚖️ Court &amp; Legal Cases</label>
+            <label class="checkbox-pill"><input type="checkbox" id="cat_crime" checked> 🚨 Crime &amp; Scams</label>
+            <label class="checkbox-pill"><input type="checkbox" id="cat_sports" checked> 🏏 Sports &amp; Cricket</label>
+            <label class="checkbox-pill"><input type="checkbox" id="cat_tech" checked> 💻 Tech &amp; Cyber</label>
+            <label class="checkbox-pill"><input type="checkbox" id="cat_economy" checked> 💰 Economy &amp; Finance</label>
+            <label class="checkbox-pill"><input type="checkbox" id="cat_intl"> 🌍 International</label>
+            <label class="checkbox-pill"><input type="checkbox" id="cat_entertainment"> 🎬 Entertainment</label>
+            <label class="checkbox-pill"><input type="checkbox" id="cat_health"> 🏥 Health &amp; Science</label>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-header"><h3>🚫 Blocked Keywords</h3></div>
+          <div class="form-group">
+            <label>Skip topics containing these words (one per line):</label>
+            <textarea id="blacklistWords" rows="6" placeholder="gossip&#10;rumor&#10;clickbait&#10;fake"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Custom RSS Feeds (one URL per line):</label>
+            <textarea id="customRssFeeds" rows="4" placeholder="https://feeds.bbci.co.uk/news/rss.xml&#10;https://www.ndtv.com/rss/top-stories"></textarea>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-header"><h3>🎭 Platform Tone Mapping</h3></div>
+          <div class="tone-map-list">
+            <div class="tone-map-row">
+              <span class="plat-icon yt" style="width:28px;height:28px;font-size:14px;border-radius:6px;display:flex;align-items:center;justify-content:center;">▶</span>
+              <span>YouTube</span>
+              <select style="margin-left:auto;width:160px;"><option>Investigative</option><option>Documentary</option><option>Educational</option></select>
+            </div>
+            <div class="tone-map-row">
+              <span class="plat-icon tg" style="width:28px;height:28px;font-size:14px;border-radius:6px;display:flex;align-items:center;justify-content:center;">✈</span>
+              <span>Telegram</span>
+              <select style="margin-left:auto;width:160px;"><option>Breaking</option><option>Casual</option><option>Informative</option></select>
+            </div>
+            <div class="tone-map-row">
+              <span class="plat-icon tw" style="width:28px;height:28px;font-size:14px;border-radius:6px;display:flex;align-items:center;justify-content:center;">𝕏</span>
+              <span>Twitter / X</span>
+              <select style="margin-left:auto;width:160px;"><option>Punchy Tweet</option><option>Thread</option><option>Breaking</option></select>
+            </div>
+            <div class="tone-map-row">
+              <span class="plat-icon fb" style="width:28px;height:28px;font-size:14px;border-radius:6px;display:flex;align-items:center;justify-content:center;">📘</span>
+              <span>Facebook</span>
+              <select style="margin-left:auto;width:160px;"><option>Story Post</option><option>Link Share</option><option>Video</option></select>
+            </div>
+            <div class="tone-map-row">
+              <span class="plat-icon ig" style="width:28px;height:28px;font-size:14px;border-radius:6px;display:flex;align-items:center;justify-content:center;">📸</span>
+              <span>Instagram</span>
+              <select style="margin-left:auto;width:160px;"><option>Reels</option><option>Photo Post</option><option>Story</option></select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TAB: ANALYTICS ══════════════════════════════════ -->
+    <div id="tab-analytics" class="tab-page">
+      <div class="page-header">
+        <div>
+          <h2>Analytics &amp; Reports</h2>
+          <p class="page-sub">Full publishing history across all platforms</p>
+        </div>
+        <button class="btn btn-outline" onclick="loadHistory()">🔄 Refresh</button>
+      </div>
+
+      <div class="analytics-grid">
+        <!-- Summary Cards -->
+        <div class="analytics-summary" id="analyticsSummary">
+          <div class="glass-card sum-card">
+            <div class="sum-val" id="sumTotal">—</div>
+            <div class="sum-lbl">Total Posts</div>
+          </div>
+          <div class="glass-card sum-card">
+            <div class="sum-val" id="sumToday">—</div>
+            <div class="sum-lbl">Today</div>
+          </div>
+          <div class="glass-card sum-card">
+            <div class="sum-val" id="sumYT">—</div>
+            <div class="sum-lbl">YouTube</div>
+          </div>
+          <div class="glass-card sum-card">
+            <div class="sum-val" id="sumTG">—</div>
+            <div class="sum-lbl">Telegram</div>
+          </div>
+        </div>
+
+        <div class="glass-card full-width">
+          <div class="card-header">
+            <h3>📋 Multi-Platform Publish History</h3>
+          </div>
+          <div id="historyTable" class="history-table">
+            <div class="loading-text">Loading history...</div>
+          </div>
+        </div>
+
+        <div class="glass-card full-width">
+          <div class="card-header"><h3>📟 Full Server Log</h3></div>
+          <div id="analyticsLog" class="log-console"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>

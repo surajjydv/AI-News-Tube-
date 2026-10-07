@@ -1,145 +1,122 @@
-# 📺 AI-NewsTube — Autonomous AI News Broadcasting Pipeline
+# AI Social Media & Video Publishing Engine
 
-[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![LLM Powered](https://img.shields.io/badge/LLM-Groq--LLaMA--3.3--70B-orange.svg)](https://groq.com/)
-[![Voice Engine](https://img.shields.io/badge/TTS-Edge--Neural--TTS-green.svg)](https://github.com/rany2/edge-tts)
-[![3D Graphics](https://img.shields.io/badge/3D%20Graphics-Three.js%20%7C%20WebGL-purple.svg)](https://threejs.org/)
-[![License](https://img.shields.io/badge/License-MIT-brightgreen.svg)](LICENSE)
+An end-to-end automation platform for news curation, multi-format video production, and scheduled multi-platform publishing (YouTube, Telegram, Twitter/X, Facebook, and Instagram).
 
-> **AI-NewsTube** is a 100% autonomous, end-to-end multi-agent AI video production system that automatically discovers breaking news, verifies facts, writes high-retention scripts, generates neural voiceovers, renders 3D WebGL virtual studios with lip-sync presenters, and produces broadcast-ready 1080p MP4 news videos for YouTube — **with zero human intervention**.
+## Features
 
----
+- **Automated News Discovery**: Ingests breaking stories from verified RSS feeds and press wires with semantic deduplication.
+- **Editorial Media Verification**: Filters imagery for quality, resolution, and safe presentation standards.
+- **Neural Voice & Script Engine**: Generates journalistic scripts and natural text-to-speech narration in multiple voices and languages.
+- **Multi-Format Video Rendering**: Builds 1080p landscape documentaries (16:9), TV broadcast bulletins with glassmorphic lower-thirds and live news tickers, and vertical shorts/reels (9:16) via an optimized FFmpeg pipeline.
+- **Cross-Platform Distribution**: Automated and manual publishing pipelines for YouTube (VOD & Shorts), Telegram channels, Twitter/X, Facebook Pages, and Instagram.
+- **Centralized Control Studio**: Browser-based dashboard (FastAPI) for one-click publishing, channel switching, scheduling, platform credential management, and live log streaming.
+- **Configurable Scheduling**: Supports custom posting intervals (1h, 3h, 6h) and quiet hours (e.g., 12:00 AM - 06:00 AM IST).
 
-## 🌟 Key Highlights & Features
+## Architecture
 
-* 🤖 **10-Agent Autonomous System**: Orchestrated by a CEO Agent managing specialized sub-agents from news hunting to YouTube SEO packaging.
-* 📰 **Real-Time News Ingestion**: Automatically monitors Google News RSS across 9 major categories (Top Stories, India, World, Business, Tech, Entertainment, Sports, Science, Health).
-* 🛡️ **Automated Fact Checking**: Verifies story credibility using LLaMA 3.3 70B before script generation, scoring risk levels (`LOW`, `MEDIUM`, `HIGH`).
-* 🎙️ **Neural Voice & Lip-Sync**: Expressive Hindi/English neural text-to-speech with real-time RMS audio volume extraction for sync mouth movement.
-* 🎥 **3D Virtual News Studio**: WebGL studio space built with Three.js featuring curved LED video walls, specular news desks, volumetric lighting, and camera orbits.
-* 🖼️ **5-Tier Visual Research Engine**: Automatically fetches HD news imagery from Wikimedia Commons, NASA, Pexels, Pixabay, and Unsplash.
-* 🎬 **Broadcast Graphic Overlays**: 2.5D spatial glass panels, Devanagari kinetic captions, real-time ticker headlines, channel logo watermarks, and audio visualizers.
-
----
-
-## 🔄 How It Works (Pipeline Workflow)
-
-```mermaid
-graph TD
-    A[📢 1. News Hunter] -->|RSS & Virality Score| B[🛡️ 2. Fact Checker]
-    B -->|Credible News Item| C[✍️ 3. Script Writer]
-    C -->|6-Stage Script| D[🖼️ 4. Visuals Agent]
-    D -->|Media Assets| E[🎨 5. Graphics Agent]
-    E -->|Studio Backdrop & Ticker| F[🎙️ 6. Voice Agent]
-    F -->|Neural Audio MP3| G[🎬 7. Video Agent]
-    G -->|1080p MP4 Video| H[🖼️ 8. Thumbnail & SEO Agent]
-    H -->|Thumbnail & Tags| I[📦 9. Uploader Agent]
-    I -->|Staged Package| J[📊 10. Analytics Agent]
+```
+[News Feeds & Press Wires]
+         │
+         ▼
+[Content Curation & Verification]
+         │
+         ▼
+[Script Generation & Neural TTS]
+         │
+         ▼
+[FFmpeg Video Synthesis (16:9 / 9:16)]
+         │
+         ▼
+[Multi-Platform Publishing Engine]
+ ├── YouTube (API v3 / OAuth2)
+ ├── Telegram (Bot API)
+ ├── Twitter / X (v2 API)
+ ├── Facebook (Graph API)
+ └── Instagram (Content Publishing API)
 ```
 
----
+## Setup
 
-## 📚 Documentation Center
+### Prerequisites
 
-| Document | Description |
-| :--- | :--- |
-| 🚀 [**TECH_STACK.md**](Md%20files/TECH_STACK.md) | Technical stack breakdown, libraries, and framework details. |
-| 📌 [**PROJECT_OVERVIEW.md**](Md%20files/PROJECT_OVERVIEW.md) | High-level summary & pitch for non-technical stakeholders/investors. |
-| 🏛️ [**TECHNICAL_SYSTEM_ARCHITECTURE.md**](Md%20files/TECHNICAL_SYSTEM_ARCHITECTURE.md) | Production Virtual News Studio architecture, multi-backend renderer, camera, lighting & layer-based rendering specs. |
-| 🏗️ [**ARCHITECTURE.md**](Md%20files/ARCHITECTURE.md) | Legacy technical architecture & baseline specifications. |
-| 🤖 [**AGENT_SYSTEM_GUIDE.md**](Md%20files/AGENT_SYSTEM_GUIDE.md) | Detailed specification of all 10 autonomous agents and their tasks. |
-| ⚙️ [**SETUP_AND_USAGE.md**](Md%20files/SETUP_AND_USAGE.md) | Complete installation, API key configuration, customization, and troubleshooting guide. |
+- Python 3.10+
+- FFmpeg installed and available in system `PATH`
 
----
+### Installation
 
-## ⚡ Quick Start
-
-### 1. Prerequisite
-* Python 3.10 or higher installed.
-* FFmpeg installed and added to system PATH.
-
-### 2. Installation
 ```bash
-# Clone the repository
-git clone https://github.com/your-username/AI-NewsTube.git
+git clone https://github.com/your-org/AI-NewsTube.git
 cd AI-NewsTube
-
-# Install required Python packages
+python -m venv venv
+source venv/bin/activate  # Windows: .\venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 3. Environment Configuration
+### Environment Configuration
+
 Create a `.env` file in the root directory:
-```env
-GROQ_API_KEY=gsk_your_groq_api_key_here
-DEFAULT_TTS_VOICE=hi-IN-SwaraNeural
-CHANNEL_NAME=AI-NewsTube
-OWNER=Suraj
-```
-*(Get a free Groq API Key at [https://console.groq.com/keys](https://console.groq.com/keys))*
-
-### 4. Run the Pipeline
-```bash
-python main.py
-```
-
-The system will automatically run all 10 agents and output the final video in `videos/` and thumbnail in `thumbnails/`.
-
-### 5. Run 24/7 YouTube Live
-Set `YOUTUBE_STREAM_KEY` in `.env`, then start the continuous live engine:
-
-```bash
-python scripts/continuous_live_stream.py
-```
-
-The live engine keeps one RTMP connection open, feeds continuous raw 720p frames to a stable FFmpeg encoder, and loops the last valid clip while the next fresh news story is rendering.
-
-Optional stream-health tuning:
 
 ```env
-LIVE_STREAM_FPS=30
-LIVE_VIDEO_BITRATE=4500k
-LIVE_MAXRATE=5000k
-LIVE_BUFSIZE=9000k
+GROQ_API_KEY=your_groq_api_key
+CHANNEL_NAME="SRJ UNDERRATED"
+DEFAULT_TTS_VOICE="hi-IN-MadhurNeural"
+PORT=80
 ```
 
----
+To configure platform credentials (Telegram, Twitter/X, Facebook, Instagram), add them via the **Platforms** tab in the Web Studio or update `data/platforms.json`.
 
-## 📁 Directory Structure
+For YouTube publishing, place your `client_secret.json` in the root folder and authenticate:
 
-```
-AI-NewsTube/
-├── agents/                  # 10 Autonomous Pipeline Agents
-│   ├── ceo_agent.py         # Pipeline orchestrator
-│   ├── news_hunter.py       # News discovery & virality ranking
-│   ├── fact_checker.py      # LLM Fact checker
-│   ├── script_writer.py     # 6-Stage news script writer
-│   ├── visuals_agent.py     # Multi-tier visual procurement
-│   ├── graphics_agent.py    # 2.5D graphics & studio backdrop
-│   ├── voice_agent.py       # Neural TTS voiceover engine
-│   ├── video_agent.py       # 1080p MP4 video compositor
-│   ├── thumbnail_agent.py   # High-CTR thumbnail & SEO metadata
-│   ├── uploader_agent.py    # Staging & distribution packaging
-│   └── analytics_agent.py   # Performance feedback telemetry
-├── assets/                  # Fonts, avatars, studio backdrops, frames
-├── config/                  # Settings (settings.py) & Graphics config
-├── data/                    # Telemetry & news data logs
-├── logs/                    # System runtime log files
-├── models/                  # Dataclass schemas (news_models.py)
-├── services/                # Core engines (Groq, Three.js, RSS, Visual Research)
-├── thumbnails/              # Rendered YouTube thumbnail outputs
-├── utils/                   # Shared Logger & Exception handlers
-├── videos/                  # Final 1080p MP4 broadcast video outputs
-├── voice/                   # Generated neural MP3 voiceover files
-├── main.py                  # Entry point script
-├── requirements.txt         # Dependencies list
-└── TECH_STACK.md            # Tech stack documentation
+```bash
+python auth_youtube.py
 ```
 
----
+## Usage
 
-## 🤝 Contributing & License
+### Web Control Studio
 
-Contributions are welcome! Please feel free to open issues or submit pull requests.
+Start the dashboard:
 
-This project is licensed under the MIT License.
+```bash
+python app.py
+```
+
+Access the UI at `http://localhost/` (or your server's public IP).
+
+### Autonomous Publishing Daemon
+
+Launch the autonomous background publisher:
+
+```bash
+python scripts/trending_documentary_autopublisher.py
+```
+
+### Manual CLI Publishing
+
+Generate and publish a video for a single topic:
+
+```bash
+python test_generate_one_video.py --topic "Your Topic or Headline Here"
+```
+
+## Deployment
+
+### Linux / AWS EC2 (systemd or tmux)
+
+```bash
+# Web Dashboard
+tmux new-session -d -s studio_app 'sudo PYTHONPATH=. python3 -m uvicorn app:app --host 0.0.0.0 --port 80'
+
+# Autonomous Publishing Daemon
+tmux new-session -d -s autopublisher 'python3 -u scripts/trending_documentary_autopublisher.py >> logs/publisher.log 2>&1'
+```
+
+### Docker
+
+```bash
+docker compose up -d --build
+```
+
+## License
+
+MIT License.
