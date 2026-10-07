@@ -2,6 +2,7 @@ feedparser
 groq
 python-dotenv
 trafilatura
+lxml_html_clean
 edge-tts
 pillow
 requests
@@ -13,5 +14,8 @@ google-auth-oauthlib
 google-auth-httplib2
 pyttsx3
 uharfbuzz
+fastapi
+uvicorn[standard]
 freetype-py
 pywin32; sys_platform == 'win32'
+boto3

@@ -10,6 +10,7 @@ if str(BASE_DIR) not in sys.path:
 
 from agents.ceo_agent import ceo_agent
 from utils.logger import logger
+from app import app  # Expose FastAPI ASGI application for uvicorn main:app
 
 
 def main():

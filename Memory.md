@@ -1,5 +1,6 @@
 # Memory
 
+- **lxml_html_clean Dependency & ASGI App Export Fix**: Installed `lxml_html_clean` (v0.4.5) in `requirements.txt`. Re-exported FastAPI `app` from `app.py` in `main.py` so both `uvicorn main:app --reload` and `uvicorn app:app --reload` work out-of-the-box.
 - **Neon Database & S3 Storage Integration**: Configured `services/neon_service.py` with verified credentials from `neon-storage.env` (`uploads` S3 bucket) and relational tables (`accounts`, `generated_assets`, `scheduled_posts`, `brand_kits`). Connected Next.js frontend (`frontend/lib/api.ts` & `store.ts`) to live FastAPI studio endpoints (`/api/studio/*`) with automatic state hydration and fallback.
 - **FastAPI Studio Backend**: Integrated `CORSMiddleware` in `app.py` and running live via Uvicorn on `http://127.0.0.1:8000` (`/docs` active) for seamless integration with the Next.js frontend.
 - **B2B Instagram AI Content Studio Frontend**: Initialized Next.js 16 (App Router + Turbopack + Tailwind v4 + Zustand) at `frontend/` within the root workspace directory featuring multi-account Instagram OAuth switcher, single-prompt to multi-asset pipeline (Image, 9:16 Reel, Neural Voice, Thumbnail), scheduling engine, Brand Kit editor, and Graph API analytics dashboard.
