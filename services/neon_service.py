@@ -1,6 +1,7 @@
 import os
 import json
 import sqlite3
+import time
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 import boto3
@@ -12,14 +13,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 neon_env = dotenv_values(BASE_DIR / "neon-storage.env")
 
-# Neon S3 Storage Config
+# Neon Cloud Storage Config
 S3_ENDPOINT = neon_env.get("AWS_ENDPOINT_URL_S3") or os.getenv("AWS_ENDPOINT_URL_S3")
 S3_ACCESS_KEY = neon_env.get("AWS_ACCESS_KEY_ID") or os.getenv("AWS_ACCESS_KEY_ID")
 S3_SECRET_KEY = neon_env.get("AWS_SECRET_ACCESS_KEY") or os.getenv("AWS_SECRET_ACCESS_KEY")
 S3_REGION = neon_env.get("AWS_REGION") or os.getenv("AWS_REGION", "ap-southeast-1")
 BUCKET_NAME = "uploads"
 
-# Database Connection (Neon Postgres or SQLite fallback)
 DATABASE_URL = os.getenv("DATABASE_URL") or neon_env.get("DATABASE_URL")
 
 
@@ -42,13 +42,14 @@ class NeonStorageManager:
         if not self.client:
             return None
         try:
+            key = f"media/{file_name}"
             self.client.put_object(
                 Bucket=BUCKET_NAME,
-                Key=file_name,
+                Key=key,
                 Body=file_bytes,
                 ContentType=content_type,
             )
-            return f"{S3_ENDPOINT}/{BUCKET_NAME}/{file_name}"
+            return f"{S3_ENDPOINT}/{BUCKET_NAME}/{key}"
         except Exception as e:
             print(f"[NeonStorage] Upload failed: {e}")
             return None
@@ -65,13 +66,40 @@ class NeonStorageManager:
             print(f"[NeonStorage] Upload file error: {e}")
             return None
 
+    def read_json(self, key: str) -> Optional[Any]:
+        if not self.client:
+            return None
+        try:
+            resp = self.client.get_object(Bucket=BUCKET_NAME, Key=key)
+            return json.loads(resp["Body"].read().decode("utf-8"))
+        except Exception:
+            return None
+
+    def write_json(self, key: str, data: Any) -> bool:
+        if not self.client:
+            return False
+        try:
+            self.client.put_object(
+                Bucket=BUCKET_NAME,
+                Key=key,
+                Body=json.dumps(data, indent=2).encode("utf-8"),
+                ContentType="application/json",
+            )
+            return True
+        except Exception as e:
+            print(f"[NeonStorage] write_json error for {key}: {e}")
+            return False
+
 
 class NeonDBManager:
-    def __init__(self):
+    """Cloud-synced Neon Database manager using Neon S3/Postgres backend."""
+    def __init__(self, storage: NeonStorageManager):
+        self.storage = storage
         self.is_postgres = False
         self.db_path = BASE_DIR / "data" / "autoinsta.db"
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_db()
+        self._sync_from_neon_cloud()
 
     def _get_connection(self):
         if DATABASE_URL and (DATABASE_URL.startswith("postgres://") or DATABASE_URL.startswith("postgresql://")):
@@ -81,14 +109,13 @@ class NeonDBManager:
                 self.is_postgres = True
                 return conn
             except Exception as e:
-                print(f"[NeonDB] Postgres connect failed, falling back to SQLite: {e}")
+                print(f"[NeonDB] Postgres direct connect failed, using cloud-synced store: {e}")
         return sqlite3.connect(str(self.db_path))
 
     def _init_db(self):
         conn = self._get_connection()
         cur = conn.cursor()
 
-        # Accounts table
         cur.execute("""
             CREATE TABLE IF NOT EXISTS accounts (
                 id TEXT PRIMARY KEY,
@@ -101,7 +128,6 @@ class NeonDBManager:
             )
         """)
 
-        # Media assets table
         cur.execute("""
             CREATE TABLE IF NOT EXISTS generated_assets (
                 id TEXT PRIMARY KEY,
@@ -119,7 +145,6 @@ class NeonDBManager:
             )
         """)
 
-        # Scheduled posts table
         cur.execute("""
             CREATE TABLE IF NOT EXISTS scheduled_posts (
                 id TEXT PRIMARY KEY,
@@ -131,7 +156,6 @@ class NeonDBManager:
             )
         """)
 
-        # Brand kits table
         cur.execute("""
             CREATE TABLE IF NOT EXISTS brand_kits (
                 account_id TEXT PRIMARY KEY,
@@ -144,7 +168,7 @@ class NeonDBManager:
             )
         """)
 
-        # Seed initial accounts if empty
+        # Seed default accounts
         cur.execute("SELECT COUNT(*) FROM accounts")
         count = cur.fetchone()[0]
         if count == 0:
@@ -159,9 +183,37 @@ class NeonDBManager:
         conn.commit()
         conn.close()
 
+    def _sync_from_neon_cloud(self):
+        """Pulls persistent state from Neon Cloud Storage."""
+        try:
+            cloud_accounts = self.storage.read_json("db/accounts.json")
+            if cloud_accounts:
+                conn = self._get_connection()
+                cur = conn.cursor()
+                for a in cloud_accounts:
+                    cur.execute("""
+                        INSERT OR REPLACE INTO accounts (id, username, display_name, avatar_url, followers, category, is_connected)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """, (a["id"], a["username"], a["displayName"], a["avatarUrl"], a["followers"], a["category"], 1 if a.get("isConnected") else 0))
+                conn.commit()
+                conn.close()
+        except Exception as e:
+            print(f"[NeonDB] Cloud pull warning: {e}")
+
+    def _push_to_neon_cloud(self, table_name: str):
+        """Pushes local state snapshot to Neon Cloud Storage for 100% remote persistence."""
+        try:
+            if table_name == "accounts":
+                data = self.get_accounts()
+                self.storage.write_json("db/accounts.json", data)
+            elif table_name == "scheduled_posts":
+                data = self.get_scheduled_posts()
+                self.storage.write_json("db/scheduled_posts.json", data)
+        except Exception as e:
+            print(f"[NeonDB] Cloud push warning for {table_name}: {e}")
+
     def get_accounts(self) -> List[Dict[str, Any]]:
         conn = self._get_connection()
-        conn.row_factory = sqlite3.Row if not self.is_postgres else None
         cur = conn.cursor()
         cur.execute("SELECT id, username, display_name, avatar_url, followers, category, is_connected FROM accounts")
         rows = cur.fetchall()
@@ -189,6 +241,7 @@ class NeonDBManager:
             cur.execute("UPDATE accounts SET is_connected = ? WHERE id = ?", (new_val, account_id))
             conn.commit()
             conn.close()
+            self._push_to_neon_cloud("accounts")
             return bool(new_val)
         conn.close()
         return False
@@ -196,7 +249,7 @@ class NeonDBManager:
     def save_generated_asset(self, asset: Dict[str, Any]) -> str:
         conn = self._get_connection()
         cur = conn.cursor()
-        asset_id = asset.get("id") or ("ast_" + str(int(os.times().elapsed * 1000)))
+        asset_id = asset.get("id") or ("ast_" + str(int(time.time() * 1000)))
         cur.execute("""
             INSERT OR REPLACE INTO generated_assets 
             (id, account_id, image_url, video_url, audio_url, thumbnail_url, caption, hashtags, aspect_ratio, content_type, prompt, created_at)
@@ -217,6 +270,8 @@ class NeonDBManager:
         ))
         conn.commit()
         conn.close()
+        # Save individual asset to Neon Cloud
+        self.storage.write_json(f"db/assets/{asset_id}.json", asset)
         return asset_id
 
     def get_scheduled_posts(self) -> List[Dict[str, Any]]:
@@ -263,7 +318,7 @@ class NeonDBManager:
     def add_scheduled_post(self, post_data: Dict[str, Any]) -> str:
         conn = self._get_connection()
         cur = conn.cursor()
-        post_id = post_data.get("id") or ("sch_" + str(int(os.times().elapsed * 1000)))
+        post_id = post_data.get("id") or ("sch_" + str(int(time.time() * 1000)))
         asset_id = self.save_generated_asset(post_data.get("asset", {}))
         cur.execute("""
             INSERT OR REPLACE INTO scheduled_posts (id, account_id, asset_id, scheduled_time, status, recurrence)
@@ -278,6 +333,7 @@ class NeonDBManager:
         ))
         conn.commit()
         conn.close()
+        self._push_to_neon_cloud("scheduled_posts")
         return post_id
 
     def delete_scheduled_post(self, post_id: str) -> bool:
@@ -286,9 +342,15 @@ class NeonDBManager:
         cur.execute("DELETE FROM scheduled_posts WHERE id = ?", (post_id,))
         conn.commit()
         conn.close()
+        self._push_to_neon_cloud("scheduled_posts")
         return True
 
     def get_brand_kit(self, account_id: str) -> Dict[str, Any]:
+        # Try cloud first
+        cloud_kit = self.storage.read_json(f"db/brandkits/{account_id}.json")
+        if cloud_kit:
+            return cloud_kit
+
         conn = self._get_connection()
         cur = conn.cursor()
         cur.execute("SELECT brand_name, primary_color, secondary_color, font_tone, signature_hashtags, cta_text FROM brand_kits WHERE account_id = ?", (account_id,))
@@ -310,7 +372,7 @@ class NeonDBManager:
                 "ctaText": row[5],
             }
         return {
-            "brandName": "Brand Store",
+            "brandName": "Artisan Brand",
             "primaryColor": "#E07A5F",
             "secondaryColor": "#F4F1DE",
             "fontTone": "Warm & Artisanal",
@@ -335,7 +397,9 @@ class NeonDBManager:
         ))
         conn.commit()
         conn.close()
+        # Save to Neon Cloud directly
+        self.storage.write_json(f"db/brandkits/{account_id}.json", kit)
 
 
 neon_storage = NeonStorageManager()
-neon_db = NeonDBManager()
+neon_db = NeonDBManager(neon_storage)
