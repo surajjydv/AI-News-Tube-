@@ -1,4 +1,4 @@
-import axios from "axios";
+﻿import axios from "axios";
 import { Account, BrandKit, ContentType, AspectRatio, MediaAsset, ScheduledPost } from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/studio";
@@ -24,6 +24,15 @@ export const api = {
   },
 
   // Generate Media Pack
+  async getLatestAsset(): Promise<MediaAsset | null> {
+    try {
+      const res = await apiClient.get<MediaAsset | null>("/latest");
+      return res.data;
+    } catch {
+      return null;
+    }
+  },
+
   async generateMedia(payload: {
     prompt: string;
     contentType: ContentType;
@@ -71,3 +80,4 @@ export const api = {
     await apiClient.post(`/brandkit/${accountId}`, brandKit);
   },
 };
+

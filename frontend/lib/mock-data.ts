@@ -1,11 +1,11 @@
-import { Account, BrandKit, MediaAsset, MetricItem, ScheduledPost } from "@/types";
+﻿import { Account, BrandKit, MediaAsset, MetricItem, ScheduledPost } from "@/types";
 
 export const MOCK_ACCOUNTS: Account[] = [
   {
     id: "acc_1",
     username: "artisan_bakery_nyc",
     displayName: "Artisan Bakery NYC",
-    avatarUrl: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=150&auto=format&fit=crop&q=80",
+    avatarUrl: "/image_1791362073.jpg",
     followers: 24800,
     category: "Food & Beverage",
     isConnected: true,
@@ -53,24 +53,20 @@ export const MOCK_BRAND_KITS: Record<string, BrandKit> = {
     secondaryColor: "#F2CC8F",
     fontTone: "Luxury",
     signatureHashtags: ["#CleanBeauty", "#GlowRoutine", "#OrganicSkinCare"],
-    ctaText: "Experience pure botanicals ? shop 20% off today.",
+    ctaText: "Experience pure botanicals — shop 20% off today.",
   },
 };
 
 export const INITIAL_GENERATED_ASSET: MediaAsset = {
-  imageUrl: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=1080&auto=format&fit=crop&q=80",
-  videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-  audioUrl: "https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg",
-  thumbnailUrl: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&auto=format&fit=crop&q=80",
-  caption: `Weekend Special: Handcrafted Alphonso Mango Gateau!
-
-Indulge in layers of light vanilla sponge, pure mango compote, and delicate white chocolate chantilly cream. Limited 50 batches baked every Saturday morning.
-
-Reserve yours before it sells out! Link in bio.`,
+  imageUrl: "/image_1791362073.jpg",
+  videoUrl: "/reel_1791362073.mp4",
+  audioUrl: "/voice_1791362073.mp3",
+  thumbnailUrl: "/image_1791362073.jpg",
+  caption: "✨ Weekend Special: Handcrafted Alphonso Mango Gateau!\n\nIndulge in layers of light vanilla sponge, pure mango compote, and delicate white chocolate chantilly cream. Limited 50 batches baked every Saturday morning.\n\n👉 Reserve yours before it sells out! Link in bio. 🥭🎂",
   hashtags: ["#MangoCake", "#ArtisanBaking", "#WeekendSpecials", "#NYCFoodie", "#BakeryLife", "#DessertGoals"],
-  aspectRatio: "4:5",
+  aspectRatio: "9:16",
   contentType: "reel",
-  prompt: "Promote my bakery new Alphonso mango cake for weekend with irresistible gourmet vibe",
+  prompt: "Promote my bakery new mango cake for weekends with gourmet vibe",
   createdAt: new Date().toISOString(),
 };
 
@@ -82,25 +78,6 @@ export const INITIAL_SCHEDULED_POSTS: ScheduledPost[] = [
     scheduledTime: new Date(Date.now() + 1000 * 60 * 60 * 4).toISOString(),
     status: "scheduled",
     recurrence: "none",
-  },
-  {
-    id: "sch_2",
-    accountId: "acc_1",
-    asset: {
-      imageUrl: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=1080&auto=format&fit=crop&q=80",
-      videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-      audioUrl: "https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg",
-      thumbnailUrl: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400&auto=format&fit=crop&q=80",
-      caption: `Morning Fresh: Hot Butter Croissants straight from the oven at 7:00 AM.`,
-      hashtags: ["#CroissantLove", "#BreakfastNYC", "#FreshBakes"],
-      aspectRatio: "1:1",
-      contentType: "post",
-      prompt: "Golden crispy flaky morning croissants fresh from oven promo",
-      createdAt: new Date().toISOString(),
-    },
-    scheduledTime: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
-    status: "scheduled",
-    recurrence: "daily",
   },
 ];
 

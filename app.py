@@ -425,50 +425,52 @@ async def save_studio_brandkit(account_id: str, req: BrandKitRequest):
     neon_db.save_brand_kit(account_id, req.dict())
     return {"status": "success", "brandKit": req.dict()}
 
+
+@app.get("/api/studio/latest")
+async def get_latest_generated_asset():
+    conn = neon_db._get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT id, account_id, image_url, video_url, audio_url, thumbnail_url, caption, hashtags, aspect_ratio, content_type, prompt, created_at
+        FROM generated_assets
+        ORDER BY created_at DESC
+        LIMIT 1
+    """)
+    row = cur.fetchone()
+    conn.close()
+    if row:
+        hashtags = []
+        if row[7]:
+            try:
+                hashtags = json.loads(row[7])
+            except Exception:
+                hashtags = []
+        return {
+            "id": row[0],
+            "accountId": row[1],
+            "imageUrl": row[2],
+            "videoUrl": row[3],
+            "audioUrl": row[4],
+            "thumbnailUrl": row[5],
+            "caption": row[6],
+            "hashtags": hashtags,
+            "aspectRatio": row[8],
+            "contentType": row[9],
+            "prompt": row[10],
+            "createdAt": row[11],
+        }
+    return None
+
 @app.post("/api/studio/generate")
 async def generate_studio_media(req: GenerateRequest):
-    try:
-        from services.groq_service import generate_with_groq_fallback
-        caption_prompt = f"Write an engaging viral Instagram {req.contentType} caption for this topic: '{req.prompt}'. Tone: {req.tone}. Include emojis and a compelling call-to-action. Do not include markdown headers or thinking tags, just the caption."
-        caption = generate_with_groq_fallback(caption_prompt).strip()
-    except Exception:
-        caption = f"?? {req.prompt.capitalize()}\n\nExperience the highest quality handcrafted specials this week.\n\n?? Tap link in bio to learn more!"
-
-    # Sample verified HD assets
-    sample_images = [
-        "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=1080",
-        "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=1080",
-        "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1080",
-        "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=1080",
-    ]
-    import random
-    picked_img = random.choice(sample_images)
-
-    hashtags = [
-        f"#{req.prompt.split()[0].replace('#', '') if req.prompt else 'Trending'}",
-        "#InstagramAI",
-        "#ContentCreation",
-        "#ViralReels",
-        "#B2BAutomation",
-        "#NeonStorage"
-    ]
-
-    asset = {
-        "accountId": req.accountId,
-        "imageUrl": picked_img,
-        "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-        "audioUrl": "https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg",
-        "thumbnailUrl": picked_img,
-        "caption": caption,
-        "hashtags": hashtags,
-        "aspectRatio": req.aspectRatio,
-        "contentType": req.contentType,
-        "prompt": req.prompt,
-        "createdAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-    }
-
-    asset_id = neon_db.save_generated_asset(asset)
-    asset["id"] = asset_id
+    from services.real_media_generator import generate_real_media_pack
+    asset = await generate_real_media_pack(
+        prompt=req.prompt,
+        content_type=req.contentType or "reel",
+        aspect_ratio=req.aspectRatio or "9:16",
+        tone=req.tone or "Warm & Artisanal",
+        account_id=req.accountId or "acc_1"
+    )
     return asset
 
 

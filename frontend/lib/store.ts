@@ -1,4 +1,4 @@
-import { create } from "zustand";
+﻿import { create } from "zustand";
 import { Account, BrandKit, ContentType, AspectRatio, MediaAsset, ScheduledPost } from "@/types";
 import { MOCK_ACCOUNTS, MOCK_BRAND_KITS, INITIAL_GENERATED_ASSET, INITIAL_SCHEDULED_POSTS } from "./mock-data";
 import { api } from "./api";
@@ -224,3 +224,4 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     }
   },
 }));
+
