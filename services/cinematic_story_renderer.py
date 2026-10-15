@@ -31,7 +31,7 @@ if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
 from utils.logger import logger
-from utils.font_utils import sanitize_text, draw_shaped_text
+from utils.font_utils import sanitize_text, draw_shaped_text, load_font
 
 # ─── Palette ──────────────────────────────────────────────────────────────────
 GOLD      = (255, 210, 50)
@@ -41,41 +41,29 @@ TEAL_GLOW = (0, 180, 220)
 DARK_BG   = (5, 8, 18)
 
 
-# ─── Helpers ──────────────────────────────────────────────────────────────────
+# --- Helpers ---
 
 def _cinematic_grade(img: Image.Image) -> Image.Image:
-    """Apply dark cinematic colour grade: high contrast, slight desaturate, darken."""
-    img = ImageEnhance.Contrast(img).enhance(1.30)
-    img = ImageEnhance.Color(img).enhance(0.85)
-    img = ImageEnhance.Brightness(img).enhance(0.78)
-    img = ImageEnhance.Sharpness(img).enhance(1.35)
+    """Natural color grading: high contrast, vibrant color, and crisp sharpness without darkening."""
+    img = ImageEnhance.Contrast(img).enhance(1.12)
+    img = ImageEnhance.Color(img).enhance(1.10)
+    img = ImageEnhance.Sharpness(img).enhance(1.30)
     return img
 
 
 def _build_vignette(w: int, h: int) -> Image.Image:
-    """Creates a strong cinematic vignette layer (pre-built once)."""
+    """Clean, smooth lower-third gradient backdrop for text clarity without any black split lines."""
     v = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    d = ImageDraw.Draw(v)
-    # Heavy bottom gradient (text area)
-    for y in range(h):
-        f = max(0.0, (y - h * 0.28) / (h * 0.72))
-        a = int(255 * min(1.0, f ** 1.4))
-        d.line([(0, y), (w, y)], fill=(0, 0, 0, a))
-    # Subtle top dark
-    for y in range(int(h * 0.30)):
-        f = 1.0 - y / (h * 0.30)
-        a = int(140 * f ** 2.0)
-        d.line([(0, y), (w, y)], fill=(0, 0, 0, a))
-    # Left edge
-    for x in range(int(w * 0.30)):
-        f = 1.0 - x / (w * 0.30)
-        a = int(130 * f ** 2.0)
-        d.line([(x, 0), (x, h)], fill=(0, 0, 0, a))
-    # Right edge
-    for x in range(int(w * 0.20)):
-        f = 1.0 - x / (w * 0.20)
-        a = int(100 * f ** 2.0)
-        d.line([(w - x, 0), (w - x, h)], fill=(0, 0, 0, a))
+    y_start = int(h * 0.62)
+    grad_h = h - y_start
+    # Create smooth 1xN gradient strip then scale horizontally to eliminate line banding
+    strip = Image.new("RGBA", (1, grad_h), (0, 0, 0, 0))
+    for y in range(grad_h):
+        factor = y / float(grad_h)
+        alpha = int(160 * (factor ** 1.6))
+        strip.putpixel((0, y), (0, 0, 0, alpha))
+    grad = strip.resize((w, grad_h), Image.Resampling.BILINEAR)
+    v.paste(grad, (0, y_start), grad)
     return v
 
 
@@ -143,70 +131,136 @@ def _draw_slide_label(canvas: Image.Image, label: str, slide_num: int, total: in
     dot_y = y + 30
     for i in range(total):
         cx_dot = rx - (total - i - 1) * 18 - 10
-        color = GOLD if i == slide_num else (80, 80, 80)
+        color = GOLD if i <= slide_num else (80, 90, 120)
         d.ellipse([(cx_dot-5, dot_y-5), (cx_dot+5, dot_y+5)], fill=color)
 
 
-def _draw_lower_third_headline(canvas: Image.Image, line1: str, line2: str,
-                                w: int, h: int, anim_progress: float):
+def draw_3d_text_extrusion(
+    canvas: Image.Image,
+    pos: Tuple[int, int],
+    text: str,
+    font_size: int,
+    text_color: Tuple[int, int, int],
+    depth: int = 5,
+    angle_dx: int = 2,
+    angle_dy: int = 2
+):
+    """Draws 3D extruded text with depth bevel layers and outer outline."""
+    x, y = pos
+    # 3D Depth Extrusion Layers (from dark back to front)
+    for step in range(depth, 0, -1):
+        ratio = step / float(depth)
+        ext_r = int(text_color[0] * 0.18 + (1 - ratio) * 15)
+        ext_g = int(text_color[1] * 0.18 + (1 - ratio) * 15)
+        ext_b = int(text_color[2] * 0.18 + (1 - ratio) * 15)
+        draw_shaped_text(canvas, (x + step * angle_dx, y + step * angle_dy),
+                         text, font_size=font_size, bold=True, text_color=(ext_r, ext_g, ext_b))
+
+    # Crisp outline boundary
+    for ox in range(-2, 3):
+        for oy in range(-2, 3):
+            if ox * ox + oy * oy <= 5:
+                draw_shaped_text(canvas, (x + ox, y + oy),
+                                 text, font_size=font_size, bold=True, text_color=(0, 0, 0))
+
+    # Front face
+    draw_shaped_text(canvas, (x, y), text, font_size=font_size, bold=True, text_color=text_color)
+
+
+def _draw_3d_headline_slab(
+    canvas: Image.Image,
+    line1: str,
+    line2: str,
+    badge_label: str = "⚡ LIVE REPORT",
+    w: int = 1920,
+    h: int = 1080,
+    anim_progress: float = 1.0
+):
     """
-    Sleek broadcast lower-third plate:
-    - High-contrast glassmorphic card with metallic gold and crimson rails.
-    - Clean Hind typography without distorted multi-stroke outlines.
-    - Zero left-edge clipping (x_base locked at safe margin).
+    Symmetrical Centered 3D Broadcast Headline Slab:
+    - Centered across 1920px screen (balanced left & right margins)
+    - Physical Gaussian soft drop shadow for 3D elevation
+    - Multi-bevel metallic chamfer rails (Gold top + Ruby bottom + left notch)
+    - 3D Extruded typography with physical depth layers
+    - Dynamic 3D badge pill
     """
     ease = min(1.0, anim_progress * 3.0)
     if ease <= 0:
         return
 
     y_shift = int((1.0 - ease) * 15)
-    card_x = 50
-    card_y = (h - 280) + y_shift
-    card_w = min(1500, w - 100)
-    card_h = 175
+    card_w = min(1800, w - 100)
+    card_x = (w - card_w) // 2  # Perfectly centered horizontally
+    card_y = (h - 290) + y_shift
+    card_h = 180
 
+    # 1. 3D Elevation Soft Shadow
+    shadow = Image.new("RGBA", (card_w + 30, card_h + 30), (0, 0, 0, 0))
+    sd = ImageDraw.Draw(shadow)
+    sd.rounded_rectangle([(10, 10), (card_w + 10, card_h + 10)], radius=16, fill=(0, 0, 0, int(180 * ease)))
+    shadow = shadow.filter(ImageFilter.GaussianBlur(radius=8))
+    canvas.paste(shadow, (card_x - 10, card_y), shadow)
+
+    # 2. Main 3D Card
     card = Image.new("RGBA", (card_w, card_h), (0, 0, 0, 0))
     cd = ImageDraw.Draw(card)
 
-    card_alpha = int(230 * ease)
-    cd.rounded_rectangle([(0, 0), (card_w, card_h)], radius=12,
-                         fill=(8, 14, 28, card_alpha),
-                         outline=(50, 70, 110, int(180 * ease)), width=1)
-    # Glowing top accent stripe
-    cd.rounded_rectangle([(0, 0), (card_w, 4)], radius=2,
-                         fill=(255, 204, 0, int(255 * ease)))
-    # Left crimson accent rail
-    cd.rounded_rectangle([(0, 0), (8, card_h)], radius=2,
+    card_alpha = int(235 * ease)
+    cd.rounded_rectangle([(0, 0), (card_w, card_h)], radius=14,
+                         fill=(7, 12, 26, card_alpha),
+                         outline=(65, 90, 135, int(195 * ease)), width=2)
+
+    # Top 3D Metallic Gold Bevel Rail
+    cd.rounded_rectangle([(0, 0), (card_w, 5)], radius=3,
+                         fill=(255, 215, 0, int(255 * ease)))
+    # Bottom Ruby Accent Rail
+    cd.rounded_rectangle([(0, card_h - 4), (card_w, card_h)], radius=2,
+                         fill=(220, 20, 35, int(240 * ease)))
+    # Left Ruby 3D Notch
+    cd.rounded_rectangle([(0, 0), (10, card_h)], radius=3,
                          fill=(220, 20, 35, int(255 * ease)))
 
-    # Live Report Pill Badge
-    cd.rounded_rectangle([(25, 14), (185, 40)], radius=5,
-                         fill=(220, 20, 35, int(240 * ease)))
-    draw_shaped_text(card, (36, 18), "⚡ LIVE REPORT", font_size=15, bold=True,
-                     text_color=WHITE)
+    # 3D Badge Pill - Centered at top of card
+    badge_w = max(180, min(280, 30 + len(badge_label) * 12))
+    badge_x = (card_w - badge_w) // 2
+    cd.rounded_rectangle([(badge_x, 10), (badge_x + badge_w, 40)], radius=6,
+                         fill=(220, 20, 35, int(240 * ease)),
+                         outline=(255, 95, 95, int(200 * ease)), width=1)
+    draw_shaped_text(card, (badge_x + 14, 15), badge_label, font_size=16, bold=True, text_color=WHITE)
 
     f1_size = 46 if len(line1) <= 35 else (40 if len(line1) <= 50 else 34)
-    f2_size = 32 if len(line2) <= 50 else (28 if len(line2) <= 70 else 24)
+    f2_size = 30 if len(line2) <= 50 else (26 if len(line2) <= 70 else 22)
 
-    # Line 1: Main hook headline in Electric Gold
-    draw_shaped_text(card, (25, 48), line1[:60], font_size=f1_size, bold=True,
-                     text_color=GOLD, shadow=True)
+    # Center-align line 1 and line 2 inside the 3D card
+    f1 = load_font(f1_size, bold=True)
+    t1_w = int(f1.getlength(line1[:70]))
+    t1_x = max(30, (card_w - t1_w) // 2)
 
-    # Line 2: Context subtitle in Clean White
-    draw_shaped_text(card, (25, 108), line2[:80], font_size=f2_size, bold=False,
-                     text_color=(245, 248, 255), shadow=True)
+    f2 = load_font(f2_size, bold=True)
+    t2_w = int(f2.getlength(line2[:90]))
+    t2_x = max(30, (card_w - t2_w) // 2)
+
+    # Line 1: 3D Extruded Electric Gold (Centered)
+    draw_3d_text_extrusion(card, (t1_x, 48), line1[:70], font_size=f1_size, text_color=GOLD, depth=5)
+    # Line 2: 3D Extruded Clean White (Centered)
+    draw_3d_text_extrusion(card, (t2_x, 110), line2[:90], font_size=f2_size, text_color=(245, 248, 255), depth=4)
 
     canvas.paste(card, (card_x, card_y), card)
 
 
+# Compatibility alias
+_draw_lower_third_headline = _draw_3d_headline_slab
+
+
 def _draw_fact_bullets(canvas: Image.Image, bullets: List[str], w: int, h: int,
                         anim_progress: float):
-    """Clean bullet cards with zero clipping and high contrast."""
-    x_base = 55
-    y_start = int(h * 0.54)
-    line_h = 58
+    """Clean bullet cards with zero clipping and centered high contrast sitting above the 3D headline plate."""
+    bullet_w = min(1500, w - 160)
+    x_base = (w - bullet_w) // 2
+    y_start = int(h * 0.46)
+    line_h = 56
 
-    for i, bullet in enumerate(bullets[:4]):
+    for i, bullet in enumerate(bullets[:2]):
         local_p = max(0.0, (anim_progress - i * 0.12) * 2.5)
         ease = min(1.0, local_p)
         if ease <= 0:
@@ -216,16 +270,17 @@ def _draw_fact_bullets(canvas: Image.Image, bullets: List[str], w: int, h: int,
         y_shift = int((1.0 - ease) * 10)
         clean = sanitize_text(str(bullet))[:80]
 
-        # Dark glass backing strip for readability
+        # Centered dark glass backing strip for readability
         d = ImageDraw.Draw(canvas)
-        d.rounded_rectangle([(x_base - 5, y + y_shift - 6), (min(w - 60, x_base + 1100), y + y_shift + 42)],
-                            radius=8, fill=(8, 14, 28, int(190 * ease)))
+        d.rounded_rectangle([(x_base, y + y_shift - 6), (x_base + bullet_w, y + y_shift + 42)],
+                            radius=8, fill=(8, 14, 28, int(190 * ease)),
+                            outline=(50, 70, 110, int(120 * ease)), width=1)
 
         # Bullet marker
-        draw_shaped_text(canvas, (x_base + 10, y + y_shift), "▶",
+        draw_shaped_text(canvas, (x_base + 16, y + y_shift), "▶",
                          font_size=22, bold=True, text_color=GOLD)
         # Bullet text
-        draw_shaped_text(canvas, (x_base + 44, y + y_shift + 2), clean,
+        draw_shaped_text(canvas, (x_base + 50, y + y_shift + 2), clean,
                          font_size=28, bold=False, text_color=WHITE, shadow=True)
 
 
@@ -315,10 +370,11 @@ def _draw_source_tag(canvas: Image.Image, credit: str, w: int, h: int):
 # ─── Slide type definitions ────────────────────────────────────────────────────
 
 SLIDE_TYPES = {
-    0: {"label": "◆ OPENING",    "zoom_s": 1.00, "zoom_e": 1.07, "pan_dx":  0.3, "pan_dy": 0.2},
-    1: {"label": "◆ BACKGROUND", "zoom_s": 1.04, "zoom_e": 1.00, "pan_dx": -0.4, "pan_dy": 0.0},
-    2: {"label": "◆ EVIDENCE",   "zoom_s": 1.02, "zoom_e": 1.08, "pan_dx":  0.2, "pan_dy":-0.3},
-    3: {"label": "◆ IMPACT",     "zoom_s": 1.06, "zoom_e": 1.00, "pan_dx": -0.2, "pan_dy": 0.2},
+    0: {"label": "◆ 1. BREAKING HOOK",   "badge": "⚡ BREAKING HOOK",   "zoom_s": 1.00, "zoom_e": 1.07, "pan_dx":  0.3, "pan_dy": 0.2},
+    1: {"label": "◆ 2. GROUND REALITY",  "badge": "📌 GROUND REALITY",  "zoom_s": 1.05, "zoom_e": 1.00, "pan_dx": -0.4, "pan_dy": 0.1},
+    2: {"label": "◆ 3. KEY EVIDENCE",    "badge": "🔍 KEY EVIDENCE",    "zoom_s": 1.02, "zoom_e": 1.08, "pan_dx":  0.2, "pan_dy":-0.3},
+    3: {"label": "◆ 4. PUBLIC IMPACT",   "badge": "💥 PUBLIC IMPACT",   "zoom_s": 1.06, "zoom_e": 1.00, "pan_dx": -0.3, "pan_dy": 0.2},
+    4: {"label": "◆ 5. WHAT NEXT",       "badge": "⚖️ WHAT NEXT",       "zoom_s": 1.00, "zoom_e": 1.06, "pan_dx":  0.4, "pan_dy":-0.1},
 }
 
 
@@ -329,6 +385,7 @@ def render_cinematic_story_video(
     category: str,
     slide_takeaways: Optional[List[str]] = None,
     takeaway_points: Optional[List[str]] = None,
+    slide_headlines: Optional[List[str]] = None,
     photo_paths: Optional[List[str]] = None,
     photo_credits: Optional[List[str]] = None,
     audio_path: Optional[Path] = None,
@@ -337,8 +394,9 @@ def render_cinematic_story_video(
     **kwargs
 ) -> Path:
     """
-    Cinematic Story Video Renderer — full-screen Ken Burns photos,
-    animated text, story arc slides, data box, scrolling ticker.
+    Cinematic Story Video Renderer — 5 dynamic story-arc slides,
+    animated 3D extruded headline slab that changes per slide,
+    Ken Burns photos, data box, and scrolling news ticker.
     Drop-in replacement for render_dynamic_broadcast_video().
     """
     if output_video_path is None:
@@ -349,14 +407,22 @@ def render_cinematic_story_video(
 
     W, H = 1920, 1080
 
-    # Resolve takeaways
+    # Resolve takeaways (minimum 5 slides)
     resolved_takeaways = slide_takeaways or takeaway_points or [
         "Breaking Development: Investigation teams actively deployed on ground",
         "Historical Background: Key decisions and timeline traced back to origin",
         "Official Action: Government agencies confirm findings and next steps",
-        "Wide Impact: Citizens and institutions brace for long-term consequences"
+        "Wide Impact: Citizens and institutions brace for long-term consequences",
+        "Strategic Outlook: Authorities issue high-level directives for next phase"
     ]
-    num_slides = max(2, min(len(resolved_takeaways), 5))
+    resolved_headlines = slide_headlines or kwargs.get("headlines") or [
+        headline,
+        f"Ground Reality: {headline[:40]}",
+        "Key Evidence & Revelations",
+        "Public Impact & Reaction",
+        "Government Move & What Next"
+    ]
+    num_slides = max(5, min(len(resolved_takeaways), 6))
     resolved_credits = photo_credits or ["Verified News Wire"]
 
     # ── Audio ──────────────────────────────────────────────────────────────────
@@ -364,7 +430,7 @@ def render_cinematic_story_video(
         raise FileNotFoundError(f"Audio not found: {audio_path}")
     audio_clip = AudioFileClip(str(audio_path))
     duration   = float(audio_clip.duration)
-    logger.info(f"  🎙️ Audio: {duration:.1f}s")
+    logger.info(f"  🎙️ Audio: {duration:.1f}s across {num_slides} dynamic slides")
 
     slide_dur    = duration / num_slides
     fade_dur     = min(0.40, slide_dur * 0.12)   # cross-fade length
@@ -401,23 +467,22 @@ def render_cinematic_story_video(
               + "   •   ".join(sanitize_text(t)[:60] for t in resolved_takeaways)
               + "   •   ")
 
-    # ── Headline split (Line1 = hook, Line2 = context) ─────────────────────────
-    words = clean_hl.split()
-    if len(words) <= 4:
-        line1 = clean_hl
-        line2 = f"LIVE REPORT • {category.upper()}"
-    else:
-        total_len = sum(len(w) for w in words)
-        mid_target = total_len // 2
-        running = 0
-        split_idx = len(words) // 2
-        for i, w in enumerate(words):
-            running += len(w) + 1
-            if running >= mid_target:
-                split_idx = max(2, min(i + 1, len(words) - 1))
+    # Helper to split headline into Line 1 (Hook) and Line 2 (Detail)
+    def split_headline(hl: str) -> Tuple[str, str]:
+        c_hl = sanitize_text(hl)
+        w_list = c_hl.split()
+        if len(w_list) <= 4:
+            return c_hl, f"LIVE REPORT • {category.upper()}"
+        tot = sum(len(w) for w in w_list)
+        mid = tot // 2
+        run = 0
+        s_idx = len(w_list) // 2
+        for idx, w in enumerate(w_list):
+            run += len(w) + 1
+            if run >= mid:
+                s_idx = max(2, min(idx + 1, len(w_list) - 1))
                 break
-        line1 = " ".join(words[:split_idx])
-        line2 = " ".join(words[split_idx:])
+        return " ".join(w_list[:s_idx]), " ".join(w_list[s_idx:])
 
     # ── Frame compositor ───────────────────────────────────────────────────────
     def make_frame(t: float) -> np.ndarray:
@@ -429,7 +494,7 @@ def render_cinematic_story_video(
         anim_p = min(1.0, t_in_slide / (slide_dur * 0.40))
 
         # Ken Burns for current slide
-        s_cfg  = SLIDE_TYPES.get(slide_idx % 4, SLIDE_TYPES[0])
+        s_cfg  = SLIDE_TYPES.get(slide_idx % len(SLIDE_TYPES), SLIDE_TYPES[0])
         photo  = graded_photos[slide_idx % len(graded_photos)]
 
         if photo is not None:
@@ -451,7 +516,7 @@ def render_cinematic_story_video(
         # Cross-fade: if we're in transition window with next slide
         if t_in_slide < fade_dur and slide_idx > 0:
             prev_idx   = slide_idx - 1
-            p_cfg      = SLIDE_TYPES.get(prev_idx % 4, SLIDE_TYPES[0])
+            p_cfg      = SLIDE_TYPES.get(prev_idx % len(SLIDE_TYPES), SLIDE_TYPES[0])
             prev_photo = graded_photos[prev_idx % len(graded_photos)]
             if prev_photo is not None:
                 prev_frame = _ken_burns(prev_photo, W, H, 1.0,
@@ -474,33 +539,19 @@ def render_cinematic_story_video(
         label = s_cfg["label"]
         _draw_slide_label(canvas, label, slide_idx, num_slides, W)
 
-        # ── Story content by slide type ───────────────────────────────────────
-        if slide_idx == 0:
-            # HOOK: big headline lower third
-            _draw_lower_third_headline(canvas, line1, line2, W, H, anim_p)
+        # ── Dynamic 3D Headline Plate (Updates with fresh info on EVERY slide!) ──
+        cur_hl_text = resolved_headlines[slide_idx % len(resolved_headlines)]
+        cur_l1, cur_l2 = split_headline(cur_hl_text)
+        badge_lbl = s_cfg.get("badge", "⚡ LIVE REPORT")
+        _draw_3d_headline_slab(canvas, cur_l1, cur_l2, badge_lbl, W, H, anim_p)
 
-        elif slide_idx == num_slides - 1:
-            # IMPACT: headline + conclusion bullets
-            _draw_lower_third_headline(canvas, line1, line2, W, H, anim_p)
-            _draw_fact_bullets(canvas,
-                                [f"Conclusion: {t}" for t in resolved_takeaways[-2:]],
-                                W, H, max(0, anim_p - 0.3))
+        # ── Story Content Bullets & Data Box ─────────────────────────────────
+        if slide_idx > 0:
+            cur_bullet = resolved_takeaways[slide_idx % len(resolved_takeaways)]
+            _draw_fact_bullets(canvas, [cur_bullet], W, H, anim_p)
 
-        else:
-            # MIDDLE slides: bullets + optional data box
-            idx_bullets = (slide_idx - 1) * 2
-            bullets = resolved_takeaways[idx_bullets: idx_bullets + 2]
-            _draw_fact_bullets(canvas, bullets, W, H, anim_p)
-
-            # Data box on even middle slides
-            if slide_idx % 2 == 0 and len(resolved_takeaways) > 2:
-                data_facts = resolved_takeaways[:4]
-                _draw_data_box(canvas, data_facts, W, H, max(0, anim_p - 0.2))
-
-            # Subtle headline at very bottom for context
-            draw_shaped_text(canvas, (55, int(H * 0.90)),
-                              f"◆ {clean_hl[:75]}",
-                              font_size=24, bold=False, text_color=(200, 200, 200))
+        if slide_idx == 2 and len(resolved_takeaways) >= 3:
+            _draw_data_box(canvas, resolved_takeaways[:3], W, H, max(0, anim_p - 0.2))
 
         # ── Photo credit ──────────────────────────────────────────────────────
         credit = resolved_credits[slide_idx % len(resolved_credits)]
@@ -514,22 +565,31 @@ def render_cinematic_story_video(
     # ── Encode ────────────────────────────────────────────────────────────────
     logger.info(f"  ⚡ Encoding {duration:.0f}s cinematic video @ {fps} FPS...")
     video_clip       = VideoClip(make_frame, duration=duration)
+    orig_remove = os.remove
+    def safe_remove(path):
+        try:
+            orig_remove(path)
+        except Exception:
+            pass
     video_with_audio = video_clip.with_audio(audio_clip)
-    video_with_audio.write_videofile(
-        str(output_video_path),
-        codec="libx264",
-        audio_codec="aac",
-        fps=fps,
-        preset="ultrafast",
-        threads=4,
-        ffmpeg_params=[
-            "-pix_fmt", "yuv420p",
-            "-crf", "20",
-            "-tune", "zerolatency",
-            "-movflags", "+faststart",
-        ],
-        logger=None
-    )
+    os.remove = safe_remove
+    try:
+        video_with_audio.write_videofile(
+            str(output_video_path),
+            codec="libx264",
+            audio_codec="aac",
+            fps=fps,
+            preset="ultrafast",
+            threads=4,
+            ffmpeg_params=[
+                "-pix_fmt", "yuv420p",
+                "-crf", "20",
+                "-movflags", "+faststart",
+            ],
+            logger=None
+        )
+    finally:
+        os.remove = orig_remove
     try:
         audio_clip.close()
     except Exception:

@@ -299,19 +299,7 @@ def render_25d_background(w: int = 1920, h: int = 1080) -> Image.Image:
 
     draw = ImageDraw.Draw(bg)
 
-    # Perspective Grid Lines
-    for gy in range(0, h, 60):
-        draw.line([(0, gy), (w, gy)], fill=(22, 34, 72), width=1)
-
-    for gx in range(0, w, 80):
-        draw.line([(gx, 0), (gx, h)], fill=(16, 26, 56), width=1)
-
-    # Perspective Angled Beams
-    vp_x, vp_y = 960, -200
-    for ang_x in range(-400, w + 500, 160):
-        draw.line([(ang_x, h), (vp_x, vp_y)], fill=(24, 38, 78), width=1)
-
-    # Borders
+    # Clean borders without grid line artifacts
     draw.rectangle([(0, 0), (w, 3)], fill=(8, 14, 30))
     draw.rectangle([(0, h - 3), (w, h)], fill=(2, 4, 10))
 

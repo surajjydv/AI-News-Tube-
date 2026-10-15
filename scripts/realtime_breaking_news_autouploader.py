@@ -33,8 +33,9 @@ OUTPUT_DIR = BASE_DIR / "output"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 from utils.logger import logger
 from utils.json_utils import extract_json_from_llm
-from models.news_models import NewsArticle, MediaAsset
+from models.news_models import NewsArticle
 from services.rss_service import fetch_news
+from services.viral_topic_service import get_top_viral_stories
 from services.visual_asset_manager import VisualAssetManager
 from services.fluent_script_service import generate_fluent_news_script, generate_shorts_news_script
 from services.ai_thumbnail_service import create_real_event_youtube_thumbnail
@@ -139,18 +140,38 @@ def set_next_publish_mode(current_mode: str, last_title: str):
 
 
 def fetch_latest_fresh_breaking_news(max_age_hours: float = 3.0) -> Optional[NewsArticle]:
-    """Fetches high-impact news articles and returns the freshest unposted story."""
+    """
+    Fetches strictly viral topics with >= 1,000,000 views on YouTube India trending
+    or top Google Trends, falling back to fresh breaking news wires if needed.
+    """
+    seen_titles = load_processed_story_hashes()
+
+    # Step A: Query YouTube & Google Trends for Viral Topics (>= 1,000,000 Views)
+    logger.info("🔥 Scanning YouTube India Trending for Viral Topics with >= 1M Views...")
+    try:
+        viral_articles = get_top_viral_stories(min_views=1_000_000, limit=20)
+        unseen_viral = []
+        for a in viral_articles:
+            clean_t = a.title.strip().lower()
+            if not any(clean_t in s or s in clean_t for s in seen_titles):
+                unseen_viral.append(a)
+        if unseen_viral:
+            unseen_viral.sort(key=lambda x: getattr(x, "trending_score", 0.0), reverse=True)
+            chosen = unseen_viral[0]
+            logger.info(f"🚀 Selected Viral Topic (Score: {chosen.trending_score}): '{chosen.title}'")
+            return chosen
+    except Exception as e:
+        logger.warning(f"Viral topic query note: {e}")
+
+    # Step B: Fallback to RSS breaking news wires
     articles = fetch_news()
     if not articles:
         return None
 
-    seen_titles = load_processed_story_hashes()
     unseen_articles = []
-
     for a in articles:
         clean_t = a.title.strip().lower()
-        already_seen = any(clean_t in s or s in clean_t for s in seen_titles)
-        if not already_seen:
+        if not any(clean_t in s or s in clean_t for s in seen_titles):
             unseen_articles.append(a)
 
     if not unseen_articles:
@@ -160,7 +181,6 @@ def fetch_latest_fresh_breaking_news(max_age_hours: float = 3.0) -> Optional[New
     if not unseen_articles:
         return None
 
-    # Sort primarily by trending score (importance) and recency
     unseen_articles.sort(key=lambda x: (getattr(x, "trending_score", 0.0), getattr(x, "published_at", "") or ""), reverse=True)
     return unseen_articles[0]
 
@@ -191,8 +211,8 @@ def process_and_publish_full_video(article: NewsArticle) -> bool:
     story_thumb = OUTPUT_DIR / f"thumb_{story_id}.jpg"
     story_video = VIDEOS_DIR / f"breaking_{story_id}.mp4"
 
-    # Step 1: Resolve 4 Authentic Real Event Press Photos
-    logger.info("📸 Step 1: Retrieving 4 Distinct Authentic On-Ground Press Photographs...")
+    # Step 1: Resolve Minimum 5 Distinct Photographs
+    logger.info("📸 Step 1: Retrieving Minimum 5 Distinct Visual Assets...")
     story_dir = OUTPUT_DIR / f"story_assets_{story_id}"
     assets = VisualAssetManager.get_multi_visual_assets(
         headline=article.title,
@@ -200,37 +220,40 @@ def process_and_publish_full_video(article: NewsArticle) -> bool:
         output_dir=story_dir,
         article_url=article.link,
         direct_image_url=article.image_url,
-        max_photos=4
+        max_photos=5
     )
 
-    # Step 2: Write Deep Investigative Narrative
-    logger.info("📝 Step 2: Writing Deep Investigative Story (Zero Welcome, Pure Detailed Facts)...")
-    full_narr_text, slide_takeaways, broadcast_headline, viral_title, yt_tags = generate_fluent_news_script(
+    # Step 2: Write Deep Investigative Story with Dynamic Per-Slide Headlines
+    logger.info("📝 Step 2: Writing Deep Story with Dynamic Per-Slide Headlines...")
+    script_res = generate_fluent_news_script(
         title=article.title,
         category=article.category,
         context=f"{clean_title}. {clean_summary}",
         article_url=article.link,
         target_minutes=2.5
     )
+    full_narr_text, slide_takeaways, broadcast_headline, viral_title, yt_tags = script_res
+    slide_headlines = getattr(script_res, "slide_headlines", [])
 
-    # Step 3: Synthesize English Neural Voiceover
-    logger.info("🎙️ Step 3: Synthesizing Neural English Voiceover (Andrew Neural)...")
+    # Step 3: Synthesize Neural Voiceover
+    logger.info("🎙️ Step 3: Synthesizing Neural Voiceover...")
     asyncio.run(generate_realtime_narration(full_narr_text, story_audio))
     if not story_audio.exists() or story_audio.stat().st_size < 1000:
         logger.error(f"❌ Failed to generate valid audio file: {story_audio}")
         return False
 
-    # Step 4: Create Real Event Photo YouTube Thumbnail
-    logger.info("🖼️ Step 4: Creating High-CTR Real Event Photo Thumbnail...")
+    # Step 4: Create YouTube-Style Viral 3D Thumbnail (AI visual + 3D extruded typography)
+    logger.info("🖼️ Step 4: Creating Viral YouTube 3D Thumbnail...")
     create_real_event_youtube_thumbnail(
         headline=broadcast_headline,
         category=article.category,
         real_photo_path=assets[0].file_path if assets else None,
-        output_path=story_thumb
+        output_path=story_thumb,
+        use_ai_generation=True
     )
 
-    # Step 5: Render 1080p 2.5D Broadcast Video
-    logger.info("🎬 Step 5: Rendering 1080p 2.5D Animated Broadcast Video...")
+    # Step 5: Render 1080p Video with 3D Headline Graphics changing per slide
+    logger.info("🎬 Step 5: Rendering 1080p Video with 3D Headline Graphics Engine...")
     photo_paths = [a.file_path for a in assets]
     photo_credits = [a.on_screen_credit for a in assets]
 
@@ -238,6 +261,7 @@ def process_and_publish_full_video(article: NewsArticle) -> bool:
         headline=broadcast_headline,
         category=article.category,
         takeaway_points=slide_takeaways,
+        slide_headlines=slide_headlines,
         photo_paths=photo_paths,
         photo_credits=photo_credits,
         audio_path=story_audio,

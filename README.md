@@ -1,38 +1,41 @@
-# AI Social Media & Video Publishing Engine
+# NewsTube
 
-An end-to-end automation platform for news curation, multi-format video production, and scheduled multi-platform publishing (YouTube, Telegram, Twitter/X, Facebook, and Instagram).
+An automated content generation and multi-platform publishing platform that produces high-retention 1080p broadcast stories, vertical shorts, and custom thumbnails from real-time viral topics and breaking news wires.
 
 ## Features
 
-- **Automated News Discovery**: Ingests breaking stories from verified RSS feeds and press wires with semantic deduplication.
-- **Editorial Media Verification**: Filters imagery for quality, resolution, and safe presentation standards.
-- **Neural Voice & Script Engine**: Generates journalistic scripts and natural text-to-speech narration in multiple voices and languages.
-- **Multi-Format Video Rendering**: Builds 1080p landscape documentaries (16:9), TV broadcast bulletins with glassmorphic lower-thirds and live news tickers, and vertical shorts/reels (9:16) via an optimized FFmpeg pipeline.
-- **Cross-Platform Distribution**: Automated and manual publishing pipelines for YouTube (VOD & Shorts), Telegram channels, Twitter/X, Facebook Pages, and Instagram.
-- **Centralized Control Studio**: Browser-based dashboard (FastAPI) for one-click publishing, channel switching, scheduling, platform credential management, and live log streaming.
-- **Configurable Scheduling**: Supports custom posting intervals (1h, 3h, 6h) and quiet hours (e.g., 12:00 AM - 06:00 AM IST).
+- **Viral Topic Discovery Engine**: Continuously tracks YouTube Trending (India) for videos with $\ge$ 1M views and cross-references with Google Trends traffic velocity.
+- **Dynamic 3D Headline Engine**: Multi-layered metallic bevel slabs with 3D text extrusion and per-slide headline transitions that refresh context on every scene.
+- **AI-Powered 3D Thumbnails**: High-CTR YouTube packaging with photorealistic scene generation (Gemini Imagen, OpenAI DALL-E, Pollinations Flux.1) and bold 3D extruded typography.
+- **Multi-Scene Visuals**: Resolves a minimum of 5 distinct high-resolution editorial press and event photographs per production.
+- **Neural Hindi & English Narration**: Fluent journalistic scripts synthesized via Edge-TTS neural voices without robotic intros or filler labels.
+- **Multi-Format Video Rendering**: 1080p landscape broadcasts (16:9) with Ken Burns motion, data callouts, and running tickers, plus vertical shorts (9:16) via hardware-optimized FFmpeg.
+- **Multi-Platform Distribution**: Automated publishing pipelines for YouTube Data API v3, Telegram channels, Twitter/X, Facebook Pages, and Instagram.
+- **Web Management Studio**: FastAPI dashboard with white ivory theme for manual video triggering, schedule management, and live logs.
 
 ## Architecture
 
 ```
-[News Feeds & Press Wires]
-         │
-         ▼
-[Content Curation & Verification]
-         │
-         ▼
-[Script Generation & Neural TTS]
-         │
-         ▼
-[FFmpeg Video Synthesis (16:9 / 9:16)]
-         │
-         ▼
-[Multi-Platform Publishing Engine]
- ├── YouTube (API v3 / OAuth2)
- ├── Telegram (Bot API)
- ├── Twitter / X (v2 API)
- ├── Facebook (Graph API)
- └── Instagram (Content Publishing API)
+[YouTube Trending (1M+ Views) & Google Trends]
+                     │
+                     ▼
+          [Viral Topic Discovery]
+                     │
+                     ▼
+  [Deep Research & Multi-Scene Press Visuals (5+ Images)]
+                     │
+                     ▼
+    [Fluent Journalistic Narration & Neural TTS]
+                     │
+                     ▼
+  [FFmpeg 1080p Synthesis & Dynamic 3D Headline Plates]
+                     │
+                     ▼
+    [High-CTR 3D AI Thumbnail & Metadata Packaging]
+                     │
+                     ▼
+        [Multi-Platform Publishing]
+   (YouTube VOD / Shorts, Telegram, X, Meta)
 ```
 
 ## Setup
@@ -40,7 +43,7 @@ An end-to-end automation platform for news curation, multi-format video producti
 ### Prerequisites
 
 - Python 3.10+
-- FFmpeg installed and available in system `PATH`
+- FFmpeg installed and configured in system `PATH`
 
 ### Installation
 
@@ -48,24 +51,25 @@ An end-to-end automation platform for news curation, multi-format video producti
 git clone https://github.com/your-org/AI-NewsTube.git
 cd AI-NewsTube
 python -m venv venv
-source venv/bin/activate  # Windows: .\venv\Scripts\activate
+# Linux / macOS:
+source venv/bin/activate
+# Windows:
+.\venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### Environment Configuration
+### Configuration
 
-Create a `.env` file in the root directory:
+Create a `.env` file in the project root:
 
 ```env
-GROQ_API_KEY=your_groq_api_key
 CHANNEL_NAME="SRJ UNDERRATED"
+GROQ_API_KEY=your_groq_api_key
 DEFAULT_TTS_VOICE="hi-IN-MadhurNeural"
 PORT=80
 ```
 
-To configure platform credentials (Telegram, Twitter/X, Facebook, Instagram), add them via the **Platforms** tab in the Web Studio or update `data/platforms.json`.
-
-For YouTube publishing, place your `client_secret.json` in the root folder and authenticate:
+For YouTube video uploads, place `client_secret.json` in the root directory and run authentication:
 
 ```bash
 python auth_youtube.py
@@ -73,27 +77,27 @@ python auth_youtube.py
 
 ## Usage
 
-### Web Control Studio
+### Web Studio Dashboard
 
-Start the dashboard:
+Run the management interface:
 
 ```bash
 python app.py
 ```
 
-Access the UI at `http://localhost/` (or your server's public IP).
+Open `http://localhost/` in any browser.
 
 ### Autonomous Publishing Daemon
 
-Launch the autonomous background publisher:
+Run the continuous 24/7 autonomous publisher:
 
 ```bash
-python scripts/trending_documentary_autopublisher.py
+python scripts/realtime_breaking_news_autouploader.py
 ```
 
-### Manual CLI Publishing
+### Single Story Generation
 
-Generate and publish a video for a single topic:
+Generate a standalone video for a specific topic:
 
 ```bash
 python test_generate_one_video.py --topic "Your Topic or Headline Here"
@@ -101,14 +105,14 @@ python test_generate_one_video.py --topic "Your Topic or Headline Here"
 
 ## Deployment
 
-### Linux / AWS EC2 (systemd or tmux)
+### Linux / AWS EC2 (tmux)
 
 ```bash
 # Web Dashboard
 tmux new-session -d -s studio_app 'sudo PYTHONPATH=. python3 -m uvicorn app:app --host 0.0.0.0 --port 80'
 
-# Autonomous Publishing Daemon
-tmux new-session -d -s autopublisher 'python3 -u scripts/trending_documentary_autopublisher.py >> logs/publisher.log 2>&1'
+# Auto-Publisher Daemon
+tmux new-session -d -s autopublisher 'python3 -u scripts/realtime_breaking_news_autouploader.py >> logs/publisher.log 2>&1'
 ```
 
 ### Docker
@@ -119,4 +123,4 @@ docker compose up -d --build
 
 ## License
 
-MIT License.
+MIT

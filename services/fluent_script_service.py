@@ -17,7 +17,10 @@ if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
 import requests
-from bs4 import BeautifulSoup
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    BeautifulSoup = None
 from services.groq_service import generate_text
 from utils.json_utils import extract_json_from_llm
 from utils.font_utils import sanitize_text
@@ -94,20 +97,38 @@ def clean_news_headline(title: str) -> str:
     return cleaned
 
 
+class FluentScriptResult(tuple):
+    """
+    Backwards-compatible tuple that unpacks as 5 elements:
+    (full_narration, slide_takeaways, broadcast_headline, viral_youtube_title, youtube_tags)
+    while exposing .slide_headlines for dynamic per-slide 3D headlines.
+    """
+    def __new__(cls, full_narration, slide_takeaways, broadcast_headline, viral_youtube_title, youtube_tags, slide_headlines=None):
+        return super().__new__(cls, (full_narration, slide_takeaways, broadcast_headline, viral_youtube_title, youtube_tags))
+
+    def __init__(self, full_narration, slide_takeaways, broadcast_headline, viral_youtube_title, youtube_tags, slide_headlines=None):
+        self.full_narration = full_narration
+        self.slide_takeaways = slide_takeaways
+        self.broadcast_headline = broadcast_headline
+        self.viral_youtube_title = viral_youtube_title
+        self.youtube_tags = youtube_tags
+        self.slide_headlines = slide_headlines or []
+
+
 def determine_dynamic_story_duration(article_text: str, context: str = "") -> Tuple[float, int, int, int]:
     """
-    Computes optimal broadcast video duration dynamically (minimum 2.5 minutes):
-    - Deep article (>= 500 words) -> 4.5 min (550-750 words, 5 slides)
-    - Comprehensive news (200-500 words) -> 3.0 min (380-500 words, 4 slides)
-    - Standard breaking story (< 200 words) -> 2.5 min (300-400 words, 4 slides)
+    Computes optimal broadcast video duration dynamically (minimum 5 slides):
+    - Deep article (>= 500 words) -> 4.5 min (550-750 words, 5-6 slides)
+    - Comprehensive news (200-500 words) -> 3.0 min (380-500 words, 5 slides)
+    - Standard breaking story (< 200 words) -> 2.5 min (300-400 words, 5 slides)
     """
     total_raw_words = len(article_text.split()) + len(context.split())
     if total_raw_words >= 500:
-        return 4.5, 550, 750, 5
+        return 4.5, 550, 750, 6
     elif total_raw_words >= 200:
-        return 3.0, 380, 500, 4
+        return 3.0, 380, 500, 5
     else:
-        return 2.5, 300, 400, 4
+        return 2.5, 300, 400, 5
 
 
 def generate_fluent_news_script(
@@ -181,14 +202,22 @@ def generate_fluent_news_script(
             f"6. भाषा: शुद्ध, प्रवाहपूर्ण हिंदी (देवनागरी)। स्पष्ट, अधिकारपूर्ण लहजा।\n"
             f"7. आउटपुट: केवल valid JSON object:\n"
             f"{{\n"
-            f'  "viral_youtube_title": "(High-CTR ENGLISH YouTube title with emojis — dramatic, max 70 chars)",\n'
-            f'  "broadcast_headline": "(Clean punchy ENGLISH on-screen headline, max 7 words)",\n'
+            f'  "viral_youtube_title": "(High-CTR YouTube title with emojis — dramatic, max 70 chars)",\n'
+            f'  "broadcast_headline": "(Clean punchy on-screen master headline, max 7 words)",\n'
             f'  "full_narration": "(पूरी {word_min}-{word_max} शब्दों की हिंदी एंकर स्क्रिप्ट, सीधे तथ्य से शुरू)",\n'
+            f'  "slide_headlines": [\n'
+            f'    "(Slide 1 Hook: High-impact punchy breaking headline, max 6-8 words)",\n'
+            f'    "(Slide 2 Ground Reality: Key update headline, max 6-8 words)",\n'
+            f'    "(Slide 3 Evidence: Shocking revelation/statement headline, max 6-8 words)",\n'
+            f'    "(Slide 4 Public Impact: Direct consequence headline, max 6-8 words)",\n'
+            f'    "(Slide 5 Future Action: Government move / next step headline, max 6-8 words)"\n'
+            f'  ],\n'
             f'  "slide_takeaways": [\n'
-            f'    "(Slide 1: ENGLISH — core fact with specific number/date, 10-14 words)",\n'
-            f'    "(Slide 2: ENGLISH — historical background and evidence, 10-14 words)",\n'
-            f'    "(Slide 3: ENGLISH — official statement and investigation, 10-14 words)",\n'
-            f'    "(Slide 4: ENGLISH — broader impact and next steps, 10-14 words)"\n'
+            f'    "(Slide 1 detail: core fact with specific number/date, 10-14 words)",\n'
+            f'    "(Slide 2 detail: historical background and evidence, 10-14 words)",\n'
+            f'    "(Slide 3 detail: official statement and investigation, 10-14 words)",\n'
+            f'    "(Slide 4 detail: broader impact and consequences, 10-14 words)",\n'
+            f'    "(Slide 5 detail: next steps and future timeline, 10-14 words)"\n'
             f'  ],\n'
             f'  "youtube_tags": ["BreakingNews", "HindiNews", "LatestNews", "LiveReport", "{category}"]\n'
             f"}}" 
@@ -226,24 +255,43 @@ def generate_fluent_news_script(
                     cleaned_takeaways = [
                         f"Core Development: {b_head}",
                         "Ground Situation: Investigation and response teams deployed",
-                        "Official Position: High-level review and inquiry underway",
-                        "Strategic Impact: Authorities monitoring emerging developments"
+                        "Key Revelations: Official agencies review crucial evidence",
+                        "Public Impact: Authorities assess community consequences",
+                        "Strategic Outlook: Continuous monitoring and next directives"
                     ]
 
+                raw_s_heads = data.get("slide_headlines", [])
+                if isinstance(raw_s_heads, list) and len(raw_s_heads) >= 3:
+                    cleaned_s_heads = [clean_greetings_and_labels(str(h)) for h in raw_s_heads
+                                       if len(str(h).strip()) > 3][:num_slides]
+                else:
+                    cleaned_s_heads = [
+                        b_head,
+                        f"Ground Update: {b_head[:40]}",
+                        "Key Evidence & Revelations",
+                        "Public Impact & Reaction",
+                        "Government Move & What Next"
+                    ]
+
+                # Ensure minimum 5 items
+                while len(cleaned_takeaways) < 5:
+                    cleaned_takeaways.append(f"Ongoing Briefing: Monitoring live updates")
+                while len(cleaned_s_heads) < 5:
+                    cleaned_s_heads.append(f"Latest Update: {b_head[:35]}")
+
                 if len(cleaned_narr.split()) >= 80:
-                    # ── Fact density check ────────────────────────────────────
                     density_score, density_issues = DeepResearchService.score_fact_density(cleaned_narr)
                     if density_score < 0.45 and attempt == 0:
                         logger.warning(
                             f"  ⚠️ Script fact density low ({density_score:.2f}): {density_issues}. "
                             f"Retrying with strict mode..."
                         )
-                        continue  # Retry with strict=True
+                        continue
                     logger.info(
                         f"  ✅ Hindi Script: {len(cleaned_narr.split())} words, "
                         f"{len(cleaned_takeaways)} slides, density={density_score:.2f}"
                     )
-                    return cleaned_narr, cleaned_takeaways, b_head, v_title, yt_tags
+                    return FluentScriptResult(cleaned_narr, cleaned_takeaways, b_head, v_title, yt_tags, slide_headlines=cleaned_s_heads)
         except Exception as e:
             logger.warning(f"  Hindi script LLM note (attempt {attempt+1}): {e}")
 
@@ -258,12 +306,27 @@ def generate_fluent_news_script(
     fallback_takeaways = [
         f"Key Development: {primary_clause[:60]}",
         "Ground Response: Emergency and investigative teams actively deployed",
-        "Official Stance: Multi-agency coordination and review in progress",
+        "Key Evidence: Document audit and ground verification initiated",
+        "Public Impact: Multi-agency coordination and citizen advisories issued",
         "Current Outlook: Continuous monitoring as detailed briefings emerge"
+    ]
+    fallback_s_heads = [
+        primary_clause[:60],
+        "Ground Situation & Investigation",
+        "Evidence Traced & Statements",
+        "Impact Across Sectors",
+        "Next Steps & High-Level Directives"
     ]
     fallback_title = f"{primary_clause[:65]} 🔴 Breaking News & Analysis"
     fallback_tags = ["BreakingNews", "HindiNews", "ताजा खबर", category]
-    return clean_greetings_and_labels(fallback_narr), fallback_takeaways, primary_clause, fallback_title, fallback_tags
+    return FluentScriptResult(
+        clean_greetings_and_labels(fallback_narr),
+        fallback_takeaways,
+        primary_clause,
+        fallback_title,
+        fallback_tags,
+        slide_headlines=fallback_s_heads
+    )
 
 
 def generate_shorts_news_script(

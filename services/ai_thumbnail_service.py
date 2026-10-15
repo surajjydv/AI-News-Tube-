@@ -1,3 +1,11 @@
+"""
+services/ai_thumbnail_service.py
+================================
+AI-Powered High-CTR YouTube Thumbnail Generator.
+Integrates Gemini Imagen, OpenAI DALL-E 3, and Pollinations Flux.1 with
+3D extruded typography, high-contrast visual grading, and viral YouTube packaging.
+"""
+
 import os
 import sys
 import time
@@ -5,7 +13,7 @@ import urllib.parse
 import requests
 from pathlib import Path
 from typing import Optional, Tuple, List
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter, ImageEnhance
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 if str(BASE_DIR) not in sys.path:
@@ -22,38 +30,36 @@ def generate_ai_thumbnail_prompt(headline: str, category: str, summary: str = ""
 
     clean_hl = sanitize_text(headline)
     prompt = (
-        f"You are an expert TV news thumbnail director and AI visual prompt engineer.\n"
-        f"Headline: '{clean_hl}'\n"
-        f"Category: {category}\n\n"
-        f"Write a highly detailed, dramatic, photorealistic image prompt (in English) suitable for an AI image generator (like Flux / Imagen / DALL-E 3) "
-        f"to create a compelling news thumbnail background for this exact news event.\n\n"
-        f"Rules:\n"
-        f"- Describe the main subject, setting, dramatic lighting, expressive atmosphere, and documentary news photo style.\n"
-        f"- Include keywords: cinematic lighting, 8k uhd, editorial press photography, dramatic news visual, sharp focus.\n"
-        f"- Avoid text in the image (text will be added in overlay).\n"
-        f"- Keep the prompt under 45 words.\n"
-        f"- Return ONLY the prompt text without any introductory commentary or quotes."
+        f"You are an expert YouTube thumbnail designer and cinematic prompt engineer.\n"
+        f"HEADLINE: '{clean_hl}'\n"
+        f"CATEGORY: {category}\n\n"
+        f"Write a hyper-dramatic, photorealistic 16:9 image prompt in English for Flux / Midjourney / Imagen.\n"
+        f"Include: central dramatic subject with intense expression or high-stakes event, split cinematic rim lighting, "
+        f"hyper-detailed background, 8k resolution, editorial realism, photorealistic depth of field.\n"
+        f"Do NOT include any text, letters, logos, or watermarks in the prompt.\n"
+        f"Keep the prompt under 40 words.\n"
+        f"Return ONLY the prompt string."
     )
     try:
-        res = generate_text(prompt, temperature=0.25)
+        res = generate_text(prompt, temperature=0.3)
         res_clean = res.strip().strip('"').strip("'")
         if len(res_clean) > 20:
             return res_clean
     except Exception as e:
         logger.warning(f"AI Prompt generation note: {e}")
 
-    return f"Cinematic dramatic editorial press photo of {clean_hl}, {category} news event, dramatic studio lighting, 8k resolution, documentary photojournalism"
+    return f"Dramatic cinematic news scene of {clean_hl}, high contrast lighting, photorealistic 8k documentary visual, cinematic atmosphere"
 
 
 def fetch_ai_image_gemini(prompt: str, output_path: Path) -> bool:
     """Generates image using Google Gemini Imagen API if GEMINI_API_KEY is available."""
-    api_key = os.getenv("GEMINI_API_KEY")
+    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     if not api_key:
         return False
     try:
         from google import genai
         client = genai.Client(api_key=api_key)
-        logger.info("  🎨 Generating image via Google Gemini Imagen 3...")
+        logger.info("  🎨 Generating image via Google Gemini Imagen...")
         result = client.models.generate_images(
             model="imagen-3.0-generate-002",
             prompt=prompt,
@@ -86,7 +92,7 @@ def fetch_ai_image_openai(prompt: str, output_path: Path) -> bool:
         )
         img_url = response.data[0].url
         if img_url:
-            r = requests.get(img_url, timeout=20)
+            r = requests.get(img_url, timeout=25)
             if r.status_code == 200:
                 output_path.write_bytes(r.content)
                 logger.info("  ✅ OpenAI DALL-E 3 generation succeeded!")
@@ -99,20 +105,21 @@ def fetch_ai_image_openai(prompt: str, output_path: Path) -> bool:
 def fetch_ai_image_flux(prompt: str, output_path: Path) -> bool:
     """Generates photorealistic 16:9 image using Flux.1 engine via Pollinations AI (Zero-config, high-speed)."""
     try:
-        logger.info(f"  🎨 Generating photorealistic image via Flux.1 (Pollinations AI)...")
+        logger.info(f"  🎨 Generating photorealistic visual via Flux.1...")
         logger.info(f"     Prompt: '{prompt[:90]}...'")
         encoded = urllib.parse.quote(prompt)
-        url = f"https://image.pollinations.ai/prompt/{encoded}?width=1280&height=720&model=flux&nologo=true&seed={int(time.time()) % 10000}"
-        r = requests.get(url, timeout=35)
+        seed = int(time.time() * 1000) % 999999
+        url = f"https://image.pollinations.ai/prompt/{encoded}?width=1280&height=720&model=flux&nologo=true&seed={seed}"
+        r = requests.get(url, timeout=30)
         if r.status_code == 200 and len(r.content) > 10000:
             output_path.write_bytes(r.content)
-            logger.info("  ✅ Flux.1 AI Image Generation succeeded!")
+            logger.info(f"  ✅ Flux.1 AI Image Generation succeeded! ({len(r.content)} bytes)")
             return True
         else:
             logger.warning(f"  Flux.1 generation returned HTTP {r.status_code}")
     except Exception as e:
         logger.warning(f"  Flux.1 generation error: {e}")
-from PIL import ImageEnhance
+    return False
 
 
 def generate_short_thumbnail_headline(title: str, category: str = "General") -> Tuple[str, str]:
@@ -127,15 +134,15 @@ def generate_short_thumbnail_headline(title: str, category: str = "General") -> 
     try:
         from services.groq_service import generate_text
         prompt = (
-            f"You are the head of YouTube packaging for a top Hindi news channel (Aaj Tak / ABP News).\n"
+            f"You are the top YouTube packaging expert for a viral Hindi news/analysis channel.\n"
             f"ARTICLE TITLE: '{clean}'\n"
             f"CATEGORY: {category}\n\n"
             f"Create a high-CTR 2-line YouTube thumbnail text in HINDI (Devanagari script, max 3-4 words per line).\n"
-            f"Line 1 MUST be a dramatic high-stakes hook (e.g. '20 सांसद बाहर?', 'भीषण तबाही!', 'संसद में भूचाल!').\n"
-            f"Line 2 MUST be the key subject/entity (e.g. 'बड़ा फैसला', 'महुआ मोइत्रा का दावा', 'सैकड़ों लापता').\n\n"
+            f"Line 1 MUST be a shocking high-stakes hook (e.g. 'बड़ा धमाका!', 'देश में हड़कंप!', '20 सांसद सस्पेंड?').\n"
+            f"Line 2 MUST be the specific entity or action (e.g. 'सीबीआई का छापा', 'संसद में बवाल', 'पूरी सच्चाई').\n\n"
             f"Respond ONLY with a JSON list of two strings: [\"LINE_1\", \"LINE_2\"]"
         )
-        res = generate_text(prompt, temperature=0.2, max_tokens=60)
+        res = generate_text(prompt, temperature=0.25, max_tokens=60)
         from utils.json_utils import extract_json_from_llm
         lines = extract_json_from_llm(res)
         if isinstance(lines, list) and len(lines) >= 2:
@@ -154,35 +161,89 @@ def generate_short_thumbnail_headline(title: str, category: str = "General") -> 
     return l1, l2
 
 
+def draw_3d_text_extrusion(
+    canvas: Image.Image,
+    pos: Tuple[int, int],
+    text: str,
+    font_size: int,
+    text_color: Tuple[int, int, int],
+    depth: int = 7,
+    angle_dx: int = 2,
+    angle_dy: int = 3
+):
+    """Draws massive 3D extruded text with depth bevel layers and outer drop shadow."""
+    x, y = pos
+
+    # Outer soft drop shadow
+    shadow_layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    for s_step in range(1, 4):
+        draw_shaped_text(shadow_layer, (x + s_step * angle_dx + 3, y + s_step * angle_dy + 3),
+                         text, font_size=font_size, bold=True, text_color=(0, 0, 0, 160))
+    shadow_layer = shadow_layer.filter(ImageFilter.GaussianBlur(radius=5))
+    canvas.paste(shadow_layer, (0, 0), shadow_layer)
+
+    # 3D Depth Extrusion Layers (from dark rear to mid front)
+    for step in range(depth, 0, -1):
+        ratio = step / float(depth)
+        ext_r = int(text_color[0] * 0.15 + (1 - ratio) * 25)
+        ext_g = int(text_color[1] * 0.15 + (1 - ratio) * 25)
+        ext_b = int(text_color[2] * 0.15 + (1 - ratio) * 25)
+        draw_shaped_text(canvas, (x + step * angle_dx, y + step * angle_dy),
+                         text, font_size=font_size, bold=True, text_color=(ext_r, ext_g, ext_b))
+
+    # Crisp black outline boundary for mobile readability
+    for ox in range(-3, 4):
+        for oy in range(-3, 4):
+            if ox * ox + oy * oy <= 9:
+                draw_shaped_text(canvas, (x + ox, y + oy),
+                                 text, font_size=font_size, bold=True, text_color=(0, 0, 0))
+
+    # Front face of text
+    draw_shaped_text(canvas, (x, y), text, font_size=font_size, bold=True, text_color=text_color)
+
+
 def create_real_event_youtube_thumbnail(
     headline: str,
     category: str = "General",
-    real_photo_path: str = "",
-    output_path: Optional[Path] = None
+    real_photo_path: Optional[str] = None,
+    output_path: Optional[Path] = None,
+    use_ai_generation: bool = True
 ) -> Path:
     """
-    Cinematic Dark YouTube Thumbnail (1280x720):
-    1. Full-frame photo with deep cinematic colour grading (dark, high-contrast).
-    2. Full-frame multi-stop gradient: black vignette all edges + heavy bottom.
-    3. Subtle teal/blue left-edge glow for depth.
-    4. Top-left red LIVE pill badge.
-    5. Two-line glowing Hindi headline:
-       - Line 1: Electric Gold with outer glow halo
-       - Line 2: Pure White with subtle glow
-    No channel name / logo.
+    YouTube-Style Viral 3D Thumbnail (1280x720):
+    1. AI Generation (Gemini Imagen -> OpenAI -> Pollinations Flux.1) or Real Event Photo.
+    2. Vibrant color grade (enhanced contrast, clarity, sharpness).
+    3. Multi-layer 3D extruded typography (Electric Yellow #FFE500 + Crisp White #FFFFFF).
+    4. YouTube attention pill badge (RED / GOLD).
     """
-    from PIL import ImageFilter, ImageChops
     THUMBNAILS_DIR.mkdir(parents=True, exist_ok=True)
     if not output_path:
         ts = int(time.time())
-        output_path = THUMBNAILS_DIR / f"thumb_clean_{ts}.jpg"
+        output_path = THUMBNAILS_DIR / f"thumb_{ts}.jpg"
     else:
         output_path = Path(output_path)
 
     w, h = 1280, 720
-    canvas = Image.new("RGBA", (w, h), (5, 8, 18, 255))
+    canvas = Image.new("RGBA", (w, h), (10, 14, 25, 255))
 
-    # ── 1. Photo with cinematic grade ──────────────────────────────────────
+    bg_loaded = False
+    temp_ai_bg = output_path.parent / f"ai_bg_{int(time.time())}.jpg"
+
+    # Option A: Try AI-generated viral thumbnail visual if requested
+    if use_ai_generation:
+        try:
+            prompt = generate_ai_thumbnail_prompt(headline, category)
+            # Try Gemini -> OpenAI -> Flux
+            if fetch_ai_image_gemini(prompt, temp_ai_bg) or \
+               fetch_ai_image_openai(prompt, temp_ai_bg) or \
+               fetch_ai_image_flux(prompt, temp_ai_bg):
+                if temp_ai_bg.exists() and temp_ai_bg.stat().st_size > 5000:
+                    real_photo_path = str(temp_ai_bg)
+                    logger.info(f"🖼️ [Thumbnail Engine] Using AI-generated visual background for thumbnail.")
+        except Exception as e:
+            logger.warning(f"AI thumbnail background note: {e}")
+
+    # Option B: Load Photo (AI visual or on-ground press photo)
     if real_photo_path and os.path.exists(str(real_photo_path)):
         try:
             raw_p = Image.open(real_photo_path).convert("RGBA")
@@ -194,70 +255,88 @@ def create_real_event_youtube_thumbnail(
             cropped_p = scaled_p.crop((cx, cy, cx + w, cy + h))
 
             rgb_p = cropped_p.convert("RGB")
-            # Enhance photo clarity and vibrant natural color (NO darkening)
-            rgb_p = ImageEnhance.Contrast(rgb_p).enhance(1.08)
-            rgb_p = ImageEnhance.Color(rgb_p).enhance(1.06)
-            rgb_p = ImageEnhance.Sharpness(rgb_p).enhance(1.30)
+            # Enhance photo vibrancy (YouTube CTR style)
+            rgb_p = ImageEnhance.Contrast(rgb_p).enhance(1.15)
+            rgb_p = ImageEnhance.Color(rgb_p).enhance(1.20)
+            rgb_p = ImageEnhance.Sharpness(rgb_p).enhance(1.35)
             canvas.paste(rgb_p.convert("RGBA"), (0, 0))
+            bg_loaded = True
         except Exception as e:
-            logger.warning(f"  Could not load photo for thumbnail: {e}")
+            logger.warning(f"Could not load background image for thumbnail: {e}")
 
-    # ── 2. Subtle Lower-Third Gradient Only (Behind headline text only) ─────────
-    # Zero shadow over top 65% — preserves 100% natural lighting, face details, and background
+    # Clean up temp AI background file
+    if temp_ai_bg.exists():
+        try:
+            temp_ai_bg.unlink()
+        except Exception:
+            pass
+
+    # ── Lower-Third Gradient for Headline Contrast ──
     grad_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     gd = ImageDraw.Draw(grad_layer)
-    y_start = int(h * 0.58)
+    y_start = int(h * 0.52)
     for y in range(y_start, h):
         factor = (y - y_start) / float(h - y_start)
-        alpha = int(185 * (factor ** 1.6))
+        alpha = int(210 * (factor ** 1.4))
         gd.line([(0, y), (w, y)], fill=(0, 0, 0, alpha))
     canvas = Image.alpha_composite(canvas, grad_layer)
 
-    # ── 3. LIVE Alert Badge (top-left) ───────────────────────────────────────
+    # ── YouTube Attention Pill Badge (Top-Left) ──
     badge_draw = ImageDraw.Draw(canvas)
-    bx, by, bw, bh_px = 44, 38, 220, 42
-    # Badge shadow
+    bx, by, bw, bh_px = 44, 38, 230, 44
+    # 3D shadow for badge
     badge_draw.rounded_rectangle(
-        [(bx + 2, by + 2), (bx + bw + 2, by + bh_px + 2)],
-        radius=7, fill=(0, 0, 0, 140)
+        [(bx + 3, by + 3), (bx + bw + 3, by + bh_px + 3)],
+        radius=8, fill=(0, 0, 0, 180)
     )
-    # Badge fill
+    # Red gradient badge
     badge_draw.rounded_rectangle(
         [(bx, by), (bx + bw, by + bh_px)],
-        radius=7, fill=(210, 15, 35, 250),
-        outline=(255, 80, 80, 200), width=2
+        radius=8, fill=(225, 20, 35, 255),
+        outline=(255, 100, 100, 220), width=2
     )
-    draw_shaped_text(canvas, (bx + 14, by + 8), "SRJ UNDERRATED", font_size=22, bold=True, text_color=(255, 255, 255))
+    badge_text = "🔴 LIVE EXCLUSIVE"
+    draw_shaped_text(canvas, (bx + 16, by + 9), badge_text, font_size=21, bold=True, text_color=(255, 255, 255))
 
-    # ── 4. Two-line glowing headline with crisp outline ──────────────────────
+    # ── 3D Extruded Two-Line Headline ──
     line1, line2 = generate_short_thumbnail_headline(headline, category)
 
-    font_sz_l1 = 68 if len(line1) > 16 else 78
-    font_sz_l2 = 58 if len(line2) > 20 else 66
+    font_sz_l1 = 70 if len(line1) > 16 else 80
+    font_sz_l2 = 60 if len(line2) > 20 else 68
 
-    y_l1 = int(h * 0.65)
-    y_l2 = int(h * 0.81)
+    y_l1 = int(h * 0.64)
+    y_l2 = int(h * 0.80)
     x_txt = 48
 
-    # Crisp multi-directional 360-degree black stroke/shadow for 100% legibility
-    for dx in range(-4, 5):
-        for dy in range(-4, 5):
-            if dx * dx + dy * dy <= 16:
-                draw_shaped_text(canvas, (x_txt + dx, y_l1 + dy), line1, font_size=font_sz_l1, bold=True, text_color=(0, 0, 0))
-                draw_shaped_text(canvas, (x_txt + dx, y_l2 + dy), line2, font_size=font_sz_l2, bold=True, text_color=(0, 0, 0))
+    # Line 1: Electric Yellow with 3D Depth Extrusion
+    draw_3d_text_extrusion(
+        canvas=canvas,
+        pos=(x_txt, y_l1),
+        text=line1,
+        font_size=font_sz_l1,
+        text_color=(255, 230, 0),
+        depth=8,
+        angle_dx=2,
+        angle_dy=3
+    )
 
-    # Line 1 main — Electric Gold
-    draw_shaped_text(canvas, (x_txt, y_l1), line1, font_size=font_sz_l1, bold=True, text_color=(255, 225, 0))
-
-    # Line 2 main — Pure White
-    draw_shaped_text(canvas, (x_txt, y_l2), line2, font_size=font_sz_l2, bold=True, text_color=(255, 255, 255))
+    # Line 2: Crisp White with 3D Depth Extrusion
+    draw_3d_text_extrusion(
+        canvas=canvas,
+        pos=(x_txt, y_l2),
+        text=line2,
+        font_size=font_sz_l2,
+        text_color=(255, 255, 255),
+        depth=7,
+        angle_dx=2,
+        angle_dy=3
+    )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     canvas.convert("RGB").save(str(output_path), "JPEG", quality=96)
-    logger.info(f"✅ [Clean Bright Thumbnail] Created: {output_path.name}")
+    logger.info(f"✅ [Viral YouTube 3D Thumbnail] Created: {output_path.name}")
     return output_path
 
 
-# Backward compatibility alias
+# Backward compatibility aliases
 create_ai_youtube_thumbnail = create_real_event_youtube_thumbnail
-

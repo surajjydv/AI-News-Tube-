@@ -33,7 +33,13 @@ frame_*.jpg
 *.tar.gz
 *.tmp
 *.tmp.mp4
-
+test_*.jpg
+test_*.mp4
+scratch/
+scratch_*.py
+static/*.jpg
+static/*.mp4
+static/*.mp3
 
 neon-storage.env
 *.db
@@ -44,3 +50,4 @@ output/
 tools/
 *.zip
 *.gz
+

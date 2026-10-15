@@ -80,7 +80,20 @@ class VisualAssetManager:
                 matched.add(stem_art[p_stem])
 
         matched_list = sorted(list(matched))
-        is_verified = len(matched_list) >= min_words
+        # Adaptive threshold:
+        # 1. Direct entity containment in metadata: immediate match (e.g., "Ranbir Kapoor" in "File:Ranbir Kapoor.jpg")
+        # 2. For single-token entity searches (e.g., "Yash", "Ramayana"): 1 match is sufficient
+        # 3. For multi-word entity or short queries: min(min_words, max(1, len(article_tokens) // 2))
+        clean_art = article_text.strip().lower()
+        clean_meta = photo_metadata.strip().lower()
+        if len(clean_art) >= 3 and clean_art in clean_meta:
+            is_verified = True
+        elif len(article_tokens) == 1:
+            is_verified = len(matched_list) >= 1
+        else:
+            required = min(min_words, 2)
+            is_verified = len(matched_list) >= required
+
         return is_verified, len(matched_list), matched_list
 
     @classmethod
@@ -220,14 +233,15 @@ class VisualAssetManager:
         article_url: Optional[str] = None,
         direct_image_url: Optional[str] = None,
         context: str = "",
-        max_photos: int = 4
+        max_photos: int = 5
     ) -> List[MediaAsset]:
         """
-        Retrieves 3-4 distinct authentic real event photographs for a single news story:
+        Retrieves minimum 5 distinct authentic photographs for a single news story:
         1. Lead Event Press Photo (from RSS wire, article og:image, or primary event topic)
         2. Specific Event Scene / Subject Photo (e.g. Rocket launch, Courtroom, Stadium, Flood site)
         3. Key Organization / Location / Institutional Visual (e.g. SpaceX, Supreme Court, ISRO)
         4. Context / Secondary Topic Visual
+        5. Ground Impact / Reaction Visual
         """
         output_dir.mkdir(parents=True, exist_ok=True)
         assets: List[MediaAsset] = []
