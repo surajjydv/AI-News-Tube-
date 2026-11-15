@@ -223,3 +223,10 @@
   - Eliminated fallback croissant assets in `store.ts`.
   - Rebuilt `PromptStudio.tsx` with 16:9 / 9:16 / 4:5 / 1:1 aspect ratio selectors, broadcast format toggles, and real news/cricket prompt ideas.
   - Verified with live test ("today cricket match virat kohli"): successfully downloaded official Wikipedia photo of Virat Kohli, synthesized neural Hindi audio, and rendered 1080p video reel (`reel_1794779393.mp4`).
+
+- **1-Click 24/7 Continuous Live Stream Engine & Video Rotation Desk**:
+  - Implemented `services/live_stream_manager.py` to manage background execution of `scripts/continuous_live_stream.py` with PID tracking, process-tree termination (cleaning up child FFmpeg processes), and status monitoring.
+  - Added FastAPI endpoints in `app.py`: `GET /api/live/status`, `POST /api/live/start`, and `POST /api/live/stop`.
+  - Added 1-click **Start 24/7 Live Stream** and **Stop Live Stream** controls with live status pill and uptime counter to `YouTubeStudio.tsx` in both `frontend/` and `AI-NewsTube/frontend/`.
+  - Audited channel uploads and recent background production: verified 105 channel videos on `SRJ UNDERRATED` with active 15-minute background autopublisher (`task-853`) rendering fresh 1080p breaking news and vertical shorts with verified editorial photography.
+  - Rewrote and humanized `README.md` for clean, professional public-GitHub presentation.

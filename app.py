@@ -767,6 +767,29 @@ async def get_real_youtube_stream():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+from services.live_stream_manager import live_stream_manager
+
+@app.get("/api/live/status")
+async def get_live_stream_status():
+    try:
+        return live_stream_manager.get_status()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/live/start")
+async def start_live_stream():
+    try:
+        return live_stream_manager.start_stream()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/live/stop")
+async def stop_live_stream():
+    try:
+        return live_stream_manager.stop_stream()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 if __name__ == "__main__":
     import uvicorn

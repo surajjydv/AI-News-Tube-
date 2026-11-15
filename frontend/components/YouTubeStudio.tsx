@@ -20,6 +20,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Video,
+  Square,
 } from "lucide-react";
 
 export const YouTubeStudio: React.FC = () => {
@@ -40,6 +41,10 @@ export const YouTubeStudio: React.FC = () => {
   const [voiceId, setVoiceId] = useState("hi-IN-MadhurNeural");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationMsg, setGenerationMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [isLiveStreamActive, setIsLiveStreamActive] = useState(false);
+  const [liveStreamLoading, setLiveStreamLoading] = useState(false);
+  const [liveStreamUptime, setLiveStreamUptime] = useState(0);
+  const [liveMsg, setLiveMsg] = useState<string | null>(null);
 
   const fetchRealData = async () => {
     setLoading(true);
@@ -69,8 +74,59 @@ export const YouTubeStudio: React.FC = () => {
     }
   };
 
+  const fetchLiveStatus = async () => {
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/live/status");
+      if (res.ok) {
+        const data = await res.json();
+        setIsLiveStreamActive(!!data.isLive);
+        setLiveStreamUptime(data.uptimeSeconds || 0);
+      }
+    } catch (err) {
+      // ignore
+    }
+  };
+
+  const handleStartLiveStream = async () => {
+    setLiveStreamLoading(true);
+    setLiveMsg(null);
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/live/start", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        setIsLiveStreamActive(true);
+        setLiveMsg("24/7 Live Stream active! Rotating videos to YouTube RTMP.");
+      } else {
+        setLiveMsg(data.message || "Failed to start live stream.");
+      }
+    } catch (err) {
+      setLiveMsg("Error contacting live stream service.");
+    } finally {
+      setLiveStreamLoading(false);
+      fetchLiveStatus();
+    }
+  };
+
+  const handleStopLiveStream = async () => {
+    setLiveStreamLoading(true);
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/live/stop", { method: "POST" });
+      const data = await res.json();
+      setIsLiveStreamActive(false);
+      setLiveMsg("Live stream stopped.");
+    } catch (err) {
+      setLiveMsg("Error stopping live stream.");
+    } finally {
+      setLiveStreamLoading(false);
+      fetchLiveStatus();
+    }
+  };
+
   useEffect(() => {
     fetchRealData();
+    fetchLiveStatus();
+    const interval = setInterval(fetchLiveStatus, 4000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleManualGenerate = async (e: React.FormEvent) => {
@@ -411,16 +467,55 @@ export const YouTubeStudio: React.FC = () => {
             <Radio className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-900 tracking-tight">24/7 RTMP Streaming Hub</h3>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h3 className="text-sm font-bold text-slate-900 tracking-tight">24/7 Continuous Live Stream Hub</h3>
+              {isLiveStreamActive ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold border border-red-200 animate-pulse">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-600"></span>
+                  STREAMING LIVE (VIDEO ROTATION QUEUE)
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-semibold border border-slate-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                  READY TO STREAM
+                </span>
+              )}
+            </div>
             <p className="text-xs text-slate-500 mt-1 leading-relaxed max-w-2xl">
               Server URL: <code className="text-red-700 bg-slate-100 px-1.5 py-0.5 rounded-none border border-slate-200 font-mono text-[11px]">{streamInfo?.rtmpUrl || "rtmp://a.rtmp.youtube.com/live2"}</code>
               <span className="mx-2 text-slate-300">|</span>
               Stream Key: <code className="text-slate-800 bg-slate-100 px-1.5 py-0.5 rounded-none border border-slate-200 font-mono text-[11px]">{revealKey ? "011y-69ku-2w6b-seq4-6vyq" : streamInfo?.streamKeyMasked || "011y-****-****-6vyq"}</code>
             </p>
+            {liveMsg && (
+              <p className="text-[11px] font-semibold text-emerald-600 mt-1.5 flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                {liveMsg}
+              </p>
+            )}
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto justify-end">
+          {isLiveStreamActive ? (
+            <button
+              onClick={handleStopLiveStream}
+              disabled={liveStreamLoading}
+              className="px-4 py-2 rounded-sm bg-red-600 hover:bg-red-700 text-xs text-white font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+            >
+              <Square className="w-3.5 h-3.5 fill-white" />
+              {liveStreamLoading ? "Stopping..." : "Stop Live Stream"}
+            </button>
+          ) : (
+            <button
+              onClick={handleStartLiveStream}
+              disabled={liveStreamLoading}
+              className="px-4 py-2 rounded-sm bg-emerald-600 hover:bg-emerald-700 text-xs text-white font-bold transition-all flex items-center gap-2 shadow-xs cursor-pointer"
+            >
+              <Play className="w-3.5 h-3.5 fill-white" />
+              {liveStreamLoading ? "Starting Engine..." : "Start 24/7 Live Stream"}
+            </button>
+          )}
+
           <button
             onClick={() => setRevealKey(!revealKey)}
             className="px-3 py-1.5 rounded-sm bg-slate-100 hover:bg-slate-200 text-xs text-slate-700 font-semibold border border-slate-300 transition-colors"
@@ -433,7 +528,7 @@ export const YouTubeStudio: React.FC = () => {
               setCopiedKey(true);
               setTimeout(() => setCopiedKey(false), 2000);
             }}
-            className="px-3.5 py-1.5 rounded-sm bg-red-600 hover:bg-red-700 text-xs text-white font-semibold transition-colors flex items-center gap-1.5 shadow-xs"
+            className="px-3.5 py-1.5 rounded-sm bg-slate-800 hover:bg-slate-900 text-xs text-white font-semibold transition-colors flex items-center gap-1.5 shadow-xs"
           >
             {copiedKey ? <Check className="w-3.5 h-3.5 text-emerald-200" /> : <Copy className="w-3.5 h-3.5" />}
             {copiedKey ? "Copied RTMP!" : "Copy Endpoint"}

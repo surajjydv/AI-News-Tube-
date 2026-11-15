@@ -1,43 +1,34 @@
 # NewsTube & OmniBlast Studio
 
-A production-grade content distribution suite and autonomous AI video generation pipeline. Post existing media everywhere in 1-click or generate high-impact broadcast videos directly from words and auto-publish across YouTube, Telegram, Twitter/X, Instagram, and Facebook.
+A media production and distribution engine designed for automated content generation and multi-platform publishing. Generate broadcast-grade videos, vertical shorts, and real-time live streams with neural voice synthesis and direct delivery across YouTube, Telegram, Twitter/X, Instagram, and Facebook.
 
 ## Features
 
-- **1-Click Multi-Platform Media Blast**: Upload any video or image, enter title and description, and broadcast simultaneously across YouTube, Telegram, Twitter/X, Instagram, and Facebook.
-- **AI Word-to-Video & Auto-Blast**: Input a topic headline or prompt to automatically trigger research, scriptwriting, neural voice synthesis, 1080p video rendering, and multi-channel publication.
-- **Dynamic On-Screen Broadcast Engine**: Generates 1080p full-HD landscape (16:9) broadcasts and vertical shorts (9:16) with tickers, chapter cards, and real event photography.
-- **High-CTR Thumbnail Synthesis**: Programmatic thumbnail generation featuring 3D typography and authentic event visuals.
-- **Neural Voice Narration**: Multi-speaker neural voiceover in Hindi and English powered by Edge-TTS.
-- **Multi-Platform Dispatcher**: Unified orchestrator connecting YouTube Data API v3, Telegram Bot API, Twitter v2 API, and Meta Graph API.
-- **OmniBlast Web Studio**: Integrated single-page dashboard served directly via FastAPI (`http://localhost:8000/`) with real-time audit logs and platform status indicators.
+- **24/7 YouTube Live Streaming**: Continuous RTMP streaming engine with dynamic playlist rotation, loop failover, and zero dead air.
+- **1-Click Multi-Platform Dispatch**: Publish videos and images simultaneously across YouTube, Telegram, Twitter/X, Instagram, and Meta platforms.
+- **Topic-to-Video Engine**: Automatically generates 1080p landscape (16:9) broadcasts and vertical shorts (9:16) with tickers, badges, and verified editorial photography.
+- **Studio Dashboard**: Web-based control center for API keys, manual video rendering, live stream monitoring, and channel analytics.
+- **Neural Voice Narration**: Multi-lingual text-to-speech with natural pacing and broadcast audio mastering.
+- **High-CTR Thumbnail Generation**: Automated graphic composition with bold typography and editorial imagery.
 
 ## Architecture
 
 ```
-[User Media Upload / Words Prompt]
-                 │
-                 ├──▶ [1-Click Multi-Platform Dispatcher]
-                 │           │
-                 │           ├──▶ YouTube Data API v3
-                 │           ├──▶ Telegram Bot API
-                 │           ├──▶ Twitter / X API v2
-                 │           ├──▶ Instagram Graph API
-                 │           └──▶ Facebook Page API
-                 │
-                 └──▶ [Autonomous AI Video Pipeline]
-                             │
-                             ▼
-                    [Fact Research & Ingestion]
-                             │
-                             ▼
-                    [Script & Voice Synthesis]
-                             │
-                             ▼
-                    [FFmpeg 1080p Video Rendering]
-                             │
-                             ▼
-                    [Auto-Publish Everywhere]
+[Web Dashboard / REST API]
+            │
+            ├──▶ [Live Stream Manager] ──▶ 24/7 RTMP Engine ──▶ YouTube Live
+            │
+            ├──▶ [Multi-Platform Dispatcher]
+            │           ├──▶ YouTube Data API v3
+            │           ├──▶ Telegram Bot API
+            │           ├──▶ Twitter / X API v2
+            │           └──▶ Meta Graph API (Instagram / Facebook)
+            │
+            └──▶ [Video Production Engine]
+                        ├──▶ Story Research & Summarization
+                        ├──▶ Neural Voice Synthesis (Edge-TTS)
+                        ├──▶ Editorial Visual Asset Sourcing
+                        └──▶ FFmpeg 1080p Broadcast Compositor
 ```
 
 ## Setup
@@ -45,41 +36,45 @@ A production-grade content distribution suite and autonomous AI video generation
 ### Prerequisites
 
 - Python 3.10+
-- FFmpeg installed and configured in system `PATH`
-- Google Chrome or modern web browser
+- Node.js 18+ & npm
+- FFmpeg installed and available in system `PATH`
 
 ### Installation
 
 ```bash
+# Clone repository
 git clone https://github.com/your-org/AI-NewsTube.git
 cd AI-NewsTube
 
-# Create and activate virtual environment
+# Setup Python environment
 python -m venv venv
-
-# Windows
+# On Windows:
 .\venv\Scripts\activate
-
-# Linux / macOS
+# On Linux/macOS:
 source venv/bin/activate
 
-# Install dependencies
 pip install -r requirements.txt
+
+# Setup Frontend
+cd frontend
+npm install
+cd ..
 ```
 
 ### Configuration
 
-Create a `.env` file in the project root:
+Create a `.env` file in the root directory:
 
 ```env
-CHANNEL_NAME="Your Channel"
+CHANNEL_NAME="Your Channel Name"
+YOUTUBE_CHANNEL_ID="your_channel_id"
+YOUTUBE_STREAM_KEY="your_rtmp_stream_key"
 GROQ_API_KEY="your_groq_api_key"
 DEFAULT_TTS_VOICE="hi-IN-MadhurNeural"
 PORT=8000
-YOUTUBE_STREAM_KEY="your_youtube_rtmp_key"
 ```
 
-For YouTube uploads, place your OAuth client secret file at `client_secret.json` and generate credentials via:
+For YouTube OAuth direct publishing, save `client_secret.json` in the root folder and run:
 
 ```bash
 python auth/auth_youtube.py
@@ -87,68 +82,55 @@ python auth/auth_youtube.py
 
 ## Usage
 
-### 1. Launch OmniBlast Studio (Web UI & Next.js App)
+### 1. Run the Studio Dashboard
 
-Start the unified FastAPI application:
+Start the FastAPI backend:
 
 ```bash
-uvicorn app:app --reload --port 8000
+python -m uvicorn app:app --host 0.0.0.0 --port 8000
 ```
 
-Start the Next.js Frontend Studio:
+Start the Next.js frontend:
 
 ```bash
 cd frontend
 npm run dev
 ```
 
-Open `http://localhost:3000/` (Next.js Studio) or `http://localhost:8000/` (FastAPI Web UI).
+Open `http://localhost:3000` to manage broadcasts, trigger 24/7 live streaming, or render custom topics on demand.
 
-- **API Keys & Platforms**: Open the **API Keys & Platforms** tab to save your Instagram, YouTube, Groq, Telegram, Twitter, and Facebook credentials in 1 click.
-- **1-Click Media Blast**: Drag and drop any video or image, enter your headline and caption, select target channels, and click **Blast Everywhere**.
-- **AI Word-to-Video**: Enter a topic or prompt, select format (16:9 or 9:16), choose narrator voice, and click **Generate Video & Auto-Blast**.
+### 2. Live Streaming via CLI
 
-
-### 2. Command-Line Execution
-
-Generate a video for an automated top story:
+Start the 24/7 continuous live stream directly from the command line:
 
 ```bash
-python main.py
-```
-
-Generate for a custom topic:
-
-```bash
-python main.py --topic "Union Budget 2026 Key Highlights"
-```
-
-### 3. Background Autopublishers
-
-```bash
-# 24/7 continuous news video autopublisher
-python scripts/run_realtime_news_autopublisher.py
-
-# 24/7 RTMP live stream to YouTube
 python scripts/continuous_live_stream.py
+```
+
+### 3. Automated 15-Minute News Publisher
+
+Run the background publisher to generate and broadcast new stories every 15 minutes:
+
+```bash
+python scripts/run_realtime_news_autopublisher.py
 ```
 
 ## Deployment
 
-### Linux / Production Server
+### Linux Server (Systemd / Background)
 
 ```bash
-# Run FastAPI server
-python -m uvicorn app:app --host 0.0.0.0 --port 8000
+# Start backend API
+nohup python -m uvicorn app:app --host 0.0.0.0 --port 8000 > logs/api.log 2>&1 &
 
-# Run daemon with background output logging
-nohup python -u scripts/run_realtime_news_autopublisher.py > logs/publisher.log 2>&1 &
+# Start automated background publisher
+nohup python scripts/run_realtime_news_autopublisher.py > logs/publisher.log 2>&1 &
 ```
 
 ### Docker
 
 ```bash
-docker compose -f docker/docker-compose.yml up -d --build
+docker compose up -d --build
 ```
 
 ## License
