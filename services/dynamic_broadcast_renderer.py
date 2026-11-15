@@ -38,6 +38,35 @@ from services.broadcast_25d_engine import (
 from utils.logger import logger
 
 
+def render_broadcast_frame(
+    t: float,
+    total_duration: float,
+    headline: str,
+    category: str,
+    slide_takeaways: List[str],
+    photo_images: List[Optional[Image.Image]],
+    photo_credits: List[str],
+    w: int = 1920,
+    h: int = 1080
+) -> np.ndarray:
+    """Renders a single 2.5D broadcast frame as a numpy array."""
+    img = render_broadcast_frame_25d(
+        t=t,
+        total_duration=total_duration,
+        headline=headline,
+        category=category,
+        slide_takeaways=slide_takeaways,
+        photo_images=photo_images,
+        photo_credits=photo_credits,
+        w=w,
+        h=h
+    )
+    if isinstance(img, Image.Image):
+        return np.array(img)
+    return img
+
+
+
 def bake_slide_base(
     slide_idx: int,
     total_slides: int,

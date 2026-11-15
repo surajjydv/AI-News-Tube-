@@ -196,3 +196,9 @@
 
 
 
+
+- **Full 2-Minute Broadcast Video Generation & YouTube Live RTMP Broadcast**:
+  - Exported `render_broadcast_frame` in `services/dynamic_broadcast_renderer.py` converting 2.5D TV broadcast frames to numpy array for MoviePy and PIL.
+  - Executed `scripts/generate_and_publish_2min_video.py`: Scraped fresh news (Santiniketan police encounter), downloaded 4 verified editorial press photos, generated fluent Hindi storytelling script (256 words), synthesized 110.9s Edge-TTS neural audio (`hi-IN-SwaraNeural`), rendered 1080p 2.5D TV broadcast video (`videos/story_2m_video.mp4`, 19.8 MB), and broadcasted to YouTube Live via RTMP.
+  - Deployed 15-minute autopublisher daemon (`scripts/run_realtime_news_autopublisher.py`) for continuous autonomous video production and publishing.
+  - Bound FastAPI application to `0.0.0.0:8000` (`/api/status`, `/api/platforms`, `/api/youtube/channel` verified HTTP 200). Next.js frontend verified active on `http://127.0.0.1:3000`.
