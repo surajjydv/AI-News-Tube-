@@ -1,41 +1,43 @@
-# NewsTube
+# NewsTube & OmniBlast Studio
 
-An automated content generation and multi-platform publishing platform that produces high-retention 1080p broadcast stories, vertical shorts, and custom thumbnails from real-time viral topics and breaking news wires.
+A production-grade content distribution suite and autonomous AI video generation pipeline. Post existing media everywhere in 1-click or generate high-impact broadcast videos directly from words and auto-publish across YouTube, Telegram, Twitter/X, Instagram, and Facebook.
 
 ## Features
 
-- **Viral Topic Discovery Engine**: Continuously tracks YouTube Trending (India) for videos with $\ge$ 1M views and cross-references with Google Trends traffic velocity.
-- **Dynamic 3D Headline Engine**: Multi-layered metallic bevel slabs with 3D text extrusion and per-slide headline transitions that refresh context on every scene.
-- **AI-Powered 3D Thumbnails**: High-CTR YouTube packaging with photorealistic scene generation (Gemini Imagen, OpenAI DALL-E, Pollinations Flux.1) and bold 3D extruded typography.
-- **Multi-Scene Visuals**: Resolves a minimum of 5 distinct high-resolution editorial press and event photographs per production.
-- **Neural Hindi & English Narration**: Fluent journalistic scripts synthesized via Edge-TTS neural voices without robotic intros or filler labels.
-- **Multi-Format Video Rendering**: 1080p landscape broadcasts (16:9) with Ken Burns motion, data callouts, and running tickers, plus vertical shorts (9:16) via hardware-optimized FFmpeg.
-- **Multi-Platform Distribution**: Automated publishing pipelines for YouTube Data API v3, Telegram channels, Twitter/X, Facebook Pages, and Instagram.
-- **Web Management Studio**: FastAPI dashboard with white ivory theme for manual video triggering, schedule management, and live logs.
+- **1-Click Multi-Platform Media Blast**: Upload any video or image, enter title and description, and broadcast simultaneously across YouTube, Telegram, Twitter/X, Instagram, and Facebook.
+- **AI Word-to-Video & Auto-Blast**: Input a topic headline or prompt to automatically trigger research, scriptwriting, neural voice synthesis, 1080p video rendering, and multi-channel publication.
+- **Dynamic On-Screen Broadcast Engine**: Generates 1080p full-HD landscape (16:9) broadcasts and vertical shorts (9:16) with tickers, chapter cards, and real event photography.
+- **High-CTR Thumbnail Synthesis**: Programmatic thumbnail generation featuring 3D typography and authentic event visuals.
+- **Neural Voice Narration**: Multi-speaker neural voiceover in Hindi and English powered by Edge-TTS.
+- **Multi-Platform Dispatcher**: Unified orchestrator connecting YouTube Data API v3, Telegram Bot API, Twitter v2 API, and Meta Graph API.
+- **OmniBlast Web Studio**: Integrated single-page dashboard served directly via FastAPI (`http://localhost:8000/`) with real-time audit logs and platform status indicators.
 
 ## Architecture
 
 ```
-[YouTube Trending (1M+ Views) & Google Trends]
-                     │
-                     ▼
-          [Viral Topic Discovery]
-                     │
-                     ▼
-  [Deep Research & Multi-Scene Press Visuals (5+ Images)]
-                     │
-                     ▼
-    [Fluent Journalistic Narration & Neural TTS]
-                     │
-                     ▼
-  [FFmpeg 1080p Synthesis & Dynamic 3D Headline Plates]
-                     │
-                     ▼
-    [High-CTR 3D AI Thumbnail & Metadata Packaging]
-                     │
-                     ▼
-        [Multi-Platform Publishing]
-   (YouTube VOD / Shorts, Telegram, X, Meta)
+[User Media Upload / Words Prompt]
+                 │
+                 ├──▶ [1-Click Multi-Platform Dispatcher]
+                 │           │
+                 │           ├──▶ YouTube Data API v3
+                 │           ├──▶ Telegram Bot API
+                 │           ├──▶ Twitter / X API v2
+                 │           ├──▶ Instagram Graph API
+                 │           └──▶ Facebook Page API
+                 │
+                 └──▶ [Autonomous AI Video Pipeline]
+                             │
+                             ▼
+                    [Fact Research & Ingestion]
+                             │
+                             ▼
+                    [Script & Voice Synthesis]
+                             │
+                             ▼
+                    [FFmpeg 1080p Video Rendering]
+                             │
+                             ▼
+                    [Auto-Publish Everywhere]
 ```
 
 ## Setup
@@ -44,17 +46,24 @@ An automated content generation and multi-platform publishing platform that prod
 
 - Python 3.10+
 - FFmpeg installed and configured in system `PATH`
+- Google Chrome or modern web browser
 
 ### Installation
 
 ```bash
 git clone https://github.com/your-org/AI-NewsTube.git
 cd AI-NewsTube
+
+# Create and activate virtual environment
 python -m venv venv
-# Linux / macOS:
-source venv/bin/activate
-# Windows:
+
+# Windows
 .\venv\Scripts\activate
+
+# Linux / macOS
+source venv/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
@@ -63,62 +72,75 @@ pip install -r requirements.txt
 Create a `.env` file in the project root:
 
 ```env
-CHANNEL_NAME="SRJ UNDERRATED"
-GROQ_API_KEY=your_groq_api_key
+CHANNEL_NAME="Your Channel"
+GROQ_API_KEY="your_groq_api_key"
 DEFAULT_TTS_VOICE="hi-IN-MadhurNeural"
-PORT=80
+PORT=8000
+YOUTUBE_STREAM_KEY="your_youtube_rtmp_key"
 ```
 
-For YouTube video uploads, place `client_secret.json` in the root directory and run authentication:
+For YouTube uploads, place your OAuth client secret file at `client_secret.json` and generate credentials via:
 
 ```bash
-python auth_youtube.py
+python auth/auth_youtube.py
 ```
 
 ## Usage
 
-### Web Studio Dashboard
+### 1. Launch OmniBlast Studio (Web UI)
 
-Run the management interface:
+Start the unified FastAPI application:
 
 ```bash
-python app.py
+uvicorn app:app --reload --port 8000
 ```
 
-Open `http://localhost/` in any browser.
+Open `http://localhost:8000/` in your browser.
 
-### Autonomous Publishing Daemon
+- **1-Click Media Blast**: Drag and drop any video or image, enter your headline and caption, select target channels, and click **Blast Everywhere**.
+- **AI Word-to-Video**: Enter a topic or prompt, select format (16:9 or 9:16), choose narrator voice, and click **Generate Video & Auto-Blast**.
+- **Platform Configuration**: Click the gear icon in the top navigation bar to configure or update Telegram, Twitter, Instagram, and Facebook credentials.
 
-Run the continuous 24/7 autonomous publisher:
+### 2. Command-Line Execution
+
+Generate a video for an automated top story:
 
 ```bash
-python scripts/realtime_breaking_news_autouploader.py
+python main.py
 ```
 
-### Single Story Generation
-
-Generate a standalone video for a specific topic:
+Generate for a custom topic:
 
 ```bash
-python test_generate_one_video.py --topic "Your Topic or Headline Here"
+python main.py --topic "Union Budget 2026 Key Highlights"
+```
+
+### 3. Background Autopublishers
+
+```bash
+# 24/7 continuous news video autopublisher
+python scripts/run_realtime_news_autopublisher.py
+
+# 24/7 RTMP live stream to YouTube
+python scripts/continuous_live_stream.py
 ```
 
 ## Deployment
 
-### Linux / AWS EC2 (tmux)
+### Linux / Production Server
 
 ```bash
-# Web Dashboard
-tmux new-session -d -s studio_app 'sudo PYTHONPATH=. python3 -m uvicorn app:app --host 0.0.0.0 --port 80'
+# Run FastAPI server
+python -m uvicorn app:app --host 0.0.0.0 --port 8000
 
-# Auto-Publisher Daemon
-tmux new-session -d -s autopublisher 'python3 -u scripts/realtime_breaking_news_autouploader.py >> logs/publisher.log 2>&1'
+# Run daemon with background output logging
+nohup python -u scripts/run_realtime_news_autopublisher.py > logs/publisher.log 2>&1 &
 ```
 
 ### Docker
 
 ```bash
-docker compose up -d --build
+docker compose -f docker/docker-compose.yml up -d --build
 ```
 
 ## License

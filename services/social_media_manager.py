@@ -51,13 +51,40 @@ def publish_to_all_platforms(
     results = {}
     timestamp = datetime.now().isoformat()
 
-    # ── YouTube: already published via trending_documentary_autopublisher
-    if "youtube" in platforms_config and youtube_video_id:
-        results["youtube"] = {
-            "success": True,
-            "url": f"https://youtu.be/{youtube_video_id}",
-            "platform": "youtube"
-        }
+    # ── YouTube: already published or direct upload ──────────────────────────────
+    if "youtube" in platforms_config:
+        if youtube_video_id:
+            results["youtube"] = {
+                "success": True,
+                "url": f"https://youtu.be/{youtube_video_id}",
+                "platform": "youtube"
+            }
+        elif video_path and os.path.exists(video_path):
+            try:
+                from services.youtube_upload_service import upload_video_to_youtube
+                tags_list = [t.strip("# ") for t in hashtags.split() if t.strip()] or None
+                yt_id = upload_video_to_youtube(
+                    video_path=video_path,
+                    title=title[:95],
+                    description=f"{title}\n\n{body_text}\n\n{hashtags}",
+                    thumbnail_path=thumbnail_path if (thumbnail_path and os.path.exists(thumbnail_path)) else None,
+                    tags=tags_list
+                )
+                if yt_id and yt_id not in ["LOCAL_SAVED", "RTMP_LIVE_STREAM_BROADCASTED"]:
+                    youtube_video_id = yt_id
+                    results["youtube"] = {
+                        "success": True,
+                        "url": f"https://youtu.be/{yt_id}",
+                        "platform": "youtube"
+                    }
+                else:
+                    results["youtube"] = {
+                        "success": True,
+                        "url": "YouTube Live RTMP" if yt_id == "RTMP_LIVE_STREAM_BROADCASTED" else "Saved locally",
+                        "platform": "youtube"
+                    }
+            except Exception as e:
+                results["youtube"] = {"success": False, "error": str(e), "platform": "youtube"}
 
     # ── Telegram ──────────────────────────────────────────────────────────
     tg_cfg = platforms_config.get("telegram", {})

@@ -1,11 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #090a0f;
+  --background: #07080b;
   --foreground: #f8fafc;
-  --card: #11131a;
-  --card-border: #1e2230;
-  --ig-gradient: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+  --card: #0f1118;
+  --card-border: #1c202e;
+  --yt-red: #cc0000;
+  --ig-rose: #e11d48;
 }
 
 body {
@@ -15,33 +16,46 @@ body {
   overflow-x: hidden;
 }
 
-/* Custom Instagram Gradient Utility */
-.bg-ig-gradient {
-  background: var(--ig-gradient);
+/* YouTube Brand Solid Utilities */
+.bg-yt-gradient {
+  background: var(--yt-red);
 }
 
-.text-ig-gradient {
-  background: var(--ig-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+.text-yt-gradient {
+  color: #ff0033;
 }
 
-.border-ig-gradient {
-  border-image: var(--ig-gradient) 1;
+.yt-glow {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
-/* Glassmorphism */
+.yt-glow-lg {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+/* Clean Panels & Cards */
 .glass-panel {
-  background: rgba(17, 19, 26, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0f1118;
+  border: 1px solid #1c202e;
+  border-radius: 2px;
+}
+
+.glass-panel-premium {
+  background: #0d0f17;
+  border: 1px solid #1c202e;
+  border-radius: 2px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
 .glass-card {
-  background: rgba(22, 25, 35, 0.6);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: #0f1118;
+  border: 1px solid #1c202e;
+  border-radius: 2px;
+}
+
+.glass-card:hover {
+  background: #141722;
+  border-color: #2e344a;
 }
 
 /* Custom Scrollbar */
@@ -50,11 +64,11 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #090a0f;
+  background: #07080b;
 }
 ::-webkit-scrollbar-thumb {
-  background: #272c3d;
-  border-radius: 9999px;
+  background: #252a3a;
+  border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #3b425b;

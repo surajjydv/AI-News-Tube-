@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useStudioStore } from "@/lib/store";
-import { Calendar, Clock, Trash2, Send, CheckCircle2, RefreshCw } from "lucide-react";
+import { Calendar, Clock, Trash2, Send } from "lucide-react";
 
 export const ScheduledQueue: React.FC = () => {
   const { scheduledPosts, removeScheduledPost, publishNow, accounts } = useStudioStore();
@@ -13,25 +13,25 @@ export const ScheduledQueue: React.FC = () => {
   };
 
   return (
-    <div className="glass-panel rounded-2xl p-6 border border-slate-800 shadow-xl space-y-6">
+    <div className="glass-panel rounded-sm p-5 border border-slate-800 space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
         <div>
           <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-pink-400" />
-            Automated Publishing Schedule & Queue
+            <Calendar className="w-4 h-4 text-rose-400" />
+            Publishing Schedule & Queue
           </h2>
-          <p className="text-xs text-slate-400">Monitor queued AI media items and manage automated delivery slots</p>
+          <p className="text-xs text-slate-400">Monitor queued media items and manage automated delivery slots</p>
         </div>
-        <span className="text-xs font-semibold px-3 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-          {scheduledPosts.length} Posts in Queue
+        <span className="text-xs text-slate-400 font-medium">
+          {scheduledPosts.length} posts in queue
         </span>
       </div>
 
       {scheduledPosts.length === 0 ? (
-        <div className="text-center py-12 border border-dashed border-slate-800 rounded-xl">
-          <Clock className="w-10 h-10 text-slate-600 mx-auto mb-2" />
+        <div className="text-center py-12 border border-dashed border-slate-800 rounded-sm">
+          <Clock className="w-8 h-8 text-slate-600 mx-auto mb-2" />
           <p className="text-sm text-slate-400 font-semibold">Queue is empty</p>
-          <p className="text-xs text-slate-500 mt-0.5">Use the AI Studio to generate and schedule your next content drop.</p>
+          <p className="text-xs text-slate-500 mt-0.5">Use the Studio to generate and schedule your next content drop.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -47,16 +47,16 @@ export const ScheduledQueue: React.FC = () => {
             return (
               <div
                 key={post.id}
-                className="bg-slate-900/80 rounded-xl p-4 border border-slate-800/90 flex gap-4 hover:border-slate-700 transition-colors shadow-md"
+                className="bg-slate-900 rounded-sm p-3.5 border border-slate-800 flex gap-4 hover:border-slate-700 transition-colors"
               >
                 {/* Media Thumbnail */}
-                <div className="w-24 h-24 rounded-lg overflow-hidden shrink-0 relative bg-black border border-slate-700">
+                <div className="w-20 h-20 rounded-sm overflow-hidden shrink-0 relative bg-black border border-slate-800">
                   <img
                     src={post.asset.thumbnailUrl || post.asset.imageUrl}
                     alt="Thumbnail"
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute bottom-1 right-1 bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded text-[9px] text-white font-medium">
+                  <div className="absolute bottom-1 right-1 bg-black/80 px-1 py-0.5 rounded-none text-[9px] text-white font-medium">
                     {post.asset.contentType.toUpperCase()}
                   </div>
                 </div>
@@ -65,11 +65,11 @@ export const ScheduledQueue: React.FC = () => {
                 <div className="flex-1 flex flex-col justify-between overflow-hidden">
                   <div>
                     <div className="flex items-center justify-between gap-1 mb-1">
-                      <span className="text-xs font-bold text-pink-400 truncate">
+                      <span className="text-xs font-semibold text-rose-400 truncate">
                         {getAccountName(post.accountId)}
                       </span>
                       <span
-                        className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border ${
+                        className={`text-[10px] px-1.5 py-0.5 rounded-sm font-medium border ${
                           post.status === "published"
                             ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                             : post.status === "publishing"
@@ -88,10 +88,10 @@ export const ScheduledQueue: React.FC = () => {
 
                   <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800/80">
                     <div className="flex items-center gap-1.5">
-                      <Clock className="w-3 h-3 text-pink-400" />
+                      <Clock className="w-3 h-3 text-rose-400" />
                       <span>{formattedDate}</span>
                       {post.recurrence !== "none" && (
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-sm bg-purple-500/10 text-purple-400 border border-purple-500/20">
                           {post.recurrence}
                         </span>
                       )}
@@ -101,7 +101,7 @@ export const ScheduledQueue: React.FC = () => {
                       {post.status === "scheduled" && (
                         <button
                           onClick={() => publishNow(post.id)}
-                          className="p-1 text-slate-400 hover:text-pink-400 transition-colors"
+                          className="p-1 text-slate-400 hover:text-rose-400 transition-colors"
                           title="Trigger Publish Now"
                         >
                           <Send className="w-3.5 h-3.5" />

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useStudioStore } from "@/lib/store";
-import { Palette, Save, CheckCircle2, Sparkles, Hash, MessageSquare } from "lucide-react";
+import { Palette, Save, CheckCircle2, MessageSquare } from "lucide-react";
 
 export const BrandKitModal: React.FC = () => {
   const { brandKits, activeAccountId, updateBrandKit, accounts } = useStudioStore();
@@ -38,15 +38,15 @@ export const BrandKitModal: React.FC = () => {
   };
 
   return (
-    <div className="glass-panel rounded-2xl p-6 border border-slate-800 shadow-xl space-y-6">
+    <div className="glass-panel rounded-sm p-5 border border-slate-800 space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
         <div>
           <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Palette className="w-4 h-4 text-pink-400" />
-            Brand Kit & AI Personality ({activeAccount?.displayName || "Account"})
+            <Palette className="w-4 h-4 text-rose-400" />
+            Brand Kit & Personality ({activeAccount?.displayName || "Account"})
           </h2>
           <p className="text-xs text-slate-400">
-            Configure design palettes, tone guidelines, and signature signatures applied to every generated reel & post
+            Configure design palettes, tone guidelines, and signature signatures applied to every generated asset
           </p>
         </div>
       </div>
@@ -59,7 +59,7 @@ export const BrandKitModal: React.FC = () => {
             type="text"
             value={brandName}
             onChange={(e) => setBrandName(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-pink-500"
+            className="w-full bg-slate-900 border border-slate-800 rounded-sm p-2.5 text-xs text-white focus:outline-none focus:border-rose-500"
           />
         </div>
 
@@ -67,12 +67,12 @@ export const BrandKitModal: React.FC = () => {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">Primary Brand Color</label>
-            <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-xl p-2">
+            <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-sm p-2">
               <input
                 type="color"
                 value={primaryColor}
                 onChange={(e) => setPrimaryColor(e.target.value)}
-                className="w-7 h-7 rounded border-none cursor-pointer bg-transparent"
+                className="w-6 h-6 rounded-none border-none cursor-pointer bg-transparent"
               />
               <span className="text-xs text-slate-300 font-mono">{primaryColor}</span>
             </div>
@@ -80,12 +80,12 @@ export const BrandKitModal: React.FC = () => {
 
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">Secondary Accent Color</label>
-            <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-xl p-2">
+            <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-sm p-2">
               <input
                 type="color"
                 value={secondaryColor}
                 onChange={(e) => setSecondaryColor(e.target.value)}
-                className="w-7 h-7 rounded border-none cursor-pointer bg-transparent"
+                className="w-6 h-6 rounded-none border-none cursor-pointer bg-transparent"
               />
               <span className="text-xs text-slate-300 font-mono">{secondaryColor}</span>
             </div>
@@ -98,7 +98,7 @@ export const BrandKitModal: React.FC = () => {
           <select
             value={fontTone}
             onChange={(e) => setFontTone(e.target.value as any)}
-            className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-pink-500 cursor-pointer"
+            className="w-full bg-slate-900 border border-slate-800 rounded-sm p-2.5 text-xs text-white focus:outline-none focus:border-rose-500 cursor-pointer"
           >
             <option value="Warm & Artisanal">Warm & Artisanal</option>
             <option value="High Energy">High Energy & Viral</option>
@@ -111,31 +111,31 @@ export const BrandKitModal: React.FC = () => {
         {/* Call to Action */}
         <div>
           <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-            <MessageSquare className="w-3.5 h-3.5 text-pink-400" />
-            Standard Call To Action (Appended to Captions)
+            <MessageSquare className="w-3.5 h-3.5 text-rose-400" />
+            Standard Call To Action
           </label>
           <input
             type="text"
             value={ctaText}
             onChange={(e) => setCtaText(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-pink-500"
+            className="w-full bg-slate-900 border border-slate-800 rounded-sm p-2.5 text-xs text-white focus:outline-none focus:border-rose-500"
           />
         </div>
 
         {/* Save Button */}
-        <div className="pt-3">
+        <div className="pt-2">
           <button
             type="submit"
-            className="py-2.5 px-6 rounded-xl font-bold text-xs bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white shadow-md shadow-pink-500/20 flex items-center gap-2 transition-all"
+            className="py-2 px-5 rounded-sm font-semibold text-xs bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-2 transition-colors"
           >
             {saved ? (
               <>
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                Brand Kit Saved!
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                Brand Kit Saved
               </>
             ) : (
               <>
-                <Save className="w-4 h-4" />
+                <Save className="w-3.5 h-3.5" />
                 Save Brand Kit Settings
               </>
             )}

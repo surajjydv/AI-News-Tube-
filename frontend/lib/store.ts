@@ -12,11 +12,11 @@ interface StudioState {
   generationStep: string;
   generationPercent: number;
   scheduledPosts: ScheduledPost[];
-  activeTab: "studio" | "schedule" | "analytics" | "brandkit";
+  activeTab: "studio" | "schedule" | "analytics" | "brandkit" | "youtube";
 
   initBackendData: () => Promise<void>;
   setActiveAccount: (id: string) => void;
-  setActiveTab: (tab: "studio" | "schedule" | "analytics" | "brandkit") => void;
+  setActiveTab: (tab: "studio" | "schedule" | "analytics" | "brandkit" | "youtube") => void;
   toggleAccountConnect: (id: string) => Promise<void>;
   updateBrandKit: (accountId: string, kit: Partial<BrandKit>) => Promise<void>;
   updateGeneratedAsset: (asset: Partial<MediaAsset>) => void;
@@ -40,7 +40,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   generationStep: "",
   generationPercent: 0,
   scheduledPosts: INITIAL_SCHEDULED_POSTS,
-  activeTab: "studio",
+  activeTab: "youtube",
 
   initBackendData: async () => {
     try {

@@ -49,3 +49,41 @@ export interface MetricItem {
   change: string;
   isPositive: boolean;
 }
+
+export interface YouTubeChannel {
+  id: string;
+  title: string;
+  description: string;
+  customUrl: string;
+  avatarUrl: string;
+  subscriberCount: number;
+  viewCount: number;
+  videoCount: number;
+  country: string;
+  publishedAt: string;
+}
+
+export interface YouTubeVideo {
+  id: string;
+  title: string;
+  description: string;
+  publishedAt: string;
+  thumbnailUrl: string;
+  viewCount: number;
+  likeCount: number;
+  commentCount: number;
+  duration: string;
+  youtubeUrl: string;
+  embedUrl: string;
+  isShort: boolean;
+}
+
+export interface YouTubeStreamInfo {
+  rtmpUrl: string;
+  streamKeyMasked: string;
+  hasKey: boolean;
+  targetResolution: string;
+  audioCodec: string;
+  videoCodec: string;
+  activeStreamEntry: string;
+}

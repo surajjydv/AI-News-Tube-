@@ -1,502 +1,630 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Social Media Automation Manager</title>
-  <meta name="description" content="100% Autonomous AI Social Media Manager — YouTube, Instagram, Twitter, Facebook, Telegram">
-  <meta name="theme-color" content="#FAF8F5">
+  <title>OmniBlast — 1-Click Multi-Platform Media & AI Video Studio</title>
+  <meta name="description" content="Blast media to YouTube, Telegram, Twitter, Instagram & Facebook in 1-Click, or auto-generate videos from words and auto-publish everywhere.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-<div class="app-root">
 
-  <!-- ─── SIDEBAR ───────────────────────────────────────── -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">
-      <div class="brand-logo">🤖</div>
+<div class="app-container">
+  
+  <!-- ─── TOP NAVIGATION BAR ────────────────────────────────────── -->
+  <header class="top-nav">
+    <div class="brand">
+      <div class="brand-logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>
+      </div>
       <div>
-        <div class="brand-name">AI SOCIAL</div>
-        <div class="brand-sub">AUTOMATION MANAGER</div>
+        <h1 class="brand-title">OmniBlast</h1>
+        <p class="brand-subtitle">Multi-Platform Distribution & AI Media Automation</p>
       </div>
     </div>
 
-    <nav class="sidebar-nav">
-      <button class="nav-item active" data-tab="dashboard">
-        <span class="nav-icon">🏠</span><span>Dashboard</span>
-      </button>
-      <button class="nav-item" data-tab="studio">
-        <span class="nav-icon">🎬</span><span>Content Studio</span>
-      </button>
-      <button class="nav-item" data-tab="scheduler">
-        <span class="nav-icon">📅</span><span>Scheduler</span>
-      </button>
-      <button class="nav-item" data-tab="platforms">
-        <span class="nav-icon">📱</span><span>Platforms</span>
-        <span class="nav-badge" id="connectedBadge">1</span>
-      </button>
-      <button class="nav-item" data-tab="channels">
-        <span class="nav-icon">📺</span><span>YouTube Channel</span>
-      </button>
-      <button class="nav-item" data-tab="strategy">
-        <span class="nav-icon">🧠</span><span>AI Strategy</span>
-      </button>
-      <button class="nav-item" data-tab="analytics">
-        <span class="nav-icon">📊</span><span>Analytics</span>
-      </button>
-    </nav>
-
-    <div class="sidebar-autopilot">
-      <div class="autopilot-label">
-        <span class="status-dot" id="sidebarDot"></span>
-        <span id="sidebarStatus">AUTOPILOT ON</span>
+    <!-- Platform Connectivity Indicators -->
+    <div class="platform-chips-bar" id="platformChipsBar">
+      <div class="platform-chip" data-platform="youtube" id="chip-youtube">
+        <span class="chip-icon">▶</span>
+        <span class="chip-name">YouTube</span>
+        <span class="chip-status-dot"></span>
       </div>
-      <label class="switch">
-        <input type="checkbox" id="globalAutopilotToggle" checked onchange="toggleGlobalAutopilot()">
-        <span class="slider round"></span>
-      </label>
+      <div class="platform-chip" data-platform="telegram" id="chip-telegram">
+        <span class="chip-icon">✈</span>
+        <span class="chip-name">Telegram</span>
+        <span class="chip-status-dot"></span>
+      </div>
+      <div class="platform-chip" data-platform="twitter" id="chip-twitter">
+        <span class="chip-icon">𝕏</span>
+        <span class="chip-name">Twitter</span>
+        <span class="chip-status-dot"></span>
+      </div>
+      <div class="platform-chip" data-platform="instagram" id="chip-instagram">
+        <span class="chip-icon">📸</span>
+        <span class="chip-name">Instagram</span>
+        <span class="chip-status-dot"></span>
+      </div>
+      <div class="platform-chip" data-platform="facebook" id="chip-facebook">
+        <span class="chip-icon">📘</span>
+        <span class="chip-name">Facebook</span>
+        <span class="chip-status-dot"></span>
+      </div>
+      <button class="btn-config-icon" onclick="openConfigModal()" title="Platform API Settings">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
     </div>
-  </aside>
+  </header>
 
-  <!-- ─── MAIN ──────────────────────────────────────────── -->
-  <main class="main-area">
+  <!-- ─── WORKFLOW MODE TABS ───────────────────────────────────── -->
+  <div class="mode-tabs-wrapper">
+    <div class="mode-tabs">
+      <button class="mode-tab-btn active" data-mode="blast" onclick="switchWorkflowMode('blast')">
+        <span class="tab-icon">📤</span>
+        <span class="tab-text">
+          <strong>1-Click Media Blast</strong>
+          <small>Post existing video/image everywhere</small>
+        </span>
+      </button>
+      
+      <button class="mode-tab-btn" data-mode="ai-create" onclick="switchWorkflowMode('ai-create')">
+        <span class="tab-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="1" ry="1"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line></svg></span>
+        <span class="tab-text">
+          <strong>AI Word-to-Video & Blast</strong>
+          <small>Create from words & auto-publish</small>
+        </span>
+      </button>
 
-    <!-- ══ TAB: DASHBOARD ══════════════════════════════════ -->
-    <div id="tab-dashboard" class="tab-page active-page">
-      <div class="page-header">
-        <div>
-          <h2>Autopilot Dashboard</h2>
-          <p class="page-sub">All platforms running autonomously · zero manual effort</p>
-        </div>
-        <div class="header-actions">
-          <span id="dashServerTime" class="text-dim"></span>
-          <button class="btn btn-outline" onclick="refreshDashboard()">🔄 Refresh</button>
-          <button class="btn btn-primary" onclick="triggerImmediatePost()">⚡ Publish Now</button>
-        </div>
-      </div>
-
-      <!-- Platform Status Row -->
-      <div class="platform-status-row" id="platformStatusRow"></div>
-
-      <!-- 2-col Grid -->
-      <div class="dash-grid">
-        <div class="glass-card feed-card">
-          <div class="card-header">
-            <h3>📡 Live Publish Activity</h3>
-            <span class="badge badge-live">LIVE</span>
-          </div>
-          <div id="activityFeed" class="activity-feed">
-            <div class="feed-item"><div class="feed-icon">🤖</div>
-              <div class="feed-body"><div class="feed-title">AI Engine initializing...</div>
-              <div class="feed-meta">Connecting to all platforms</div></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="glass-card">
-          <div class="card-header">
-            <h3>⏱ Auto-Post Queue</h3>
-            <button class="btn btn-sm btn-outline" onclick="refreshDashboard()">🔄</button>
-          </div>
-          <div id="queueList" class="queue-list"></div>
-          <div class="stats-bar">
-            <div class="stat-box">
-              <div class="stat-val" id="statPostsToday">—</div>
-              <div class="stat-lbl">Today</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-val" id="statPlatforms">5</div>
-              <div class="stat-lbl">Platforms</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-val" id="statConnected">1</div>
-              <div class="stat-lbl">Connected</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-val" id="statNextPost">3h</div>
-              <div class="stat-lbl">Next Post</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Log Console -->
-      <div class="glass-card mt-20">
-        <div class="card-header">
-          <h3>📟 EC2 Engine — Live Log</h3>
-          <span id="logTimestamp" class="text-dim">Live</span>
-        </div>
-        <div id="logConsole" class="log-console"></div>
-      </div>
+      <button class="mode-tab-btn" data-mode="history" onclick="switchWorkflowMode('history')">
+        <span class="tab-icon">📜</span>
+        <span class="tab-text">
+          <strong>Blasted History & Logs</strong>
+          <small>Track published posts & live console</small>
+        </span>
+      </button>
     </div>
+  </div>
 
-    <!-- ══ TAB: CONTENT STUDIO ═════════════════════════════ -->
-    <div id="tab-studio" class="tab-page">
-      <div class="page-header">
-        <div>
-          <h2>Content Studio</h2>
-          <p class="page-sub">Manual override — generate &amp; publish custom content instantly</p>
-        </div>
+  <!-- ─── MAIN CONTENT CONTAINER ────────────────────────────────── -->
+  <main class="content-body">
+
+    <!-- ════════════════════════════════════════════════════════════
+         SYSTEM 1: 1-CLICK MEDIA BLAST
+         ════════════════════════════════════════════════════════════ -->
+    <section id="section-blast" class="workflow-section active-section">
+      <div class="section-hero">
+        <h2>Post Media Everywhere in 1-Click</h2>
+        <p>Upload your video or image, enter your title and description, and blast it instantly across all your connected channels simultaneously.</p>
       </div>
 
-      <div class="studio-grid">
-        <div class="studio-left">
-          <div class="glass-card">
-            <div class="card-header"><h3>📝 Content Brief</h3></div>
+      <form id="blastForm" class="blast-layout" onsubmit="handleBlastSubmit(event)">
+        
+        <!-- Left Column: Media Upload & Preview -->
+        <div class="layout-card media-uploader-card">
+          <div class="card-header-clean">
+            <span class="step-num">1</span>
+            <h3>Upload Media File</h3>
+          </div>
+
+          <div class="dropzone" id="mediaDropzone" onclick="document.getElementById('mediaInput').click()">
+            <input type="file" id="mediaInput" accept="video/mp4,video/quicktime,video/webm,video/x-matroska,image/jpeg,image/png,image/webp" style="display:none;" onchange="handleMediaSelect(this)">
+            <div class="dropzone-content" id="dropzoneEmpty">
+              <div class="drop-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+              </div>
+              <h4>Drag & drop video or image here</h4>
+              <p class="drop-hint">Supports MP4, MOV, WEBM, JPG, PNG, WEBP (Up to 500MB)</p>
+              <button type="button" class="btn-browse">Browse Files</button>
+            </div>
+
+            <!-- Preview Card (shown once file is selected) -->
+            <div class="media-preview" id="mediaPreview" style="display:none;">
+              <div class="preview-viewport" id="previewViewport">
+                <!-- Video or Image dynamically inserted here -->
+              </div>
+              <div class="preview-meta">
+                <div class="meta-info">
+                  <strong id="previewFileName">filename.mp4</strong>
+                  <span id="previewFileSize">0 MB</span>
+                </div>
+                <button type="button" class="btn-remove-media" onclick="removeMedia(event)">✕ Change</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Optional Custom Thumbnail for Videos -->
+          <div class="optional-thumb-box" id="optionalThumbBox" style="display:none;">
+            <label class="input-label">Custom Video Thumbnail (Optional)</label>
+            <div class="thumb-row">
+              <input type="file" id="thumbInput" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="handleThumbSelect(this)">
+              <button type="button" class="btn-thumb-picker" onclick="document.getElementById('thumbInput').click()">
+                🖼️ Choose Thumbnail
+              </button>
+              <span id="thumbFileName" class="text-subtle">No custom thumbnail chosen</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Content Details & Target Platforms -->
+        <div class="layout-card content-details-card">
+          <div class="card-header-clean">
+            <span class="step-num">2</span>
+            <h3>Content Details</h3>
+          </div>
+
+          <div class="form-group">
+            <div class="label-with-counter">
+              <label for="blastTitle" class="input-label">Post Title / Main Headline *</label>
+              <span class="char-counter" id="titleCounter">0/100</span>
+            </div>
+            <input type="text" id="blastTitle" class="form-input" placeholder="e.g. Breaking Update: Major Economic Policy Announced" required maxlength="100" oninput="updateCounter('blastTitle', 'titleCounter', 100)">
+          </div>
+
+          <div class="form-group">
+            <div class="label-with-counter">
+              <label for="blastDescription" class="input-label">Description / Caption *</label>
+              <span class="char-counter" id="descCounter">0/2000</span>
+            </div>
+            <textarea id="blastDescription" class="form-textarea" rows="4" placeholder="Write caption or summary for YouTube, Telegram, Twitter, Instagram & Facebook..." required maxlength="2000" oninput="updateCounter('blastDescription', 'descCounter', 2000)"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="blastHashtags" class="input-label">Hashtags</label>
+            <input type="text" id="blastHashtags" class="form-input" placeholder="#BreakingNews #LatestUpdate #Trending #Viral">
+            
+            <!-- Quick Tag Pills -->
+            <div class="quick-tags">
+              <span class="tag-pill" onclick="appendTag('#BreakingNews')">+ #BreakingNews</span>
+              <span class="tag-pill" onclick="appendTag('#Viral')">+ #Viral</span>
+              <span class="tag-pill" onclick="appendTag('#Trending')">+ #Trending</span>
+              <span class="tag-pill" onclick="appendTag('#Reels')">+ #Reels</span>
+              <span class="tag-pill" onclick="appendTag('#Shorts')">+ #Shorts</span>
+              <span class="tag-pill" onclick="appendTag('#NewsUpdate')">+ #NewsUpdate</span>
+            </div>
+          </div>
+
+          <div class="card-header-clean mt-2">
+            <span class="step-num">3</span>
+            <h3>Select Target Platforms</h3>
+          </div>
+
+          <div class="platforms-selector-grid">
+            
+            <label class="platform-check-card yt-card active">
+              <input type="checkbox" name="target_platform" value="youtube" checked onchange="togglePlatformCard(this)">
+              <div class="plat-card-inner">
+                <span class="plat-icon yt">▶</span>
+                <div class="plat-details">
+                  <strong>YouTube</strong>
+                  <small>Channel / Shorts VOD</small>
+                </div>
+                <div class="plat-checkbox">✓</div>
+              </div>
+            </label>
+
+            <label class="platform-check-card tg-card active">
+              <input type="checkbox" name="target_platform" value="telegram" checked onchange="togglePlatformCard(this)">
+              <div class="plat-card-inner">
+                <span class="plat-icon tg">✈</span>
+                <div class="plat-details">
+                  <strong>Telegram</strong>
+                  <small>Channel Broadcast</small>
+                </div>
+                <div class="plat-checkbox">✓</div>
+              </div>
+            </label>
+
+            <label class="platform-check-card tw-card active">
+              <input type="checkbox" name="target_platform" value="twitter" checked onchange="togglePlatformCard(this)">
+              <div class="plat-card-inner">
+                <span class="plat-icon tw">𝕏</span>
+                <div class="plat-details">
+                  <strong>Twitter / X</strong>
+                  <small>Media Tweet Post</small>
+                </div>
+                <div class="plat-checkbox">✓</div>
+              </div>
+            </label>
+
+            <label class="platform-check-card ig-card active">
+              <input type="checkbox" name="target_platform" value="instagram" checked onchange="togglePlatformCard(this)">
+              <div class="plat-card-inner">
+                <span class="plat-icon ig">📸</span>
+                <div class="plat-details">
+                  <strong>Instagram</strong>
+                  <small>Feed / Reel Post</small>
+                </div>
+                <div class="plat-checkbox">✓</div>
+              </div>
+            </label>
+
+            <label class="platform-check-card fb-card active">
+              <input type="checkbox" name="target_platform" value="facebook" checked onchange="togglePlatformCard(this)">
+              <div class="plat-card-inner">
+                <span class="plat-icon fb">📘</span>
+                <div class="plat-details">
+                  <strong>Facebook</strong>
+                  <small>Page Video / Post</small>
+                </div>
+                <div class="plat-checkbox">✓</div>
+              </div>
+            </label>
+
+          </div>
+
+          <!-- Blast Action CTA -->
+          <div class="action-footer">
+            <button type="submit" id="btnBlastSubmit" class="btn-hero-blast">
+              <span class="btn-glow"></span>
+              <span class="btn-content">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path>
+                  <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path>
+                  <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path>
+                  <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path>
+                </svg>
+                <span>Blast Everywhere (1-Click)</span>
+              </span>
+            </button>
+          </div>
+
+          <!-- Live Blast Results Display -->
+          <div id="blastResultsArea" class="blast-results-card" style="display:none;">
+            <div class="results-header">
+              <h4>🚀 Broadcast Results</h4>
+              <span id="blastOverallStatus" class="status-badge success">Completed</span>
+            </div>
+            <div id="blastResultsList" class="results-list">
+              <!-- Result rows inserted here -->
+            </div>
+          </div>
+
+        </div>
+
+      </form>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════
+         SYSTEM 2: AI WORD-TO-VIDEO & AUTO-BLAST
+         ════════════════════════════════════════════════════════════ -->
+    <section id="section-ai-create" class="workflow-section">
+      <div class="section-hero">
+        <h2>Generate Video from Words & Auto-Blast Everywhere</h2>
+        <p>Give a prompt, headline, or notes. The AI engine automatically conducts deep research, drafts the script, synthesizes neural voiceover, composites 1080p broadcast video, and auto-publishes to all platforms.</p>
+      </div>
+
+      <div class="ai-create-grid">
+        
+        <!-- Left Column: Inputs & Video Settings -->
+        <div class="layout-card">
+          <div class="card-header-clean">
+            <span class="step-num">1</span>
+            <h3>Prompt & Words</h3>
+          </div>
+
+          <div class="form-group">
+            <label for="aiTopic" class="input-label">Topic Headline / Keywords / Prompt *</label>
+            <input type="text" id="aiTopic" class="form-input text-lg" placeholder="e.g. ISRO Gaganyaan Mission 2026 crew and space capsule readiness" required>
+          </div>
+
+          <div class="form-group">
+            <label for="aiDirectUrl" class="input-label">Direct Article or Source URL (Optional)</label>
+            <input type="url" id="aiDirectUrl" class="form-input" placeholder="https://www.thehindu.com/news/... (for instant fact extraction)">
+          </div>
+
+          <div class="form-group">
+            <label for="aiRawNotes" class="input-label">Custom Notes or Specific Angle (Optional)</label>
+            <textarea id="aiRawNotes" class="form-textarea" rows="3" placeholder="Provide extra talking points, quotes, or background context to prioritize in the narration..."></textarea>
+          </div>
+
+          <div class="card-header-clean mt-2">
+            <span class="step-num">2</span>
+            <h3>Format & Neural Voice</h3>
+          </div>
+
+          <div class="format-cards-row">
+            <div class="format-card active" data-format="16:9 Documentary" onclick="selectFormatCard(this)">
+              <div class="format-aspect landscape">16:9</div>
+              <div class="format-info">
+                <strong>Landscape Video</strong>
+                <small>YouTube & Facebook Full-Length</small>
+              </div>
+            </div>
+
+            <div class="format-card" data-format="9:16 Vertical Short" onclick="selectFormatCard(this)">
+              <div class="format-aspect vertical">9:16</div>
+              <div class="format-info">
+                <strong>Vertical Reel / Short</strong>
+                <small>Instagram Reels & YouTube Shorts</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="two-col-inputs">
+            <div class="form-group">
+              <label for="aiVoice" class="input-label">Neural Narrator Voice</label>
+              <select id="aiVoice" class="form-select">
+                <option value="hi-IN-MadhurNeural" selected>Madhur (Hindi - Authoritative Male)</option>
+                <option value="hi-IN-SwaraNeural">Swara (Hindi - Journalistic Female)</option>
+                <option value="en-IN-PrabhatNeural">Prabhat (English/Indian Accent)</option>
+                <option value="en-US-GuyNeural">Guy (English - US Broadcast)</option>
+              </select>
+            </div>
 
             <div class="form-group">
-              <label>Topic / Headline / News URL:</label>
-              <textarea id="studioTopic" rows="3" placeholder="e.g. 'Supreme Court verdict on X case' or paste a news URL..."></textarea>
+              <label for="aiDuration" class="input-label">Target Duration</label>
+              <select id="aiDuration" class="form-select">
+                <option value="2.0">2-Minute Quick Bulletin</option>
+                <option value="5.0" selected>5-Minute In-Depth Report</option>
+                <option value="7.5">7.5-Minute Investigative Documentary</option>
+              </select>
             </div>
+          </div>
 
-            <div class="form-group">
-              <label>Video Format:</label>
-              <div class="format-pills">
-                <button class="pill-btn active" data-format="16:9 Documentary" onclick="selectFormat(this)">
-                  <span>🎥 16:9 Documentary</span><small>7–15 min · Deep-dive</small>
-                </button>
-                <button class="pill-btn" data-format="16:9 Breaking Bulletin" onclick="selectFormat(this)">
-                  <span>⚡ Breaking Bulletin</span><small>2–5 min · Urgent</small>
-                </button>
-                <button class="pill-btn" data-format="9:16 Vertical Short" onclick="selectFormat(this)">
-                  <span>📱 9:16 Short/Reel</span><small>60 sec · Viral</small>
-                </button>
-              </div>
+          <!-- Automation Master Option -->
+          <div class="automation-toggle-banner">
+            <div class="banner-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg></div>
+            <div class="banner-text">
+              <strong>Auto-Blast Everywhere Once Created</strong>
+              <p>Automatically publishes the final video & thumbnail to YouTube, Telegram, Twitter, Instagram & Facebook upon generation completion.</p>
             </div>
+            <label class="switch">
+              <input type="checkbox" id="aiAutoBlastToggle" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
 
-            <div class="form-row">
-              <div class="form-group col-half">
-                <label>Narrator Voice:</label>
-                <select id="studioVoice">
-                  <option value="hi-IN-MadhurNeural">MadhurNeural (Male Hindi)</option>
-                  <option value="hi-IN-SwaraNeural">SwaraNeural (Female Hindi)</option>
-                  <option value="en-IN-NeerjaNeural">NeerjaNeural (English India)</option>
-                  <option value="en-US-GuyNeural">GuyNeural (English US)</option>
-                </select>
-              </div>
-              <div class="form-group col-half">
-                <label>Length: <b id="studioLenVal">7.5</b> min</label>
-                <input type="range" id="studioLength" min="1" max="15" step="0.5" value="7.5"
-                  oninput="document.getElementById('studioLenVal').innerText=this.value">
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label>Publish To:</label>
-              <div class="platform-checkboxes" id="studioPublishTo">
-                <label class="plat-check yt-check"><input type="checkbox" value="youtube" checked> ▶ YouTube</label>
-                <label class="plat-check tg-check"><input type="checkbox" value="telegram" checked> ✈ Telegram</label>
-                <label class="plat-check tw-check"><input type="checkbox" value="twitter"> 𝕏 Twitter/X</label>
-                <label class="plat-check fb-check"><input type="checkbox" value="facebook"> 📘 Facebook</label>
-                <label class="plat-check ig-check"><input type="checkbox" value="instagram"> 📸 Instagram</label>
-              </div>
-            </div>
-
-            <button class="btn btn-primary btn-block" id="studioPublishBtn" onclick="studioPublish()">
-              🚀 Generate &amp; Publish to Selected Platforms
+          <div class="action-footer">
+            <button type="button" id="btnAIGenerate" class="btn-hero-ai" onclick="startAIGeneration()">
+              <span class="btn-glow-purple"></span>
+              <span class="btn-content">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                <span>Generate Video & Auto-Blast</span>
+              </span>
             </button>
           </div>
         </div>
 
-        <div class="studio-right">
-          <div class="glass-card">
-            <div class="card-header"><h3>👁 Auto-Generated Preview</h3></div>
-            <div class="preview-cards">
-              <div class="preview-card yt-preview">
-                <div class="preview-platform">▶ YouTube</div>
-                <div class="preview-thumb"></div>
-                <div class="preview-title" id="prevYtTitle">Enter a topic above to preview...</div>
-                <div class="preview-meta">16:9 · Hindi AI Voice · Auto-thumbnail</div>
+        <!-- Right Column: Generation Pipeline Visualizer & Live Monitor -->
+        <div class="layout-card pipeline-monitor-card">
+          <div class="card-header-clean">
+            <span class="step-num">3</span>
+            <h3>Autonomous Pipeline Status</h3>
+            <span id="pipelineStatusBadge" class="status-badge idle">Ready</span>
+          </div>
+
+          <!-- Animated Pipeline Flow Steps -->
+          <div class="pipeline-steps">
+            <div class="pipe-step" id="step-research">
+              <div class="step-circle"><span class="step-icon">🔍</span></div>
+              <div class="step-label">
+                <strong>Deep Fact Research</strong>
+                <small>Scrapes wire articles & Wikipedia</small>
               </div>
-              <div class="preview-card tg-preview">
-                <div class="preview-platform">✈ Telegram</div>
-                <div class="preview-caption" id="prevTgCaption">Thumbnail + YouTube link will be sent to your Telegram</div>
+              <div class="step-indicator"></div>
+            </div>
+
+            <div class="pipe-step" id="step-script">
+              <div class="step-circle"><span class="step-icon">📝</span></div>
+              <div class="step-label">
+                <strong>Journalistic Script</strong>
+                <small>Groq LLM newsroom narrative</small>
               </div>
-              <div class="preview-card tw-preview">
-                <div class="preview-platform">𝕏 Twitter / X</div>
-                <div class="preview-caption" id="prevTwCaption">Tweet with thumbnail auto-generated (max 280 chars)</div>
-                <div class="preview-meta">Auto-hashtags added</div>
+              <div class="step-indicator"></div>
+            </div>
+
+            <div class="pipe-step" id="step-voice">
+              <div class="step-circle"><span class="step-icon">🎙️</span></div>
+              <div class="step-label">
+                <strong>Neural Voiceover</strong>
+                <small>Edge-TTS broadcast audio</small>
               </div>
-              <div class="preview-card fb-preview">
-                <div class="preview-platform">📘 Facebook</div>
-                <div class="preview-caption" id="prevFbCaption">Page post with link + caption auto-generated</div>
+              <div class="step-indicator"></div>
+            </div>
+
+            <div class="pipe-step" id="step-render">
+              <div class="step-circle"><span class="step-icon">🎬</span></div>
+              <div class="step-label">
+                <strong>1080p Video & Thumbnails</strong>
+                <small>FFmpeg hardware render + 3D graphics</small>
               </div>
+              <div class="step-indicator"></div>
+            </div>
+
+            <div class="pipe-step" id="step-blast">
+              <div class="step-circle"><span class="step-icon">🚀</span></div>
+              <div class="step-label">
+                <strong>Auto-Blast Everywhere</strong>
+                <small>YouTube, Telegram, Twitter, Instagram, FB</small>
+              </div>
+              <div class="step-indicator"></div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- ══ TAB: SCHEDULER ══════════════════════════════════ -->
-    <div id="tab-scheduler" class="tab-page">
-      <div class="page-header">
-        <div>
-          <h2>Automation Scheduler</h2>
-          <p class="page-sub">Set posting frequency per platform — all run 24/7 without manual input</p>
-        </div>
-        <button class="btn btn-primary" onclick="saveSchedulerSettings()">💾 Save All</button>
-      </div>
-
-      <div class="glass-card mb-20">
-        <div class="card-header"><h3>🌙 Global Settings</h3></div>
-        <div class="form-row">
-          <div class="form-group col-half">
-            <label>Night Quiet Window (no posts):</label>
-            <div class="form-row">
-              <input type="number" id="nightStart" min="0" max="23" value="0" style="width:70px;">
-              <span class="form-sep">:00 to</span>
-              <input type="number" id="nightEnd" min="0" max="23" value="6" style="width:70px;">
-              <span class="form-sep">:00 IST</span>
+          <!-- Live Output Terminal Log -->
+          <div class="terminal-wrapper">
+            <div class="terminal-bar">
+              <div class="terminal-dots">
+                <span class="tdot red"></span>
+                <span class="tdot yellow"></span>
+                <span class="tdot green"></span>
+              </div>
+              <span class="terminal-title">STDOUT & FFmpeg Engine Feed</span>
+              <button class="btn-clear-term" onclick="clearTerminal()">Clear</button>
             </div>
+            <pre class="terminal-window" id="terminalLog">OmniBlast AI Engine initialized. Standing by for prompt...</pre>
           </div>
-          <div class="form-group col-half">
-            <label>AI Script Model:</label>
-            <select id="modelSelect">
-              <option value="openai/gpt-oss-120b" selected>openai/gpt-oss-120b (Best Quality)</option>
-              <option value="openai/gpt-oss-20b">openai/gpt-oss-20b (Fast)</option>
-              <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile</option>
-            </select>
-          </div>
+
         </div>
-        <div class="form-row">
-          <div class="form-group col-half">
-            <label>Default Voice:</label>
-            <select id="schedVoice">
-              <option value="hi-IN-MadhurNeural" selected>MadhurNeural (Male Hindi)</option>
-              <option value="hi-IN-SwaraNeural">SwaraNeural (Female Hindi)</option>
-              <option value="en-IN-NeerjaNeural">NeerjaNeural (English India)</option>
-            </select>
-          </div>
-          <div class="form-group col-half">
-            <label>Default Video Length: <b id="schedLenVal">7.5</b> min</label>
-            <input type="range" id="schedLength" min="2" max="20" step="0.5" value="7.5"
-              oninput="document.getElementById('schedLenVal').innerText=this.value">
-          </div>
-        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════
+         SYSTEM 3: PUBLISH HISTORY & ANALYTICS
+         ════════════════════════════════════════════════════════════ -->
+    <section id="section-history" class="workflow-section">
+      <div class="section-hero">
+        <h2>Blasted Media History</h2>
+        <p>Complete audit log of all media and videos published across YouTube, Telegram, Twitter, Instagram, and Facebook.</p>
       </div>
 
-      <div class="schedule-grid" id="scheduleGrid"></div>
-    </div>
-
-    <!-- ══ TAB: PLATFORMS ══════════════════════════════════ -->
-    <div id="tab-platforms" class="tab-page">
-      <div class="page-header">
-        <div>
-          <h2>Platform Accounts</h2>
-          <p class="page-sub">Connect your social accounts · credentials stored securely on your EC2 server</p>
+      <div class="layout-card">
+        <div class="table-header-row">
+          <h3>Recent Published Posts</h3>
+          <button class="btn-refresh-history" onclick="loadHistory()">🔄 Refresh List</button>
         </div>
-        <button class="btn btn-outline" onclick="loadPlatforms()">🔄 Refresh Status</button>
-      </div>
 
-      <div class="info-banner">
-        <span>💡</span>
-        <span>YouTube is already connected via OAuth. For other platforms, paste your API credentials below and click <b>Save &amp; Connect</b>. Once connected, enable the toggle to start auto-posting.</span>
-      </div>
-
-      <div class="platforms-grid" id="platformsGrid">
-        <div class="loading-text">Loading platform status...</div>
-      </div>
-    </div>
-
-    <!-- ══ TAB: YOUTUBE CHANNEL ════════════════════════════ -->
-    <div id="tab-channels" class="tab-page">
-      <div class="page-header">
-        <div>
-          <h2>YouTube Channel</h2>
-          <p class="page-sub">Switch between YouTube channels or upload a new OAuth token</p>
+        <div class="history-table-container">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Date / Time</th>
+                <th>Title / Headline</th>
+                <th>Target Platforms</th>
+                <th>Status</th>
+                <th>Quick Links</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody">
+              <tr>
+                <td colspan="5" class="table-loading">Loading recent publish history...</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
-
-      <div class="glass-card mb-20">
-        <div class="card-header"><h3>📺 Active Channel</h3></div>
-        <div id="activeChannelInfo" class="active-channel-box">
-          <div class="channel-logo">▶</div>
-          <div>
-            <div class="channel-name" id="activeChName">SRJ UNDERRATED</div>
-            <div class="channel-id" id="activeChId">UC7lAXODVk6aGIxE60Qy-9Yg</div>
-            <span class="status-connected" style="font-size:11px;padding:3px 10px;border-radius:10px;">✅ OAuth Connected</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="channels-grid">
-        <div class="glass-card">
-          <div class="card-header"><h3>🔄 Switch Channel</h3></div>
-          <div class="form-group">
-            <label>Channel Name:</label>
-            <input type="text" id="switchChName" placeholder="e.g. My News Channel">
-          </div>
-          <div class="form-group">
-            <label>Channel ID:</label>
-            <input type="text" id="switchChId" placeholder="e.g. UCxxxxxxxxxxxxxxxx">
-          </div>
-          <div class="form-group">
-            <label>OAuth token.json (paste JSON):</label>
-            <textarea id="switchChToken" rows="4" placeholder='{"token": "...", "refresh_token": "...", ...}'></textarea>
-          </div>
-          <button class="btn btn-primary" onclick="switchChannel()">🔀 Switch Channel</button>
-        </div>
-
-        <div class="glass-card">
-          <div class="card-header"><h3>📋 Channel List</h3></div>
-          <div id="channelList" class="channel-list">
-            <div class="loading-text">Loading channels...</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ TAB: AI STRATEGY ════════════════════════════════ -->
-    <div id="tab-strategy" class="tab-page">
-      <div class="page-header">
-        <div>
-          <h2>AI Content Strategy</h2>
-          <p class="page-sub">Control what topics the AI covers and how content is mixed across platforms</p>
-        </div>
-        <button class="btn btn-primary" onclick="saveStrategy()">💾 Save Strategy</button>
-      </div>
-
-      <div class="strategy-grid">
-        <div class="glass-card">
-          <div class="card-header"><h3>🎯 Content Mix</h3></div>
-          <div class="form-group">
-            <label>Breaking News: <b id="mixBreaking">40</b>%</label>
-            <input type="range" id="mixBreakingSlider" min="0" max="100" value="40"
-              oninput="document.getElementById('mixBreaking').innerText=this.value">
-          </div>
-          <div class="form-group">
-            <label>Investigative Documentary: <b id="mixDoc">35</b>%</label>
-            <input type="range" id="mixDocSlider" min="0" max="100" value="35"
-              oninput="document.getElementById('mixDoc').innerText=this.value">
-          </div>
-          <div class="form-group">
-            <label>Shorts / Reels: <b id="mixShorts">25</b>%</label>
-            <input type="range" id="mixShortsSlider" min="0" max="100" value="25"
-              oninput="document.getElementById('mixShorts').innerText=this.value">
-          </div>
-          <div class="form-group">
-            <label>Narrative Style:</label>
-            <select id="stratNarrative">
-              <option value="investigative">Investigative (Nitish Rajput style)</option>
-              <option value="breaking">Breaking News (Urgent)</option>
-              <option value="educational">Educational Explainer</option>
-              <option value="casual">Casual / Friendly</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="glass-card">
-          <div class="card-header"><h3>📡 News Categories</h3></div>
-          <div class="category-checks">
-            <label class="checkbox-pill"><input type="checkbox" id="cat_national" checked> 🇮🇳 National Politics</label>
-            <label class="checkbox-pill"><input type="checkbox" id="cat_court" checked> ⚖️ Court &amp; Legal Cases</label>
-            <label class="checkbox-pill"><input type="checkbox" id="cat_crime" checked> 🚨 Crime &amp; Scams</label>
-            <label class="checkbox-pill"><input type="checkbox" id="cat_sports" checked> 🏏 Sports &amp; Cricket</label>
-            <label class="checkbox-pill"><input type="checkbox" id="cat_tech" checked> 💻 Tech &amp; Cyber</label>
-            <label class="checkbox-pill"><input type="checkbox" id="cat_economy" checked> 💰 Economy &amp; Finance</label>
-            <label class="checkbox-pill"><input type="checkbox" id="cat_intl"> 🌍 International</label>
-            <label class="checkbox-pill"><input type="checkbox" id="cat_entertainment"> 🎬 Entertainment</label>
-            <label class="checkbox-pill"><input type="checkbox" id="cat_health"> 🏥 Health &amp; Science</label>
-          </div>
-        </div>
-
-        <div class="glass-card">
-          <div class="card-header"><h3>🚫 Blocked Keywords</h3></div>
-          <div class="form-group">
-            <label>Skip topics containing these words (one per line):</label>
-            <textarea id="blacklistWords" rows="6" placeholder="gossip&#10;rumor&#10;clickbait&#10;fake"></textarea>
-          </div>
-          <div class="form-group">
-            <label>Custom RSS Feeds (one URL per line):</label>
-            <textarea id="customRssFeeds" rows="4" placeholder="https://feeds.bbci.co.uk/news/rss.xml&#10;https://www.ndtv.com/rss/top-stories"></textarea>
-          </div>
-        </div>
-
-        <div class="glass-card">
-          <div class="card-header"><h3>🎭 Platform Tone Mapping</h3></div>
-          <div class="tone-map-list">
-            <div class="tone-map-row">
-              <span class="plat-icon yt" style="width:28px;height:28px;font-size:14px;border-radius:6px;display:flex;align-items:center;justify-content:center;">▶</span>
-              <span>YouTube</span>
-              <select style="margin-left:auto;width:160px;"><option>Investigative</option><option>Documentary</option><option>Educational</option></select>
-            </div>
-            <div class="tone-map-row">
-              <span class="plat-icon tg" style="width:28px;height:28px;font-size:14px;border-radius:6px;display:flex;align-items:center;justify-content:center;">✈</span>
-              <span>Telegram</span>
-              <select style="margin-left:auto;width:160px;"><option>Breaking</option><option>Casual</option><option>Informative</option></select>
-            </div>
-            <div class="tone-map-row">
-              <span class="plat-icon tw" style="width:28px;height:28px;font-size:14px;border-radius:6px;display:flex;align-items:center;justify-content:center;">𝕏</span>
-              <span>Twitter / X</span>
-              <select style="margin-left:auto;width:160px;"><option>Punchy Tweet</option><option>Thread</option><option>Breaking</option></select>
-            </div>
-            <div class="tone-map-row">
-              <span class="plat-icon fb" style="width:28px;height:28px;font-size:14px;border-radius:6px;display:flex;align-items:center;justify-content:center;">📘</span>
-              <span>Facebook</span>
-              <select style="margin-left:auto;width:160px;"><option>Story Post</option><option>Link Share</option><option>Video</option></select>
-            </div>
-            <div class="tone-map-row">
-              <span class="plat-icon ig" style="width:28px;height:28px;font-size:14px;border-radius:6px;display:flex;align-items:center;justify-content:center;">📸</span>
-              <span>Instagram</span>
-              <select style="margin-left:auto;width:160px;"><option>Reels</option><option>Photo Post</option><option>Story</option></select>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ TAB: ANALYTICS ══════════════════════════════════ -->
-    <div id="tab-analytics" class="tab-page">
-      <div class="page-header">
-        <div>
-          <h2>Analytics &amp; Reports</h2>
-          <p class="page-sub">Full publishing history across all platforms</p>
-        </div>
-        <button class="btn btn-outline" onclick="loadHistory()">🔄 Refresh</button>
-      </div>
-
-      <div class="analytics-grid">
-        <!-- Summary Cards -->
-        <div class="analytics-summary" id="analyticsSummary">
-          <div class="glass-card sum-card">
-            <div class="sum-val" id="sumTotal">—</div>
-            <div class="sum-lbl">Total Posts</div>
-          </div>
-          <div class="glass-card sum-card">
-            <div class="sum-val" id="sumToday">—</div>
-            <div class="sum-lbl">Today</div>
-          </div>
-          <div class="glass-card sum-card">
-            <div class="sum-val" id="sumYT">—</div>
-            <div class="sum-lbl">YouTube</div>
-          </div>
-          <div class="glass-card sum-card">
-            <div class="sum-val" id="sumTG">—</div>
-            <div class="sum-lbl">Telegram</div>
-          </div>
-        </div>
-
-        <div class="glass-card full-width">
-          <div class="card-header">
-            <h3>📋 Multi-Platform Publish History</h3>
-          </div>
-          <div id="historyTable" class="history-table">
-            <div class="loading-text">Loading history...</div>
-          </div>
-        </div>
-
-        <div class="glass-card full-width">
-          <div class="card-header"><h3>📟 Full Server Log</h3></div>
-          <div id="analyticsLog" class="log-console"></div>
-        </div>
-      </div>
-    </div>
+    </section>
 
   </main>
+
+  <!-- ─── PLATFORM CREDENTIALS MODAL ────────────────────────────── -->
+  <div class="modal-overlay" id="configModal" onclick="closeConfigModal(event)">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h3>Platform API Settings</h3>
+          <p class="modal-sub">Configure API keys and access tokens for multi-platform broadcasting</p>
+        </div>
+        <button class="btn-modal-close" onclick="closeConfigModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        
+        <!-- Telegram Tab -->
+        <div class="config-section">
+          <div class="config-header">
+            <span class="plat-badge tg">✈ Telegram</span>
+            <span id="tgStatusBadge" class="status-badge-sm">Checking...</span>
+          </div>
+          <div class="config-fields">
+            <div class="form-group">
+              <label class="input-label-sm">Bot Token</label>
+              <input type="password" id="cfgTgBotToken" class="form-input-sm" placeholder="123456789:ABCdefGHIjkLMNopQRstUVwxyZ">
+            </div>
+            <div class="form-group">
+              <label class="input-label-sm">Channel ID / Username</label>
+              <input type="text" id="cfgTgChannelId" class="form-input-sm" placeholder="@YourChannel or -1001234567890">
+            </div>
+            <button class="btn-save-sm" onclick="savePlatformCreds('telegram')">Save & Verify Telegram</button>
+          </div>
+        </div>
+
+        <!-- Twitter Tab -->
+        <div class="config-section">
+          <div class="config-header">
+            <span class="plat-badge tw">𝕏 Twitter / X</span>
+            <span id="twStatusBadge" class="status-badge-sm">Checking...</span>
+          </div>
+          <div class="config-fields-grid">
+            <div class="form-group">
+              <label class="input-label-sm">API Key</label>
+              <input type="password" id="cfgTwApiKey" class="form-input-sm" placeholder="Consumer API Key">
+            </div>
+            <div class="form-group">
+              <label class="input-label-sm">API Secret</label>
+              <input type="password" id="cfgTwApiSecret" class="form-input-sm" placeholder="Consumer API Secret">
+            </div>
+            <div class="form-group">
+              <label class="input-label-sm">Access Token</label>
+              <input type="password" id="cfgTwAccessToken" class="form-input-sm" placeholder="Access Token">
+            </div>
+            <div class="form-group">
+              <label class="input-label-sm">Access Token Secret</label>
+              <input type="password" id="cfgTwTokenSecret" class="form-input-sm" placeholder="Token Secret">
+            </div>
+          </div>
+          <button class="btn-save-sm" onclick="savePlatformCreds('twitter')">Save Twitter Credentials</button>
+        </div>
+
+        <!-- YouTube Tab -->
+        <div class="config-section">
+          <div class="config-header">
+            <span class="plat-badge yt">▶ YouTube</span>
+            <span id="ytStatusBadge" class="status-badge-sm">Checking...</span>
+          </div>
+          <p class="config-hint">YouTube uploads use <code>data/token.json</code> OAuth or Live RTMP Key from <code>.env</code>.</p>
+        </div>
+
+        <!-- Instagram Tab -->
+        <div class="config-section">
+          <div class="config-header">
+            <span class="plat-badge ig">📸 Instagram</span>
+            <span id="igStatusBadge" class="status-badge-sm">Checking...</span>
+          </div>
+          <div class="config-fields">
+            <div class="form-group">
+              <label class="input-label-sm">Instagram Graph User Access Token</label>
+              <input type="password" id="cfgIgToken" class="form-input-sm" placeholder="EAABw...">
+            </div>
+            <div class="form-group">
+              <label class="input-label-sm">Instagram Business Account ID</label>
+              <input type="text" id="cfgIgPageId" class="form-input-sm" placeholder="178414...">
+            </div>
+            <button class="btn-save-sm" onclick="savePlatformCreds('instagram')">Save Instagram Token</button>
+          </div>
+        </div>
+
+        <!-- Facebook Tab -->
+        <div class="config-section">
+          <div class="config-header">
+            <span class="plat-badge fb">📘 Facebook</span>
+            <span id="fbStatusBadge" class="status-badge-sm">Checking...</span>
+          </div>
+          <div class="config-fields">
+            <div class="form-group">
+              <label class="input-label-sm">Facebook Page Access Token</label>
+              <input type="password" id="cfgFbToken" class="form-input-sm" placeholder="EAABw...">
+            </div>
+            <div class="form-group">
+              <label class="input-label-sm">Facebook Page ID</label>
+              <input type="text" id="cfgFbPageId" class="form-input-sm" placeholder="10583729...">
+            </div>
+            <button class="btn-save-sm" onclick="savePlatformCreds('facebook')">Save Facebook Token</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
 </div>
+
+<!-- Audio and Toast Notification Container -->
+<div id="toastContainer" class="toast-container"></div>
+
 <script src="/static/app.js"></script>
 </body>
 </html>

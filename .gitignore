@@ -1,9 +1,23 @@
 # Environment variables and secrets
 .env
-aws.env
-client_secret.json
-token.json
+.env.*
+*.env
 *.pem
+client_secret.json
+**/client_secret.json
+token.json
+**/token.json
+credentials/
+aws.env
+neon-storage.env
+
+# Data and runtime caches
+data/
+*.db
+
+# Internal agent docs
+*AGENTS.md
+*agents.md
 
 # Python cache and bytecode
 __pycache__/
@@ -41,8 +55,6 @@ static/*.jpg
 static/*.mp4
 static/*.mp3
 
-neon-storage.env
-*.db
 node_modules/
 .next/
 output/
@@ -50,4 +62,3 @@ output/
 tools/
 *.zip
 *.gz
-

@@ -8,6 +8,7 @@ import { SchedulerModal } from "@/components/SchedulerModal";
 import { ScheduledQueue } from "@/components/ScheduledQueue";
 import { BrandKitModal } from "@/components/BrandKitModal";
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
+import { YouTubeStudio } from "@/components/YouTubeStudio";
 import { useStudioStore } from "@/lib/store";
 
 export default function Home() {
@@ -44,6 +45,8 @@ export default function Home() {
         {activeTab === "analytics" && <AnalyticsDashboard />}
 
         {activeTab === "brandkit" && <BrandKitModal />}
+
+        {activeTab === "youtube" && <YouTubeStudio />}
       </main>
 
       {/* Scheduler Modal */}

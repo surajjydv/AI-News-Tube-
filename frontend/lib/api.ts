@@ -1,5 +1,5 @@
 ﻿import axios from "axios";
-import { Account, BrandKit, ContentType, AspectRatio, MediaAsset, ScheduledPost } from "@/types";
+import { Account, BrandKit, ContentType, AspectRatio, MediaAsset, ScheduledPost, YouTubeChannel, YouTubeVideo, YouTubeStreamInfo } from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/studio";
 
@@ -79,5 +79,20 @@ export const api = {
   async saveBrandKit(accountId: string, brandKit: BrandKit): Promise<void> {
     await apiClient.post(`/brandkit/${accountId}`, brandKit);
   },
-};
 
+  // Real YouTube Data API Methods
+  async getYouTubeChannel(): Promise<YouTubeChannel> {
+    const res = await axios.get<YouTubeChannel>("http://127.0.0.1:8000/api/youtube/channel");
+    return res.data;
+  },
+
+  async getYouTubeVideos(maxResults: number = 24): Promise<{ videos: YouTubeVideo[]; total: number }> {
+    const res = await axios.get<{ videos: YouTubeVideo[]; total: number }>(`http://127.0.0.1:8000/api/youtube/videos?max_results=${maxResults}`);
+    return res.data;
+  },
+
+  async getYouTubeStream(): Promise<YouTubeStreamInfo> {
+    const res = await axios.get<YouTubeStreamInfo>("http://127.0.0.1:8000/api/youtube/stream");
+    return res.data;
+  },
+};
