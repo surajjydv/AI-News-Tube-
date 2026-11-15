@@ -209,3 +209,10 @@
   - Redesigned `Navbar.tsx` with real brand identity (`SRJ UNDERRATED • AI Broadcast & Distribution Studio`), live broadcast beacon, and channel selector.
   - Rebuilt `AnalyticsDashboard.tsx` to display real YouTube Data API v3 channel metrics (1,091 views, 105 videos, 3 subscribers) and real broadcast feed with direct YouTube watch links.
   - Verified zero TypeScript compilation errors on both Next.js frontend bundles.
+
+- **Real YouTube Upload Feed & Manual Production Desk**:
+  - Replaced hardcoded 2-video fallback in `services/youtube_real_service.py` with direct ingestion of the official YouTube RSS feed for channel `UC7lAXODVk6aGIxE60Qy-9Yg` (returning all 15 real uploads without authentication errors) alongside local freshly-rendered broadcast MP4s from `videos/` (21 total videos displayed).
+  - Mounted `/videos` and `/thumbnails` as static files in `app.py` for direct browser streaming and thumbnail rendering.
+  - Added **Manual Video Production & Instant Broadcast Desk** directly inside `YouTubeStudio.tsx` with topic input, format selector (16:9 full bulletin vs 9:16 vertical short), voice selector, "⚡ Generate & Broadcast Now" (calling `POST /api/generate/custom`), and "🔥 1-Click Auto Trending Video" (calling `POST /api/generate/trending`).
+  - Updated `PromptStudio.tsx` to replace legacy bakery prompts with breaking news topics.
+  - Both Next.js frontends compile cleanly with 0 errors via `tsc --noEmit`.

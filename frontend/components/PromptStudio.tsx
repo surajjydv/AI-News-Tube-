@@ -6,20 +6,20 @@ import { ContentType, AspectRatio } from "@/types";
 import { Wand2, Film, Image as ImageIcon, Loader2, Key } from "lucide-react";
 
 const PROMPT_IDEAS = [
-  "Promote my bakery's weekend Alphonso Mango Cake with luxurious slow-mo glaze",
-  "High-octane CrossFit workout reel introducing morning 6 AM batch with gym beat",
-  "New botanical vitamin C serum product launch with morning sun flare aesthetic",
-  "Client review showcase: how our artisan sourdough gained 500 loyal weekly fans",
+  "Delhi Air Quality Crisis: Supreme Court Imposes Emergency Action",
+  "Ramayana Movie Official Release Update: Ranbir Kapoor & Yash",
+  "Bengal Santiniketan Police Encounter: Ground Investigation",
+  "Union Budget 2026: Tax Slabs & Infrastructure Key Highlights",
 ];
 
 export const PromptStudio: React.FC = () => {
   const { isGenerating, generationStep, generationPercent, generateContent, setActiveTab } = useStudioStore();
   const [prompt, setPrompt] = useState(
-    "Promote my bakery's new mango cake for weekends with irresistible gourmet vibe"
+    "Delhi Air Quality Crisis: Supreme Court Imposes Emergency Action"
   );
   const [contentType, setContentType] = useState<ContentType>("reel");
-  const [aspectRatio, setAspectRatio] = useState<AspectRatio>("9:16");
-  const [tone, setTone] = useState("Warm & Artisanal");
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>("16:9");
+  const [tone, setTone] = useState("Prime-Time News & Documentary");
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();

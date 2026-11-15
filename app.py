@@ -31,6 +31,14 @@ STATIC_DIR = BASE_DIR / "static"
 STATIC_DIR.mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
+VIDEOS_DIR = BASE_DIR / "videos"
+VIDEOS_DIR.mkdir(exist_ok=True)
+app.mount("/videos", StaticFiles(directory=str(VIDEOS_DIR)), name="videos")
+
+THUMBNAILS_DIR = BASE_DIR / "thumbnails"
+THUMBNAILS_DIR.mkdir(exist_ok=True)
+app.mount("/thumbnails", StaticFiles(directory=str(THUMBNAILS_DIR)), name="thumbnails")
+
 
 # ── Pydantic Request Schemas ─────────────────────────────────────────────────
 class SettingsUpdateRequest(BaseModel):

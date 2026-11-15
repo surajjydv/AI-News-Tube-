@@ -15,6 +15,11 @@ import {
   Play,
   X,
   Share2,
+  Wand2,
+  Flame,
+  CheckCircle2,
+  AlertCircle,
+  Video,
 } from "lucide-react";
 
 export const YouTubeStudio: React.FC = () => {
@@ -28,6 +33,13 @@ export const YouTubeStudio: React.FC = () => {
   const [copiedLink, setCopiedLink] = useState(false);
   const [revealKey, setRevealKey] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<YouTubeVideo | null>(null);
+
+  // Manual generation state
+  const [customTopic, setCustomTopic] = useState("");
+  const [videoFormat, setVideoFormat] = useState("16:9 Breaking");
+  const [voiceId, setVoiceId] = useState("hi-IN-MadhurNeural");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationMsg, setGenerationMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const fetchRealData = async () => {
     setLoading(true);
@@ -61,6 +73,83 @@ export const YouTubeStudio: React.FC = () => {
     fetchRealData();
   }, []);
 
+  const handleManualGenerate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customTopic.trim() || isGenerating) return;
+
+    setIsGenerating(true);
+    setGenerationMsg(null);
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/generate/custom", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: customTopic.trim(),
+          video_format: videoFormat,
+          voice_id: voiceId,
+          target_minutes: videoFormat.includes("Shorts") ? 1.0 : 2.5,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setGenerationMsg({
+          type: "success",
+          text: `Production started for "${customTopic}". Rendering 1080p broadcast video in background. It will appear below once ready.`,
+        });
+        setCustomTopic("");
+        // Refresh videos after 5 seconds
+        setTimeout(() => fetchRealData(), 5000);
+      } else {
+        setGenerationMsg({
+          type: "error",
+          text: data.detail || "Generation request failed. Please check backend.",
+        });
+      }
+    } catch (err: any) {
+      setGenerationMsg({
+        type: "error",
+        text: err?.message || "Failed to reach backend server on port 8000.",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleTriggerTrending = async () => {
+    if (isGenerating) return;
+    setIsGenerating(true);
+    setGenerationMsg(null);
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/generate/trending", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setGenerationMsg({
+          type: "success",
+          text: "1-Click Trending Video production triggered. Story research, scriptwriting, and FFmpeg encoding active.",
+        });
+        setTimeout(() => fetchRealData(), 6000);
+      } else {
+        setGenerationMsg({
+          type: "error",
+          text: data.detail || "Trending generation failed.",
+        });
+      }
+    } catch (err: any) {
+      setGenerationMsg({
+        type: "error",
+        text: err?.message || "Backend error triggering trending cycle.",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const filteredVideos = videos.filter((v) => {
     const matchesFilter =
       filter === "all" ? true : filter === "shorts" ? v.isShort : !v.isShort;
@@ -69,6 +158,13 @@ export const YouTubeStudio: React.FC = () => {
       v.title.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
   });
+
+  const QUICK_TOPICS = [
+    "Delhi Air Quality Crisis: Supreme Court Imposes Emergency Action",
+    "Ramayana Movie Official Release Update: Ranbir Kapoor & Yash",
+    "Bengal Santiniketan Police Encounter: Ground Investigation",
+    "Union Budget 2026: Tax Slabs & Infrastructure Key Highlights",
+  ];
 
   return (
     <div className="space-y-6 pb-10">
@@ -99,32 +195,35 @@ export const YouTubeStudio: React.FC = () => {
                 <h1 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">
                   {channel?.title || "SRJ UNDERRATED"}
                 </h1>
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  LIVE
+                </span>
+                <span className="px-2 py-0.5 rounded-sm bg-slate-100 text-slate-600 text-xs font-medium border border-slate-200">
+                  {channel?.customUrl || "@SRJUNDERRATED"}
+                </span>
               </div>
-              <p className="text-xs text-slate-500 font-medium mt-1 flex items-center gap-2">
-                <span className="text-red-600 font-semibold">{channel?.customUrl || "@SRJUNDERRATED"}</span>
-                <span className="text-slate-300">|</span>
-                <span>OAuth 2.0 Connected</span>
-                <span className="text-slate-300">|</span>
-                <span className="text-emerald-600 font-semibold">Synchronized</span>
+              <p className="text-xs text-slate-500 mt-1 max-w-xl">
+                {channel?.description || "24/7 AI-NewsTube Live & Automated Broadcasts"}
               </p>
             </div>
           </div>
 
-          {/* Quick Action Buttons */}
-          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+          {/* Quick Actions */}
+          <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto justify-end">
             <button
               onClick={fetchRealData}
               disabled={loading}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-sm bg-slate-100 hover:bg-slate-200 text-xs text-slate-700 font-semibold border border-slate-300 transition-colors"
+              className="px-3.5 py-2 rounded-sm bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 border border-slate-200 transition-colors flex items-center gap-2"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-red-600" : ""}`} />
-              Sync YouTube API
+              Refresh Data
             </button>
             <a
               href="https://studio.youtube.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-sm bg-red-600 hover:bg-red-700 active:scale-[0.99] text-xs text-white font-semibold transition-colors shadow-xs"
+              className="px-3.5 py-2 rounded-sm bg-red-600 hover:bg-red-700 text-xs font-semibold text-white transition-colors flex items-center gap-2 shadow-xs"
             >
               <ExternalLink className="w-3.5 h-3.5" />
               Open YouTube Studio
@@ -132,7 +231,7 @@ export const YouTubeStudio: React.FC = () => {
           </div>
         </div>
 
-        {/* Live Metrics Bar */}
+        {/* Live Metrics Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-200">
           <div className="bg-slate-50 p-4 rounded-sm border border-slate-200">
             <div className="flex items-center justify-between text-slate-500 text-xs mb-1.5 font-medium">
@@ -140,13 +239,13 @@ export const YouTubeStudio: React.FC = () => {
               <Film className="w-4 h-4 text-red-600" />
             </div>
             <span className="text-2xl font-black text-slate-900 tracking-tight">
-              {channel?.videoCount || videos.length || 105}
+              {channel?.videoCount || 105}
             </span>
           </div>
 
           <div className="bg-slate-50 p-4 rounded-sm border border-slate-200">
             <div className="flex items-center justify-between text-slate-500 text-xs mb-1.5 font-medium">
-              <span>Total Channel Views</span>
+              <span>Channel Views</span>
               <Eye className="w-4 h-4 text-red-600" />
             </div>
             <span className="text-2xl font-black text-slate-900 tracking-tight">
@@ -174,6 +273,135 @@ export const YouTubeStudio: React.FC = () => {
             </span>
           </div>
         </div>
+      </div>
+
+      {/* Manual Video Production & Instant Broadcast Desk */}
+      <div className="bg-white rounded-sm p-6 border border-slate-200 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-sm bg-red-600 text-white shadow-xs">
+              <Wand2 className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">Manual Video Production Desk</h3>
+              <p className="text-xs text-slate-500">Generate and publish a 1080p full-HD broadcast video or vertical short on demand</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleTriggerTrending}
+            disabled={isGenerating}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold transition-colors shadow-2xs"
+          >
+            <Flame className="w-3.5 h-3.5 text-amber-600" />
+            1-Click Auto Trending Video
+          </button>
+        </div>
+
+        {generationMsg && (
+          <div
+            className={`p-3 rounded-sm border text-xs flex items-start gap-2 ${
+              generationMsg.type === "success"
+                ? "bg-emerald-50 border-emerald-300 text-emerald-800"
+                : "bg-red-50 border-red-300 text-red-800"
+            }`}
+          >
+            {generationMsg.type === "success" ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+            )}
+            <div className="flex-1">
+              <span>{generationMsg.text}</span>
+              {generationMsg.type === "success" && (
+                <button
+                  onClick={fetchRealData}
+                  className="block mt-1 font-bold underline hover:text-emerald-900 cursor-pointer"
+                >
+                  Click to Refresh Uploads Feed →
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        <form onSubmit={handleManualGenerate} className="space-y-3.5">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Topic Headline / Breaking News Prompt:
+            </label>
+            <input
+              type="text"
+              value={customTopic}
+              onChange={(e) => setCustomTopic(e.target.value)}
+              placeholder="e.g. Delhi Air Quality Crisis: Supreme Court Imposes Emergency Action"
+              className="w-full bg-white border border-slate-300 rounded-sm px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors"
+            />
+          </div>
+
+          {/* Quick Idea Pills */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] text-slate-500 mr-1 font-medium">Quick Ideas:</span>
+            {QUICK_TOPICS.map((topic, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setCustomTopic(topic)}
+                className="text-[11px] px-2.5 py-1 rounded-sm bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-colors truncate max-w-[280px]"
+              >
+                {topic}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-600 mb-1">Video Format</label>
+              <select
+                value={videoFormat}
+                onChange={(e) => setVideoFormat(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-sm p-2 text-xs font-medium text-slate-800 outline-none"
+              >
+                <option value="16:9 Breaking">16:9 Full Broadcast Bulletin</option>
+                <option value="9:16 Shorts">9:16 Vertical News Short</option>
+                <option value="16:9 Documentary">16:9 Documentary Explainer</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-600 mb-1">Narrator Voice</label>
+              <select
+                value={voiceId}
+                onChange={(e) => setVoiceId(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-sm p-2 text-xs font-medium text-slate-800 outline-none"
+              >
+                <option value="hi-IN-MadhurNeural">hi-IN-MadhurNeural (Male Prime-Time)</option>
+                <option value="hi-IN-SwaraNeural">hi-IN-SwaraNeural (Female Expressive)</option>
+                <option value="en-IN-PrabhatNeural">en-IN-PrabhatNeural (English Male)</option>
+              </select>
+            </div>
+
+            <div className="flex items-end">
+              <button
+                type="submit"
+                disabled={isGenerating || !customTopic.trim()}
+                className="w-full py-2.5 px-4 rounded-sm bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+              >
+                {isGenerating ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    Producing Broadcast...
+                  </>
+                ) : (
+                  <>
+                    <Video className="w-3.5 h-3.5" />
+                    ⚡ Generate & Broadcast Now
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </form>
       </div>
 
       {/* RTMP Broadcast Controller Card */}
@@ -264,79 +492,74 @@ export const YouTubeStudio: React.FC = () => {
 
       {/* Videos Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="bg-white rounded-sm p-3 border border-slate-200 animate-pulse space-y-3 shadow-xs">
-              <div className="aspect-video bg-slate-100 rounded-sm" />
-              <div className="h-4 bg-slate-200 rounded-sm w-3/4" />
-              <div className="h-3 bg-slate-100 rounded-sm w-1/2" />
-            </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <div key={i} className="bg-slate-100 animate-pulse rounded-sm aspect-video" />
           ))}
         </div>
       ) : filteredVideos.length === 0 ? (
-        <div className="text-center py-16 border border-dashed border-slate-300 rounded-sm bg-white">
-          <Film className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-          <h3 className="text-sm font-bold text-slate-700">No matching videos found</h3>
-          <p className="text-xs text-slate-500 mt-1">Try adjusting your search query or filter selection.</p>
+        <div className="bg-white rounded-sm p-12 text-center border border-slate-200">
+          <Film className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+          <p className="text-sm font-semibold text-slate-700">No videos matching criteria</p>
+          <p className="text-xs text-slate-400 mt-1">Try clearing your search query or refreshing data.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filteredVideos.map((vid) => {
-            const dateStr = new Date(vid.publishedAt).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            });
+            const dateStr = vid.publishedAt
+              ? new Date(vid.publishedAt).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })
+              : "Live";
 
             return (
               <div
                 key={vid.id}
-                className="group relative bg-white rounded-sm overflow-hidden border border-slate-200 hover:border-slate-300 shadow-xs hover:shadow-sm transition-all flex flex-col justify-between"
+                onClick={() => setSelectedVideo(vid)}
+                className="group relative bg-white border border-slate-200 hover:border-slate-300 rounded-sm overflow-hidden flex flex-col cursor-pointer transition-all shadow-2xs hover:shadow-sm"
               >
-                {/* 16:9 Thumbnail Cover */}
-                <div
-                  className="relative aspect-video bg-black overflow-hidden cursor-pointer"
-                  onClick={() => setSelectedVideo(vid)}
-                >
+                {/* Thumbnail Viewport */}
+                <div className="relative aspect-video w-full bg-slate-100 overflow-hidden">
                   <img
                     src={vid.thumbnailUrl}
                     alt={vid.title}
                     className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
+                    loading="lazy"
                   />
-                  {/* Play Button Overlay */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                    <div className="w-10 h-10 rounded-sm bg-red-600 text-white flex items-center justify-center shadow-md">
+                  <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-sm bg-red-600/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity transform scale-90 group-hover:scale-100 shadow-md">
                       <Play className="w-4 h-4 fill-white ml-0.5" />
                     </div>
                   </div>
 
                   {vid.isShort && (
-                    <span className="absolute top-2 right-2 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-none shadow-xs">
+                    <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded-none bg-red-600 text-white font-bold text-[10px] tracking-wider uppercase shadow-xs">
                       Shorts
+                    </span>
+                  )}
+                  {vid.id.startsWith("local_") && (
+                    <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-none bg-emerald-600 text-white font-bold text-[10px] tracking-wider uppercase shadow-xs">
+                      Local Ready
                     </span>
                   )}
                 </div>
 
-                {/* Details Card */}
-                <div className="p-3.5 space-y-2.5 flex-1 flex flex-col justify-between">
-                  <div>
-                    <h3
-                      onClick={() => setSelectedVideo(vid)}
-                      className="text-xs font-semibold text-slate-900 line-clamp-2 hover:text-red-600 cursor-pointer transition-colors leading-snug"
-                      title={vid.title}
-                    >
-                      {vid.title}
-                    </h3>
-                  </div>
+                {/* Video Info */}
+                <div className="p-3.5 flex flex-col flex-1 justify-between gap-3">
+                  <h4 className="text-xs font-bold text-slate-900 group-hover:text-red-600 line-clamp-2 transition-colors leading-snug">
+                    {vid.title}
+                  </h4>
 
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100">
                     <div className="flex items-center gap-3">
                       <span className="flex items-center gap-1 font-medium text-slate-700">
-                        <Eye className="w-3.5 h-3.5 text-red-600" />
-                        {vid.viewCount}
+                        <Eye className="w-3 h-3 text-red-600" />
+                        {vid.viewCount.toLocaleString()}
                       </span>
                       <span className="flex items-center gap-1 font-medium text-slate-700">
-                        <ThumbsUp className="w-3.5 h-3.5 text-red-600" />
+                        <ThumbsUp className="w-3 h-3 text-red-600" />
                         {vid.likeCount}
                       </span>
                     </div>
@@ -362,14 +585,23 @@ export const YouTubeStudio: React.FC = () => {
             </button>
 
             {/* Video Player */}
-            <div className="aspect-video w-full bg-black">
-              <iframe
-                src={`${selectedVideo.embedUrl}?autoplay=1&rel=0`}
-                title={selectedVideo.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="w-full h-full border-none"
-              />
+            <div className="aspect-video w-full bg-black flex items-center justify-center">
+              {selectedVideo.embedUrl.endsWith(".mp4") ? (
+                <video
+                  src={selectedVideo.embedUrl}
+                  controls
+                  autoPlay
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <iframe
+                  src={`${selectedVideo.embedUrl}?autoplay=1&rel=0`}
+                  title={selectedVideo.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-full border-none"
+                />
+              )}
             </div>
 
             {/* Video Meta & Controls */}
@@ -411,7 +643,7 @@ export const YouTubeStudio: React.FC = () => {
                     className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-sm bg-red-600 hover:bg-red-700 text-xs font-semibold text-white transition-colors shadow-xs"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    Watch on YouTube
+                    {selectedVideo.id.startsWith("local_") ? "Open Video" : "Watch on YouTube"}
                   </a>
                 </div>
               </div>
