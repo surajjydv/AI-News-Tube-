@@ -216,3 +216,10 @@
   - Added **Manual Video Production & Instant Broadcast Desk** directly inside `YouTubeStudio.tsx` with topic input, format selector (16:9 full bulletin vs 9:16 vertical short), voice selector, "⚡ Generate & Broadcast Now" (calling `POST /api/generate/custom`), and "🔥 1-Click Auto Trending Video" (calling `POST /api/generate/trending`).
   - Updated `PromptStudio.tsx` to replace legacy bakery prompts with breaking news topics.
   - Both Next.js frontends compile cleanly with 0 errors via `tsc --noEmit`.
+
+- **VisualAssetManager & Real Photo Generator Overhaul**:
+  - Replaced legacy hardcoded bakery croissant photos and artisan bakery captions in `services/real_media_generator.py` with dynamic real editorial photo retrieval via `VisualAssetManager` (Wikipedia Official Lead Images, Press Wires, Wikimedia, and Flux.1 photorealistic AI).
+  - Updated Groq LLM prompt in `real_media_generator.py` to produce high-impact broadcast news captions, factual takeaway bullets, and channel call-to-actions (`@SRJUNDERRATED`) with relevant hashtags.
+  - Eliminated fallback croissant assets in `store.ts`.
+  - Rebuilt `PromptStudio.tsx` with 16:9 / 9:16 / 4:5 / 1:1 aspect ratio selectors, broadcast format toggles, and real news/cricket prompt ideas.
+  - Verified with live test ("today cricket match virat kohli"): successfully downloaded official Wikipedia photo of Virat Kohli, synthesized neural Hindi audio, and rendered 1080p video reel (`reel_1794779393.mp4`).

@@ -13,6 +13,7 @@ export interface Account {
 }
 
 export interface MediaAsset {
+  id?: string;
   imageUrl: string;
   videoUrl: string;
   audioUrl: string;

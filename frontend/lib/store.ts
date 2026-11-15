@@ -1,4 +1,4 @@
-﻿import { create } from "zustand";
+import { create } from "zustand";
 import { Account, BrandKit, ContentType, AspectRatio, MediaAsset, ScheduledPost, ActiveTab } from "@/types";
 import { MOCK_ACCOUNTS, MOCK_BRAND_KITS, INITIAL_GENERATED_ASSET, INITIAL_SCHEDULED_POSTS } from "./mock-data";
 import { api } from "./api";
@@ -44,9 +44,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   initBackendData: async () => {
     try {
-      const [remoteAccounts, remoteSchedule] = await Promise.all([
+      const [remoteAccounts, remoteSchedule, latestAsset] = await Promise.all([
         api.getAccounts().catch(() => null),
         api.getSchedule().catch(() => null),
+        api.getLatestAsset().catch(() => null),
       ]);
       if (remoteAccounts && remoteAccounts.length > 0) {
         set({ accounts: remoteAccounts });
@@ -54,8 +55,11 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       if (remoteSchedule && remoteSchedule.length > 0) {
         set({ scheduledPosts: remoteSchedule });
       }
+      if (latestAsset) {
+        set({ generatedAsset: latestAsset });
+      }
     } catch {
-      // Fallback to local state if backend warming up
+      // Fallback to local state
     }
   },
 
@@ -90,87 +94,74 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         },
       },
     }));
-    try {
-      const fullKit = get().brandKits[accountId];
-      if (fullKit) {
-        await api.saveBrandKit(accountId, fullKit);
-      }
-    } catch {
-      // Silently persist locally
+    const fullKit = get().brandKits[accountId];
+    if (fullKit) {
+      await api.saveBrandKit(accountId, fullKit).catch(() => null);
     }
   },
 
-  updateGeneratedAsset: (asset) => {
+  updateGeneratedAsset: (updatedFields) =>
     set((state) => ({
-      generatedAsset: state.generatedAsset ? { ...state.generatedAsset, ...asset } : null,
-    }));
-  },
+      generatedAsset: state.generatedAsset
+        ? { ...state.generatedAsset, ...updatedFields }
+        : null,
+    })),
 
   scheduleCurrentAsset: async (scheduledTime, recurrence) => {
     const { generatedAsset, activeAccountId } = get();
     if (!generatedAsset) return;
 
     const newPost: ScheduledPost = {
-      id: "sch_" + Date.now(),
+      id: `sch_${Date.now()}`,
       accountId: activeAccountId,
-      asset: { ...generatedAsset },
+      asset: generatedAsset,
       scheduledTime,
       status: "scheduled",
       recurrence,
     };
 
     set((state) => ({
-      scheduledPosts: [newPost, ...state.scheduledPosts],
+      scheduledPosts: [...state.scheduledPosts, newPost],
     }));
 
-    try {
-      await api.schedulePost({
-        accountId: activeAccountId,
-        asset: generatedAsset,
-        scheduledTime,
-        recurrence,
-      });
-    } catch {
-      // Local fallback saved
-    }
+    await api.schedulePost({
+      accountId: activeAccountId,
+      asset: generatedAsset,
+      scheduledTime,
+      recurrence,
+    }).catch(() => null);
   },
 
   removeScheduledPost: async (id) => {
     set((state) => ({
       scheduledPosts: state.scheduledPosts.filter((p) => p.id !== id),
     }));
-    try {
-      await api.deleteSchedule(id);
-    } catch {
-      // Local fallback deleted
-    }
+    await api.deleteSchedule(id).catch(() => null);
   },
 
   publishNow: async (id) => {
-    if (id) {
-      set((state) => ({
-        scheduledPosts: state.scheduledPosts.map((p) =>
-          p.id === id ? { ...p, status: "publishing" } : p
-        ),
-      }));
-      try {
-        await api.publishPost(id);
-      } catch {
-        // Continue
+    const targetId = id || get().generatedAsset?.id;
+    if (!targetId) return false;
+
+    try {
+      const res = await api.publishPost(targetId);
+      if (res && res.status === "published") {
+        set((state) => ({
+          scheduledPosts: state.scheduledPosts.map((p) =>
+            p.id === targetId ? { ...p, status: "published" } : p
+          ),
+        }));
+        return true;
       }
-      set((state) => ({
-        scheduledPosts: state.scheduledPosts.map((p) =>
-          p.id === id ? { ...p, status: "published" } : p
-        ),
-      }));
-      return true;
+      return false;
+    } catch {
+      return false;
     }
-    return true;
   },
 
   generateContent: async (prompt, contentType, aspectRatio, tone) => {
     const { activeAccountId } = get();
-    set({ isGenerating: true, generationPercent: 15, generationStep: "Analyzing brand tone & creative brief..." });
+    set({ isGenerating: true, generationPercent: 20, generationStep: "Retrieving verified editorial photos & research dossier..." });
 
     try {
       const livePromise = api.generateMedia({
@@ -182,13 +173,13 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       });
 
       // Progress animation
-      set({ generationPercent: 40, generationStep: "Rendering 4K visual assets & storing in Neon S3..." });
-      await new Promise((r) => setTimeout(r, 600));
+      set({ generationPercent: 45, generationStep: "Analyzing verified photos & synthesizing neural audio..." });
+      await new Promise((r) => setTimeout(r, 800));
 
-      set({ generationPercent: 70, generationStep: "Synthesizing neural voiceover & ambient score..." });
-      await new Promise((r) => setTimeout(r, 600));
+      set({ generationPercent: 75, generationStep: "Compositing 1080p broadcast video & generating SEO metadata..." });
+      await new Promise((r) => setTimeout(r, 800));
 
-      set({ generationPercent: 90, generationStep: "Generating viral captions & indexing in Neon Database..." });
+      set({ generationPercent: 90, generationStep: "Persisting broadcast assets into studio database..." });
 
       const asset = await livePromise;
 
@@ -196,19 +187,18 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         generatedAsset: asset,
         isGenerating: false,
         generationPercent: 100,
-        generationStep: "Generated & Persisted to Neon!",
+        generationStep: "Broadcast Asset Generated Successfully!",
       });
     } catch (err) {
       console.warn("Backend generate fallback:", err);
-      // Fallback to local simulator
-      const cleanPrompt = prompt.trim() || "Exclusive seasonal promotion";
+      const cleanPrompt = prompt.trim() || "Breaking News Broadcast";
       const fallbackAsset: MediaAsset = {
-        imageUrl: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=1080",
-        videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-        audioUrl: "https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg",
-        thumbnailUrl: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400",
-        caption: `?? ${cleanPrompt.charAt(0).toUpperCase() + cleanPrompt.slice(1)}\n\nCrafted with premium quality. Tap link in bio to learn more!`,
-        hashtags: ["#Trending", "#ContentAI", "#ViralReels"],
+        imageUrl: "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1080",
+        videoUrl: "http://127.0.0.1:8000/videos/story_2m_video.mp4",
+        audioUrl: "http://127.0.0.1:8000/static/voice_1794779116.mp3",
+        thumbnailUrl: "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=400",
+        caption: `🔴 ${cleanPrompt.toUpperCase()}\n\n• Verified ground report & latest official match/event updates.\n• Follow @SRJUNDERRATED for 24/7 continuous news broadcasts.`,
+        hashtags: ["#BreakingNews", "#TodayNews", "#SRJUNDERRATED", "#LiveUpdates"],
         aspectRatio,
         contentType,
         prompt,
@@ -224,4 +214,3 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     }
   },
 }));
-

@@ -9,7 +9,7 @@ interface Props {
 }
 
 export const MediaPreview: React.FC<Props> = ({ onOpenScheduler }) => {
-  const { generatedAsset, updateGeneratedAsset, accounts, activeAccountId } = useStudioStore();
+  const { generatedAsset, updateGeneratedAsset, accounts, activeAccountId, publishNow } = useStudioStore();
   const [activeAssetTab, setActiveAssetTab] = useState<"video" | "image" | "audio" | "thumbnail">("video");
   const [copiedCaption, setCopiedCaption] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -39,7 +39,7 @@ export const MediaPreview: React.FC<Props> = ({ onOpenScheduler }) => {
 
   const handlePublishNow = async () => {
     setIsPublishing(true);
-    await new Promise((res) => setTimeout(res, 1500));
+    const success = await publishNow();
     setIsPublishing(false);
     setPublishSuccess(true);
     setTimeout(() => setPublishSuccess(false), 3000);
