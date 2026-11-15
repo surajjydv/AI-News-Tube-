@@ -760,6 +760,17 @@ async def get_real_youtube_videos(max_results: int = 24):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+class PublishLocalRequest(BaseModel):
+    video_id: str
+
+@app.post("/api/youtube/publish-local")
+async def publish_local_video(req: PublishLocalRequest):
+    try:
+        res = youtube_real_service.publish_local_video_to_youtube(req.video_id)
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/youtube/stream")
 async def get_real_youtube_stream():
     try:

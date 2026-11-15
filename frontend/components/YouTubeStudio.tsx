@@ -21,6 +21,7 @@ import {
   AlertCircle,
   Video,
   Square,
+  Upload,
 } from "lucide-react";
 
 export const YouTubeStudio: React.FC = () => {
@@ -45,6 +46,31 @@ export const YouTubeStudio: React.FC = () => {
   const [liveStreamLoading, setLiveStreamLoading] = useState(false);
   const [liveStreamUptime, setLiveStreamUptime] = useState(0);
   const [liveMsg, setLiveMsg] = useState<string | null>(null);
+  const [publishingId, setPublishingId] = useState<string | null>(null);
+  const [publishFeedback, setPublishFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const handlePublishToYouTube = async (vidId: string) => {
+    setPublishingId(vidId);
+    setPublishFeedback(null);
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/youtube/publish-local", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ video_id: vidId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPublishFeedback({ type: "success", text: data.message || "Video published to YouTube channel!" });
+        fetchRealData();
+      } else {
+        setPublishFeedback({ type: "error", text: data.message || "Upload failed. Check YouTube OAuth credentials." });
+      }
+    } catch (err) {
+      setPublishFeedback({ type: "error", text: "Error contacting publishing backend." });
+    } finally {
+      setPublishingId(null);
+    }
+  };
 
   const fetchRealData = async () => {
     setLoading(true);
@@ -635,9 +661,17 @@ export const YouTubeStudio: React.FC = () => {
                     </span>
                   )}
                   {vid.id.startsWith("local_") && (
-                    <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-none bg-emerald-600 text-white font-bold text-[10px] tracking-wider uppercase shadow-xs">
-                      Local Ready
-                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePublishToYouTube(vid.id);
+                      }}
+                      disabled={publishingId === vid.id}
+                      className="absolute top-2 left-2 px-2 py-1 rounded-sm bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] tracking-tight uppercase shadow-xs flex items-center gap-1.5 cursor-pointer z-10 transition-colors"
+                    >
+                      <Upload className="w-3 h-3" />
+                      {publishingId === vid.id ? "Posting..." : "Post to Channel"}
+                    </button>
                   )}
                 </div>
 

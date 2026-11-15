@@ -114,15 +114,25 @@ class YouTubeRealService:
         return videos
 
     def _fetch_local_rendered_videos(self) -> List[Dict[str, Any]]:
-        """Scans local videos/ directory for freshly generated 1080p and short videos."""
+        """Scans local videos/ directory for finished broadcast videos and shorts ready for channel posting."""
         local_vids = []
         videos_dir = BASE_DIR / "videos"
         thumbnails_dir = BASE_DIR / "thumbnails"
         if not videos_dir.exists():
             return local_vids
 
-        for f in sorted(videos_dir.glob("*.mp4"), key=os.path.getmtime, reverse=True)[:6]:
-            is_short = "short" in f.name.lower()
+        for f in sorted(videos_dir.glob("*.mp4"), key=os.path.getmtime, reverse=True):
+            name_lower = f.name.lower()
+            # Skip live RTMP internal chunks, temporary clips, and 0-byte placeholders
+            if "live_30s" in name_lower or "live_startup" in name_lower or ".tmp" in name_lower:
+                continue
+            try:
+                if f.stat().st_size < 500_000:
+                    continue
+            except OSError:
+                continue
+
+            is_short = "short" in name_lower
             mtime = os.path.getmtime(f)
             dt_str = datetime.fromtimestamp(mtime).strftime("%Y-%m-%dT%H:%M:%SZ")
             size_mb = round(f.stat().st_size / (1024 * 1024), 1)
@@ -133,11 +143,17 @@ class YouTubeRealService:
             if expected_thumb.exists():
                 thumb_url = f"http://127.0.0.1:8000/thumbnails/{expected_thumb.name}"
 
-            clean_name = f.stem.replace("_", " ").title()
+            # Clean up title for clean YouTube display
+            parts = f.stem.split("_")
+            kind = parts[0].title() if parts else "News"
+            clean_name = f"{kind} Broadcast • {dt_str[:10]}"
+            if len(parts) >= 2:
+                clean_name = f"{parts[0].title()} Report: {parts[1]}"
+
             local_vids.append({
                 "id": f"local_{f.stem}",
-                "title": f"🔴 [Ready] {clean_name}",
-                "description": f"Locally rendered 1080p broadcast video ({size_mb} MB) ready for broadcast.",
+                "title": clean_name,
+                "description": f"Broadcast video ({size_mb} MB) ready for upload to @SRJUNDERRATED.",
                 "publishedAt": dt_str,
                 "thumbnailUrl": thumb_url,
                 "viewCount": 0,
@@ -147,8 +163,66 @@ class YouTubeRealService:
                 "youtubeUrl": f"http://127.0.0.1:8000/videos/{f.name}",
                 "embedUrl": f"http://127.0.0.1:8000/videos/{f.name}",
                 "isShort": is_short,
+                "isLocal": True,
             })
+            if len(local_vids) >= 6:
+                break
         return local_vids
+
+    def publish_local_video_to_youtube(self, local_id: str) -> Dict[str, Any]:
+        """Publishes a locally stored video file directly to the YouTube channel using YouTube Upload Service."""
+        from services.youtube_upload_service import upload_video_to_youtube
+        videos_dir = BASE_DIR / "videos"
+        thumbnails_dir = BASE_DIR / "thumbnails"
+
+        clean_stem = local_id.replace("local_", "")
+        target_video = videos_dir / f"{clean_stem}.mp4"
+        if not target_video.exists():
+            matches = list(videos_dir.glob(f"*{clean_stem}*.mp4"))
+            if matches:
+                target_video = matches[0]
+            else:
+                return {"success": False, "message": f"Video file not found: {clean_stem}.mp4"}
+
+        thumb_path = thumbnails_dir / f"{target_video.stem}.jpg"
+        if not thumb_path.exists():
+            thumb_path = None
+
+        is_short = "short" in target_video.name.lower()
+        title = target_video.stem.replace("_", " ").title()
+        if is_short:
+            title = f"{title} #Shorts"
+
+        desc = "Latest breaking broadcast from @SRJUNDERRATED.\n\n#BreakingNews #NewsTube #Shorts #HindiNews"
+        try:
+            res_id = upload_video_to_youtube(
+                video_path=str(target_video),
+                title=title[:95],
+                description=desc,
+                thumbnail_path=str(thumb_path) if thumb_path else None,
+                is_short=is_short,
+                privacy_status="public"
+            )
+            if res_id and res_id not in ["LOCAL_SAVED", "RTMP_LIVE_STREAM_BROADCASTED"]:
+                return {
+                    "success": True,
+                    "videoId": res_id,
+                    "youtubeUrl": f"https://youtu.be/{res_id}",
+                    "message": "Video successfully uploaded to your YouTube channel as Public!"
+                }
+            elif res_id == "RTMP_LIVE_STREAM_BROADCASTED":
+                return {
+                    "success": True,
+                    "videoId": res_id,
+                    "message": "OAuth token expired (invalid_grant). Video was streamed live to your YouTube RTMP channel!"
+                }
+            else:
+                return {
+                    "success": False,
+                    "message": "OAuth token expired (invalid_grant). Run 'python auth_youtube.py' in terminal to link your YouTube channel."
+                }
+        except Exception as e:
+            return {"success": False, "message": str(e)}
 
     def get_channel_videos(self, max_results: int = 24) -> List[Dict[str, Any]]:
         """Fetches real videos uploaded to the channel with metrics and fallback."""

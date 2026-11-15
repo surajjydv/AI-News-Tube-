@@ -230,3 +230,9 @@
   - Added 1-click **Start 24/7 Live Stream** and **Stop Live Stream** controls with live status pill and uptime counter to `YouTubeStudio.tsx` in both `frontend/` and `AI-NewsTube/frontend/`.
   - Audited channel uploads and recent background production: verified 105 channel videos on `SRJ UNDERRATED` with active 15-minute background autopublisher (`task-853`) rendering fresh 1080p breaking news and vertical shorts with verified editorial photography.
   - Rewrote and humanized `README.md` for clean, professional public-GitHub presentation.
+
+- **Direct YouTube Video Posting & Local Video Management**:
+  - Filtered internal RTMP chunks (`live_30s_story_*`, `live_startup_*`, `.tmp`) and 0-byte placeholders out of `_fetch_local_rendered_videos` in `services/youtube_real_service.py`. Only finished full-length broadcast bulletins and vertical shorts are listed.
+  - Replaced the static `Local Ready` badge with a 1-click **Post to Channel** button in `YouTubeStudio.tsx` that calls `POST /api/youtube/publish-local`.
+  - Added `publish_local_video_to_youtube` and `POST /api/youtube/publish-local` in `app.py` to trigger direct public uploads or RTMP broadcasting with thumbnail integration.
+  - Fixed root `auth_youtube.py` import to invoke `auth/auth_youtube.py` directly for one-time Google OAuth authorization.
