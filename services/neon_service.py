@@ -175,9 +175,9 @@ class NeonDBManager:
             cur.execute("""
                 INSERT INTO accounts (id, username, display_name, avatar_url, followers, category, is_connected)
                 VALUES 
-                ('acc_1', 'artisan_bakery_nyc', 'Artisan Bakery NYC', 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=150', 24800, 'Food & Beverage', 1),
-                ('acc_2', 'apex_fitness_club', 'Apex Fitness Club', 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=150', 61200, 'Health & Fitness', 1),
-                ('acc_3', 'lumina_skincare', 'Lumina Organic Skincare', 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=150', 43500, 'Beauty & Wellness', 0)
+                ('acc_1', 'SRJUNDERRATED', 'SRJ UNDERRATED', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&h=200&fit=crop', 3, 'YouTube & Live Broadcast', 1),
+                ('acc_2', 'srj_underrated', 'SRJ Underrated Reels', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop', 105, 'Instagram Reels & Shorts', 1),
+                ('acc_3', 'newstube_wire', 'NewsTube Breaking Wire', 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=200&h=200&fit=crop', 1091, 'Telegram & News Wires', 1)
             """)
 
         conn.commit()

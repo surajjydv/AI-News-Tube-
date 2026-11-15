@@ -202,3 +202,10 @@
   - Executed `scripts/generate_and_publish_2min_video.py`: Scraped fresh news (Santiniketan police encounter), downloaded 4 verified editorial press photos, generated fluent Hindi storytelling script (256 words), synthesized 110.9s Edge-TTS neural audio (`hi-IN-SwaraNeural`), rendered 1080p 2.5D TV broadcast video (`videos/story_2m_video.mp4`, 19.8 MB), and broadcasted to YouTube Live via RTMP.
   - Deployed 15-minute autopublisher daemon (`scripts/run_realtime_news_autopublisher.py`) for continuous autonomous video production and publishing.
   - Bound FastAPI application to `0.0.0.0:8000` (`/api/status`, `/api/platforms`, `/api/youtube/channel` verified HTTP 200). Next.js frontend verified active on `http://127.0.0.1:3000`.
+
+- **Real Brand & Live Channel Data Integration (SRJ UNDERRATED)**:
+  - Removed mock bakery and fitness accounts (`artisan_bakery_nyc`, `apex_fitness_club`, `lumina_skincare`) across SQLite database, backend seeders, and frontend stores.
+  - Configured `autoinsta.db` and `services/neon_service.py` with real brand accounts: `SRJ UNDERRATED` (`acc_1` • YouTube & Live Broadcast), `srj_underrated` (`acc_2` • Instagram Reels & Shorts), and `newstube_wire` (`acc_3` • Telegram & News Wires).
+  - Redesigned `Navbar.tsx` with real brand identity (`SRJ UNDERRATED • AI Broadcast & Distribution Studio`), live broadcast beacon, and channel selector.
+  - Rebuilt `AnalyticsDashboard.tsx` to display real YouTube Data API v3 channel metrics (1,091 views, 105 videos, 3 subscribers) and real broadcast feed with direct YouTube watch links.
+  - Verified zero TypeScript compilation errors on both Next.js frontend bundles.

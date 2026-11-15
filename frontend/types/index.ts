@@ -1,5 +1,5 @@
-export type ContentType = 'post' | 'reel' | 'story' | 'carousel';
-export type AspectRatio = '1:1' | '4:5' | '9:16';
+export type ContentType = 'post' | 'reel' | 'story' | 'carousel' | 'video';
+export type AspectRatio = '1:1' | '4:5' | '9:16' | '16:9';
 export type ActiveTab = 'studio' | 'schedule' | 'analytics' | 'brandkit' | 'youtube' | 'platforms';
 
 export interface Account {

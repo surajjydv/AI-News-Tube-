@@ -2,23 +2,7 @@
 
 import React from "react";
 import { useStudioStore } from "@/lib/store";
-import { Wand2, Calendar, BarChart3, Palette, CheckCircle2, AlertCircle, Key } from "lucide-react";
-
-const InstagramIcon: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <rect x="2" y="2" width="20" height="20" rx="1" ry="1"></rect>
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-  </svg>
-);
+import { Wand2, Calendar, BarChart3, Palette, CheckCircle2, AlertCircle, Key, Radio, Tv } from "lucide-react";
 
 const YouTubeLogoIcon: React.FC<{ className?: string }> = ({ className = "w-4 h-4" }) => (
   <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
@@ -35,15 +19,19 @@ export const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Brand */}
         <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
-          <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => setActiveTab("studio")}>
-            <div className="h-8 w-8 rounded-sm bg-rose-600 flex items-center justify-center shadow-xs">
-              <InstagramIcon className="w-4 h-4 text-white stroke-[2.5]" />
+          <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => setActiveTab("youtube")}>
+            <div className="h-8 w-8 rounded-sm bg-red-600 flex items-center justify-center shadow-xs">
+              <Tv className="w-4 h-4 text-white stroke-[2.2]" />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-bold text-base tracking-tight text-slate-900">AutoInsta</span>
+                <span className="font-bold text-base tracking-tight text-slate-900">SRJ UNDERRATED</span>
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-emerald-50 text-[10px] font-semibold text-emerald-700 border border-emerald-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  LIVE
+                </span>
               </div>
-              <p className="text-[11px] text-slate-500 font-medium">Prompt-to-Publish Studio</p>
+              <p className="text-[11px] text-slate-500 font-medium">AI Broadcast & Distribution Studio</p>
             </div>
           </div>
 
@@ -71,18 +59,6 @@ export const Navbar: React.FC = () => {
         {/* Tab Navigation */}
         <nav className="flex items-center gap-1 bg-slate-100 p-1 rounded-sm border border-slate-200 overflow-x-auto max-w-full">
           <button
-            onClick={() => setActiveTab("studio")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors whitespace-nowrap ${
-              activeTab === "studio"
-                ? "bg-rose-600 text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/80"
-            }`}
-          >
-            <Wand2 className="w-3.5 h-3.5" />
-            Studio
-          </button>
-
-          <button
             onClick={() => setActiveTab("youtube")}
             className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors whitespace-nowrap ${
               activeTab === "youtube"
@@ -90,8 +66,20 @@ export const Navbar: React.FC = () => {
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/80"
             }`}
           >
-            <YouTubeLogoIcon className="w-3.5 h-3.5 text-white" />
-            YouTube
+            <YouTubeLogoIcon className="w-3.5 h-3.5" />
+            YouTube Studio
+          </button>
+
+          <button
+            onClick={() => setActiveTab("studio")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors whitespace-nowrap ${
+              activeTab === "studio"
+                ? "bg-slate-900 text-white shadow-xs"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/80"
+            }`}
+          >
+            <Wand2 className="w-3.5 h-3.5" />
+            Content Studio
           </button>
 
           <button
@@ -110,7 +98,7 @@ export const Navbar: React.FC = () => {
             onClick={() => setActiveTab("schedule")}
             className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors whitespace-nowrap ${
               activeTab === "schedule"
-                ? "bg-rose-600 text-white shadow-xs"
+                ? "bg-slate-900 text-white shadow-xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/80"
             }`}
           >
@@ -122,7 +110,7 @@ export const Navbar: React.FC = () => {
             onClick={() => setActiveTab("analytics")}
             className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors whitespace-nowrap ${
               activeTab === "analytics"
-                ? "bg-rose-600 text-white shadow-xs"
+                ? "bg-slate-900 text-white shadow-xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/80"
             }`}
           >
@@ -134,7 +122,7 @@ export const Navbar: React.FC = () => {
             onClick={() => setActiveTab("brandkit")}
             className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors whitespace-nowrap ${
               activeTab === "brandkit"
-                ? "bg-rose-600 text-white shadow-xs"
+                ? "bg-slate-900 text-white shadow-xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/80"
             }`}
           >
@@ -143,7 +131,7 @@ export const Navbar: React.FC = () => {
           </button>
         </nav>
 
-        {/* IG OAuth Connect / Status */}
+        {/* Status / Connect */}
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setActiveTab("platforms")}
@@ -151,7 +139,7 @@ export const Navbar: React.FC = () => {
             title="Configure platform API keys"
           >
             <Key className="w-3.5 h-3.5 text-amber-600" />
-            Keys
+            Keys & Config
           </button>
 
           <button
@@ -165,12 +153,12 @@ export const Navbar: React.FC = () => {
             {activeAccount.isConnected ? (
               <>
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                IG Connected (@{activeAccount.username})
+                Connected (@{activeAccount.username})
               </>
             ) : (
               <>
                 <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-                Connect Instagram
+                Connect Channel
               </>
             )}
           </button>
