@@ -460,6 +460,18 @@ async function fetchPlatforms() {
     const data = await res.json();
     AppState.platforms = data.platforms || {};
 
+    // Update Groq badge
+    const groqCfg = AppState.platforms['groq'] || {};
+    const groqBadge = document.getElementById('groqStatusBadge');
+    if (groqBadge) {
+      groqBadge.className = `status-badge-sm ${groqCfg.connected ? 'connected' : ''}`;
+      groqBadge.innerText = groqCfg.connected ? 'Ready' : 'Not Set';
+    }
+    const groqInput = document.getElementById('cfgGroqApiKey');
+    if (groqInput && groqCfg.api_key && !groqInput.value) {
+      groqInput.value = groqCfg.api_key;
+    }
+
     // Update header chips
     Object.keys(PLATFORM_META).forEach(pid => {
       const chip = document.getElementById(`chip-${pid}`);
@@ -515,7 +527,11 @@ function closeConfigModal(e) {
 async function savePlatformCreds(platform) {
   let creds = {};
 
-  if (platform === 'telegram') {
+  if (platform === 'groq') {
+    creds = {
+      api_key: document.getElementById('cfgGroqApiKey').value.trim()
+    };
+  } else if (platform === 'telegram') {
     creds = {
       bot_token: document.getElementById('cfgTgBotToken').value.trim(),
       channel_id: document.getElementById('cfgTgChannelId').value.trim()

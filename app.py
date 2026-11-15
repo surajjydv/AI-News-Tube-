@@ -468,7 +468,24 @@ async def connect_platform(req: PlatformConnectRequest):
         # Mark as connected if key credentials present
         connected = False
         pid = req.platform
-        if pid == "telegram":
+        if pid == "groq":
+            api_key = creds.get("api_key", "").strip()
+            connected = bool(api_key)
+            if api_key:
+                os.environ["GROQ_API_KEY"] = api_key
+                env_path = BASE_DIR / ".env"
+                if env_path.exists():
+                    try:
+                        content = env_path.read_text(encoding="utf-8")
+                        if "GROQ_API_KEY=" in content:
+                            import re
+                            content = re.sub(r'GROQ_API_KEY=.*', f'GROQ_API_KEY="{api_key}"', content)
+                        else:
+                            content += f'\nGROQ_API_KEY="{api_key}"\n'
+                        env_path.write_text(content, encoding="utf-8")
+                    except Exception as env_err:
+                        logger.warning(f"Failed to write GROQ_API_KEY to .env: {env_err}")
+        elif pid == "telegram":
             connected = bool(creds.get("bot_token") and creds.get("channel_id"))
             # Verify bot token if provided
             if connected:
@@ -485,7 +502,22 @@ async def connect_platform(req: PlatformConnectRequest):
         elif pid in ("instagram", "facebook"):
             connected = bool(creds.get("token") and creds.get("page_id"))
         elif pid == "youtube":
-            connected = (BASE_DIR / "data" / "token.json").exists()
+            stream_key = creds.get("stream_key", "").strip()
+            if stream_key:
+                os.environ["YOUTUBE_STREAM_KEY"] = stream_key
+                env_path = BASE_DIR / ".env"
+                if env_path.exists():
+                    try:
+                        content = env_path.read_text(encoding="utf-8")
+                        if "YOUTUBE_STREAM_KEY=" in content:
+                            import re
+                            content = re.sub(r'YOUTUBE_STREAM_KEY=.*', f'YOUTUBE_STREAM_KEY="{stream_key}"', content)
+                        else:
+                            content += f'\nYOUTUBE_STREAM_KEY="{stream_key}"\n'
+                        env_path.write_text(content, encoding="utf-8")
+                    except Exception as env_err:
+                        logger.warning(f"Failed to write YOUTUBE_STREAM_KEY to .env: {env_err}")
+            connected = bool(stream_key) or (BASE_DIR / "data" / "token.json").exists()
 
         creds["connected"] = connected
         PlatformConfigService.update_platform(pid, creds)

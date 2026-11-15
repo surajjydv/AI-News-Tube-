@@ -1,5 +1,5 @@
 ﻿import { create } from "zustand";
-import { Account, BrandKit, ContentType, AspectRatio, MediaAsset, ScheduledPost } from "@/types";
+import { Account, BrandKit, ContentType, AspectRatio, MediaAsset, ScheduledPost, ActiveTab } from "@/types";
 import { MOCK_ACCOUNTS, MOCK_BRAND_KITS, INITIAL_GENERATED_ASSET, INITIAL_SCHEDULED_POSTS } from "./mock-data";
 import { api } from "./api";
 
@@ -12,11 +12,11 @@ interface StudioState {
   generationStep: string;
   generationPercent: number;
   scheduledPosts: ScheduledPost[];
-  activeTab: "studio" | "schedule" | "analytics" | "brandkit" | "youtube";
+  activeTab: ActiveTab;
 
   initBackendData: () => Promise<void>;
   setActiveAccount: (id: string) => void;
-  setActiveTab: (tab: "studio" | "schedule" | "analytics" | "brandkit" | "youtube") => void;
+  setActiveTab: (tab: ActiveTab) => void;
   toggleAccountConnect: (id: string) => Promise<void>;
   updateBrandKit: (accountId: string, kit: Partial<BrandKit>) => Promise<void>;
   updateGeneratedAsset: (asset: Partial<MediaAsset>) => void;

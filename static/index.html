@@ -523,7 +523,22 @@
 
       <div class="modal-body">
         
-        <!-- Telegram Tab -->
+                <!-- Groq AI Tab -->
+        <div class="config-section">
+          <div class="config-header">
+            <span class="plat-badge" style="color: #F59E0B;">⚡ Groq AI Brain</span>
+            <span id="groqStatusBadge" class="status-badge-sm">Checking...</span>
+          </div>
+          <div class="config-fields">
+            <div class="form-group">
+              <label class="input-label-sm">Groq API Key</label>
+              <input type="password" id="cfgGroqApiKey" class="form-input-sm" placeholder="gsk_...">
+            </div>
+            <button class="btn-save-sm" onclick="savePlatformCreds('groq')">Save Groq Key</button>
+          </div>
+        </div>
+
+<!-- Telegram Tab -->
         <div class="config-section">
           <div class="config-header">
             <span class="plat-badge tg">✈ Telegram</span>

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useStudioStore } from "@/lib/store";
 import { ContentType, AspectRatio } from "@/types";
-import { Wand2, Film, Image as ImageIcon, Loader2 } from "lucide-react";
+import { Wand2, Film, Image as ImageIcon, Loader2, Key } from "lucide-react";
 
 const PROMPT_IDEAS = [
   "Promote my bakery's weekend Alphonso Mango Cake with luxurious slow-mo glaze",
@@ -13,7 +13,7 @@ const PROMPT_IDEAS = [
 ];
 
 export const PromptStudio: React.FC = () => {
-  const { isGenerating, generationStep, generationPercent, generateContent } = useStudioStore();
+  const { isGenerating, generationStep, generationPercent, generateContent, setActiveTab } = useStudioStore();
   const [prompt, setPrompt] = useState(
     "Promote my bakery's new mango cake for weekends with irresistible gourmet vibe"
   );
@@ -28,8 +28,23 @@ export const PromptStudio: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-sm p-5 border border-slate-200 shadow-xs">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-white rounded-sm p-5 border border-slate-200 shadow-xs space-y-4">
+      {/* Quick Setup Banner */}
+      <div className="flex items-center justify-between p-2.5 rounded-sm bg-slate-50 border border-slate-200 text-xs">
+        <div className="flex items-center gap-2 text-slate-700">
+          <Key className="w-3.5 h-3.5 text-amber-600" />
+          <span>Auto-publish to Instagram, YouTube & Telegram</span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setActiveTab("platforms")}
+          className="text-[11px] font-semibold text-rose-600 hover:text-rose-700 underline cursor-pointer"
+        >
+          Configure Keys →
+        </button>
+      </div>
+
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="p-2 rounded-sm bg-slate-100 border border-slate-200 text-rose-600">
             <Wand2 className="w-4 h-4" />

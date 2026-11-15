@@ -187,6 +187,11 @@
   - **Next.js Frontend (`frontend/` & `AI-NewsTube/frontend/`)**: Converted from dark theme to clean white porcelain design system (`bg-slate-50`, cards `bg-white`, text `text-slate-900`, borders `border-slate-200`, subtle slate fills `bg-slate-100`). High-contrast, legible typography and crisp CTA action buttons across `Navbar`, `PromptStudio`, `MediaPreview`, `YouTubeStudio`, `BrandKitModal`, `SchedulerModal`, `ScheduledQueue`, and `AnalyticsDashboard`.
   - **Static Studio Dashboard (`AI-NewsTube/static/` & `frontend/public/`)**: Transformed `--bg-core` to `#F8FAFC`, `--panel-bg` to `rgba(255, 255, 255, 0.95)`, `--text-primary` to `#1E293B`, `--text-secondary` to `#64748B`, with clean subtle borders and white cards.
   - **Type & Bundle Verification**: Both Next.js bundles compile cleanly with `tsc --noEmit` with zero errors. All static assets synchronized.
+- **Unified Platform Keys & Automation Settings UI**:
+  - **API Keys & Platforms Dashboard (`frontend/components/PlatformSettings.tsx`)**: Built a simple, zero-complexity white-theme credentials control center. Enables entering and saving API keys/tokens for Instagram (Graph Access Token + Business Account ID), YouTube (Live Stream Key + VOD OAuth), Groq AI Brain (API Key), Telegram (Bot Token + Channel ID with live bot verification), Twitter / X (API Key/Secret + Access Token/Secret), and Facebook (Page Access Token + Page ID).
+  - **Backend Endpoint Enhancements (`app.py` & `PlatformConfigService`)**: Added Groq API key and YouTube live stream key persistence to environment variables and `.env` through `/api/platforms/connect`. Live sync between Next.js frontend, FastAPI endpoints, and static dashboard modal.
+  - **Zero-Friction UX Navigation**: Added direct `API Keys & Platforms` tab in `Navbar.tsx`, quick-access `Keys` button, and in-studio prompt banner directing users to setup automation in 1 click.
+
 
 
 

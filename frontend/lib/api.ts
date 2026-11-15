@@ -1,4 +1,4 @@
-﻿import axios from "axios";
+import axios from "axios";
 import { Account, BrandKit, ContentType, AspectRatio, MediaAsset, ScheduledPost, YouTubeChannel, YouTubeVideo, YouTubeStreamInfo } from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/studio";
@@ -93,6 +93,32 @@ export const api = {
 
   async getYouTubeStream(): Promise<YouTubeStreamInfo> {
     const res = await axios.get<YouTubeStreamInfo>("http://127.0.0.1:8000/api/youtube/stream");
+    return res.data;
+  },
+
+  // Platform API Credentials & Automation
+  async getPlatforms(): Promise<Record<string, any>> {
+    try {
+      const res = await axios.get("http://127.0.0.1:8000/api/platforms");
+      return res.data?.platforms || {};
+    } catch {
+      return {};
+    }
+  },
+
+  async connectPlatform(platform: string, credentials: Record<string, any>): Promise<{ status: string; connected?: boolean; message?: string }> {
+    const res = await axios.post("http://127.0.0.1:8000/api/platforms/connect", {
+      platform,
+      credentials,
+    });
+    return res.data;
+  },
+
+  async togglePlatform(platform: string, enabled: boolean): Promise<{ status: string; enabled: boolean }> {
+    const res = await axios.post("http://127.0.0.1:8000/api/platforms/toggle", {
+      platform,
+      enabled,
+    });
     return res.data;
   },
 };

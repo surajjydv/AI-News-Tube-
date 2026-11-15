@@ -1,5 +1,6 @@
 export type ContentType = 'post' | 'reel' | 'story' | 'carousel';
 export type AspectRatio = '1:1' | '4:5' | '9:16';
+export type ActiveTab = 'studio' | 'schedule' | 'analytics' | 'brandkit' | 'youtube' | 'platforms';
 
 export interface Account {
   id: string;
@@ -86,4 +87,24 @@ export interface YouTubeStreamInfo {
   audioCodec: string;
   videoCodec: string;
   activeStreamEntry: string;
+}
+
+export interface PlatformConfig {
+  name: string;
+  icon: string;
+  color: string;
+  enabled: boolean;
+  connected: boolean;
+  content_types?: string[];
+  interval_hours?: number;
+  api_key?: string;
+  api_secret?: string;
+  access_token?: string;
+  access_token_secret?: string;
+  bearer_token?: string;
+  bot_token?: string;
+  channel_id?: string;
+  token?: string;
+  page_id?: string;
+  stream_key?: string;
 }

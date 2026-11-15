@@ -9,6 +9,7 @@ import { ScheduledQueue } from "@/components/ScheduledQueue";
 import { BrandKitModal } from "@/components/BrandKitModal";
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 import { YouTubeStudio } from "@/components/YouTubeStudio";
+import { PlatformSettings } from "@/components/PlatformSettings";
 import { useStudioStore } from "@/lib/store";
 
 export default function Home() {
@@ -40,13 +41,15 @@ export default function Home() {
           </div>
         )}
 
+        {activeTab === "platforms" && <PlatformSettings />}
+
+        {activeTab === "youtube" && <YouTubeStudio />}
+
         {activeTab === "schedule" && <ScheduledQueue />}
 
         {activeTab === "analytics" && <AnalyticsDashboard />}
 
         {activeTab === "brandkit" && <BrandKitModal />}
-
-        {activeTab === "youtube" && <YouTubeStudio />}
       </main>
 
       {/* Scheduler Modal */}
@@ -54,7 +57,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-slate-200 py-6 text-center text-xs text-slate-500">
-        AutoInsta B2B AI Studio • Powered by Neon Database & S3 Storage • Instagram Automation
+        NewsTube & OmniBlast Studio • Automated Multi-Platform Distribution (YouTube, Instagram, Telegram, Twitter, Facebook)
       </footer>
     </div>
   );

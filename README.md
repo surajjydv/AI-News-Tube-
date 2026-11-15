@@ -87,7 +87,7 @@ python auth/auth_youtube.py
 
 ## Usage
 
-### 1. Launch OmniBlast Studio (Web UI)
+### 1. Launch OmniBlast Studio (Web UI & Next.js App)
 
 Start the unified FastAPI application:
 
@@ -95,11 +95,19 @@ Start the unified FastAPI application:
 uvicorn app:app --reload --port 8000
 ```
 
-Open `http://localhost:8000/` in your browser.
+Start the Next.js Frontend Studio:
 
+```bash
+cd frontend
+npm run dev
+```
+
+Open `http://localhost:3000/` (Next.js Studio) or `http://localhost:8000/` (FastAPI Web UI).
+
+- **API Keys & Platforms**: Open the **API Keys & Platforms** tab to save your Instagram, YouTube, Groq, Telegram, Twitter, and Facebook credentials in 1 click.
 - **1-Click Media Blast**: Drag and drop any video or image, enter your headline and caption, select target channels, and click **Blast Everywhere**.
 - **AI Word-to-Video**: Enter a topic or prompt, select format (16:9 or 9:16), choose narrator voice, and click **Generate Video & Auto-Blast**.
-- **Platform Configuration**: Click the gear icon in the top navigation bar to configure or update Telegram, Twitter, Instagram, and Facebook credentials.
+
 
 ### 2. Command-Line Execution
 

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useStudioStore } from "@/lib/store";
-import { Wand2, Calendar, BarChart3, Palette, CheckCircle2, AlertCircle } from "lucide-react";
+import { Wand2, Calendar, BarChart3, Palette, CheckCircle2, AlertCircle, Key } from "lucide-react";
 
 const InstagramIcon: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }) => (
   <svg
@@ -36,7 +36,7 @@ export const Navbar: React.FC = () => {
         {/* Brand */}
         <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
           <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => setActiveTab("studio")}>
-            <div className="h-8 w-8 rounded-sm bg-rose-600 flex items-center justify-center">
+            <div className="h-8 w-8 rounded-sm bg-rose-600 flex items-center justify-center shadow-xs">
               <InstagramIcon className="w-4 h-4 text-white stroke-[2.5]" />
             </div>
             <div>
@@ -69,12 +69,12 @@ export const Navbar: React.FC = () => {
         </div>
 
         {/* Tab Navigation */}
-        <nav className="flex items-center gap-1 bg-slate-100 p-1 rounded-sm border border-slate-200">
+        <nav className="flex items-center gap-1 bg-slate-100 p-1 rounded-sm border border-slate-200 overflow-x-auto max-w-full">
           <button
             onClick={() => setActiveTab("studio")}
-            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors whitespace-nowrap ${
               activeTab === "studio"
-                ? "bg-rose-600 text-white"
+                ? "bg-rose-600 text-white shadow-xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/80"
             }`}
           >
@@ -83,10 +83,34 @@ export const Navbar: React.FC = () => {
           </button>
 
           <button
+            onClick={() => setActiveTab("youtube")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors whitespace-nowrap ${
+              activeTab === "youtube"
+                ? "bg-red-600 text-white shadow-xs"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/80"
+            }`}
+          >
+            <YouTubeLogoIcon className="w-3.5 h-3.5 text-white" />
+            YouTube
+          </button>
+
+          <button
+            onClick={() => setActiveTab("platforms")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors whitespace-nowrap ${
+              activeTab === "platforms"
+                ? "bg-slate-900 text-white shadow-xs"
+                : "text-slate-700 hover:text-slate-900 hover:bg-slate-200/80 font-bold"
+            }`}
+          >
+            <Key className="w-3.5 h-3.5 text-amber-500" />
+            API Keys & Platforms
+          </button>
+
+          <button
             onClick={() => setActiveTab("schedule")}
-            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors whitespace-nowrap ${
               activeTab === "schedule"
-                ? "bg-rose-600 text-white"
+                ? "bg-rose-600 text-white shadow-xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/80"
             }`}
           >
@@ -96,9 +120,9 @@ export const Navbar: React.FC = () => {
 
           <button
             onClick={() => setActiveTab("analytics")}
-            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors whitespace-nowrap ${
               activeTab === "analytics"
-                ? "bg-rose-600 text-white"
+                ? "bg-rose-600 text-white shadow-xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/80"
             }`}
           >
@@ -107,22 +131,10 @@ export const Navbar: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setActiveTab("youtube")}
-            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors ${
-              activeTab === "youtube"
-                ? "bg-red-600 text-white"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/80"
-            }`}
-          >
-            <YouTubeLogoIcon className="w-3.5 h-3.5 text-white" />
-            YouTube Studio
-          </button>
-
-          <button
             onClick={() => setActiveTab("brandkit")}
-            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors whitespace-nowrap ${
               activeTab === "brandkit"
-                ? "bg-rose-600 text-white"
+                ? "bg-rose-600 text-white shadow-xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/80"
             }`}
           >
@@ -132,7 +144,16 @@ export const Navbar: React.FC = () => {
         </nav>
 
         {/* IG OAuth Connect / Status */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => setActiveTab("platforms")}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-sm border border-slate-300 bg-white hover:bg-slate-100 text-xs font-medium text-slate-700 shadow-2xs"
+            title="Configure platform API keys"
+          >
+            <Key className="w-3.5 h-3.5 text-amber-600" />
+            Keys
+          </button>
+
           <button
             onClick={() => toggleAccountConnect(activeAccount.id)}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-sm border text-xs font-medium transition-colors ${
