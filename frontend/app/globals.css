@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --background: #07080b;
-  --foreground: #f8fafc;
-  --card: #0f1118;
-  --card-border: #1c202e;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-border: #e2e8f0;
   --yt-red: #cc0000;
   --ig-rose: #e11d48;
 }
@@ -26,36 +26,36 @@ body {
 }
 
 .yt-glow {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .yt-glow-lg {
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
 /* Clean Panels & Cards */
 .glass-panel {
-  background: #0f1118;
-  border: 1px solid #1c202e;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 2px;
 }
 
 .glass-panel-premium {
-  background: #0d0f17;
-  border: 1px solid #1c202e;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 2px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .glass-card {
-  background: #0f1118;
-  border: 1px solid #1c202e;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 2px;
 }
 
 .glass-card:hover {
-  background: #141722;
-  border-color: #2e344a;
+  background: #f8fafc;
+  border-color: #cbd5e1;
 }
 
 /* Custom Scrollbar */
@@ -64,12 +64,12 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #07080b;
+  background: #f1f5f9;
 }
 ::-webkit-scrollbar-thumb {
-  background: #252a3a;
+  background: #cbd5e1;
   border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3b425b;
+  background: #94a3b8;
 }

@@ -38,14 +38,14 @@ export const BrandKitModal: React.FC = () => {
   };
 
   return (
-    <div className="glass-panel rounded-sm p-5 border border-slate-800 space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
+    <div className="bg-white rounded-sm p-5 border border-slate-200 space-y-6 shadow-xs">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
         <div>
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Palette className="w-4 h-4 text-rose-400" />
+          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <Palette className="w-4 h-4 text-rose-600" />
             Brand Kit & Personality ({activeAccount?.displayName || "Account"})
           </h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500">
             Configure design palettes, tone guidelines, and signature signatures applied to every generated asset
           </p>
         </div>
@@ -54,51 +54,51 @@ export const BrandKitModal: React.FC = () => {
       <form onSubmit={handleSave} className="space-y-4 max-w-2xl">
         {/* Brand Name */}
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">Brand Identity / Store Name</label>
+          <label className="block text-xs font-semibold text-slate-700 mb-1.5">Brand Identity / Store Name</label>
           <input
             type="text"
             value={brandName}
             onChange={(e) => setBrandName(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-800 rounded-sm p-2.5 text-xs text-white focus:outline-none focus:border-rose-500"
+            className="w-full bg-white border border-slate-300 rounded-sm p-2.5 text-xs text-slate-800 focus:outline-none focus:border-rose-500"
           />
         </div>
 
         {/* Color Palette */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Primary Brand Color</label>
-            <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-sm p-2">
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Primary Brand Color</label>
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-300 rounded-sm p-2">
               <input
                 type="color"
                 value={primaryColor}
                 onChange={(e) => setPrimaryColor(e.target.value)}
                 className="w-6 h-6 rounded-none border-none cursor-pointer bg-transparent"
               />
-              <span className="text-xs text-slate-300 font-mono">{primaryColor}</span>
+              <span className="text-xs text-slate-700 font-mono">{primaryColor}</span>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Secondary Accent Color</label>
-            <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-sm p-2">
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Secondary Accent Color</label>
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-300 rounded-sm p-2">
               <input
                 type="color"
                 value={secondaryColor}
                 onChange={(e) => setSecondaryColor(e.target.value)}
                 className="w-6 h-6 rounded-none border-none cursor-pointer bg-transparent"
               />
-              <span className="text-xs text-slate-300 font-mono">{secondaryColor}</span>
+              <span className="text-xs text-slate-700 font-mono">{secondaryColor}</span>
             </div>
           </div>
         </div>
 
         {/* Brand Tone */}
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">Tone of Voice Engine</label>
+          <label className="block text-xs font-semibold text-slate-700 mb-1.5">Tone of Voice Engine</label>
           <select
             value={fontTone}
             onChange={(e) => setFontTone(e.target.value as any)}
-            className="w-full bg-slate-900 border border-slate-800 rounded-sm p-2.5 text-xs text-white focus:outline-none focus:border-rose-500 cursor-pointer"
+            className="w-full bg-white border border-slate-300 rounded-sm p-2.5 text-xs text-slate-800 focus:outline-none focus:border-rose-500 cursor-pointer"
           >
             <option value="Warm & Artisanal">Warm & Artisanal</option>
             <option value="High Energy">High Energy & Viral</option>
@@ -110,15 +110,15 @@ export const BrandKitModal: React.FC = () => {
 
         {/* Call to Action */}
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-            <MessageSquare className="w-3.5 h-3.5 text-rose-400" />
+          <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
+            <MessageSquare className="w-3.5 h-3.5 text-rose-600" />
             Standard Call To Action
           </label>
           <input
             type="text"
             value={ctaText}
             onChange={(e) => setCtaText(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-800 rounded-sm p-2.5 text-xs text-white focus:outline-none focus:border-rose-500"
+            className="w-full bg-white border border-slate-300 rounded-sm p-2.5 text-xs text-slate-800 focus:outline-none focus:border-rose-500"
           />
         </div>
 
@@ -126,11 +126,11 @@ export const BrandKitModal: React.FC = () => {
         <div className="pt-2">
           <button
             type="submit"
-            className="py-2 px-5 rounded-sm font-semibold text-xs bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-2 transition-colors"
+            className="py-2 px-5 rounded-sm font-semibold text-xs bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-2 transition-colors shadow-xs"
           >
             {saved ? (
               <>
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-200" />
                 Brand Kit Saved
               </>
             ) : (

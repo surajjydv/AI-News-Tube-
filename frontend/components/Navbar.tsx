@@ -31,7 +31,7 @@ export const Navbar: React.FC = () => {
   const activeAccount = accounts.find((a) => a.id === activeAccountId) || accounts[0];
 
   return (
-    <header className="sticky top-0 z-50 w-full glass-panel-premium border-b border-slate-800 px-4 md:px-8 py-3">
+    <header className="sticky top-0 z-50 w-full bg-white border-b border-slate-200 px-4 md:px-8 py-3 shadow-xs">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Brand */}
         <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
@@ -41,26 +41,26 @@ export const Navbar: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-bold text-base tracking-tight text-white">AutoInsta</span>
+                <span className="font-bold text-base tracking-tight text-slate-900">AutoInsta</span>
               </div>
-              <p className="text-[11px] text-slate-400 font-medium">Prompt-to-Publish Studio</p>
+              <p className="text-[11px] text-slate-500 font-medium">Prompt-to-Publish Studio</p>
             </div>
           </div>
 
           {/* Account Switcher */}
-          <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-sm px-2.5 py-1.5">
+          <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 rounded-sm px-2.5 py-1.5">
             <img
               src={activeAccount.avatarUrl}
               alt={activeAccount.displayName}
-              className="w-6 h-6 rounded-sm object-cover border border-slate-700"
+              className="w-6 h-6 rounded-sm object-cover border border-slate-300"
             />
             <select
               value={activeAccountId}
               onChange={(e) => setActiveAccount(e.target.value)}
-              className="bg-transparent text-xs font-semibold text-slate-200 outline-none cursor-pointer pr-1"
+              className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer pr-1"
             >
               {accounts.map((acc) => (
-                <option key={acc.id} value={acc.id} className="bg-slate-900 text-slate-100">
+                <option key={acc.id} value={acc.id} className="bg-white text-slate-800">
                   @{acc.username} ({acc.category})
                 </option>
               ))}
@@ -69,13 +69,13 @@ export const Navbar: React.FC = () => {
         </div>
 
         {/* Tab Navigation */}
-        <nav className="flex items-center gap-1 bg-slate-900 p-1 rounded-sm border border-slate-800">
+        <nav className="flex items-center gap-1 bg-slate-100 p-1 rounded-sm border border-slate-200">
           <button
             onClick={() => setActiveTab("studio")}
             className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors ${
               activeTab === "studio"
                 ? "bg-rose-600 text-white"
-                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/80"
             }`}
           >
             <Wand2 className="w-3.5 h-3.5" />
@@ -87,7 +87,7 @@ export const Navbar: React.FC = () => {
             className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors ${
               activeTab === "schedule"
                 ? "bg-rose-600 text-white"
-                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/80"
             }`}
           >
             <Calendar className="w-3.5 h-3.5" />
@@ -99,7 +99,7 @@ export const Navbar: React.FC = () => {
             className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors ${
               activeTab === "analytics"
                 ? "bg-rose-600 text-white"
-                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/80"
             }`}
           >
             <BarChart3 className="w-3.5 h-3.5" />
@@ -111,7 +111,7 @@ export const Navbar: React.FC = () => {
             className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors ${
               activeTab === "youtube"
                 ? "bg-red-600 text-white"
-                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/80"
             }`}
           >
             <YouTubeLogoIcon className="w-3.5 h-3.5 text-white" />
@@ -123,7 +123,7 @@ export const Navbar: React.FC = () => {
             className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors ${
               activeTab === "brandkit"
                 ? "bg-rose-600 text-white"
-                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/80"
             }`}
           >
             <Palette className="w-3.5 h-3.5" />
@@ -137,18 +137,18 @@ export const Navbar: React.FC = () => {
             onClick={() => toggleAccountConnect(activeAccount.id)}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-sm border text-xs font-medium transition-colors ${
               activeAccount.isConnected
-                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20"
-                : "bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20"
+                ? "bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100"
+                : "bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100"
             }`}
           >
             {activeAccount.isConnected ? (
               <>
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                 IG Connected (@{activeAccount.username})
               </>
             ) : (
               <>
-                <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
+                <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
                 Connect Instagram
               </>
             )}

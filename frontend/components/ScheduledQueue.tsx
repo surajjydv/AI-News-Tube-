@@ -13,24 +13,24 @@ export const ScheduledQueue: React.FC = () => {
   };
 
   return (
-    <div className="glass-panel rounded-sm p-5 border border-slate-800 space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
+    <div className="bg-white rounded-sm p-5 border border-slate-200 space-y-6 shadow-xs">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
         <div>
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-rose-400" />
+          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-rose-600" />
             Publishing Schedule & Queue
           </h2>
-          <p className="text-xs text-slate-400">Monitor queued media items and manage automated delivery slots</p>
+          <p className="text-xs text-slate-500">Monitor queued media items and manage automated delivery slots</p>
         </div>
-        <span className="text-xs text-slate-400 font-medium">
+        <span className="text-xs text-slate-500 font-medium">
           {scheduledPosts.length} posts in queue
         </span>
       </div>
 
       {scheduledPosts.length === 0 ? (
-        <div className="text-center py-12 border border-dashed border-slate-800 rounded-sm">
-          <Clock className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-          <p className="text-sm text-slate-400 font-semibold">Queue is empty</p>
+        <div className="text-center py-12 border border-dashed border-slate-300 rounded-sm bg-slate-50">
+          <Clock className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+          <p className="text-sm text-slate-700 font-semibold">Queue is empty</p>
           <p className="text-xs text-slate-500 mt-0.5">Use the Studio to generate and schedule your next content drop.</p>
         </div>
       ) : (
@@ -47,10 +47,10 @@ export const ScheduledQueue: React.FC = () => {
             return (
               <div
                 key={post.id}
-                className="bg-slate-900 rounded-sm p-3.5 border border-slate-800 flex gap-4 hover:border-slate-700 transition-colors"
+                className="bg-white rounded-sm p-3.5 border border-slate-200 flex gap-4 hover:border-slate-300 shadow-xs transition-colors"
               >
                 {/* Media Thumbnail */}
-                <div className="w-20 h-20 rounded-sm overflow-hidden shrink-0 relative bg-black border border-slate-800">
+                <div className="w-20 h-20 rounded-sm overflow-hidden shrink-0 relative bg-black border border-slate-200">
                   <img
                     src={post.asset.thumbnailUrl || post.asset.imageUrl}
                     alt="Thumbnail"
@@ -65,33 +65,33 @@ export const ScheduledQueue: React.FC = () => {
                 <div className="flex-1 flex flex-col justify-between overflow-hidden">
                   <div>
                     <div className="flex items-center justify-between gap-1 mb-1">
-                      <span className="text-xs font-semibold text-rose-400 truncate">
+                      <span className="text-xs font-semibold text-rose-600 truncate">
                         {getAccountName(post.accountId)}
                       </span>
                       <span
                         className={`text-[10px] px-1.5 py-0.5 rounded-sm font-medium border ${
                           post.status === "published"
-                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-300"
                             : post.status === "publishing"
-                            ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                            : "bg-sky-500/10 text-sky-400 border-sky-500/20"
+                            ? "bg-amber-50 text-amber-700 border-amber-300"
+                            : "bg-sky-50 text-sky-700 border-sky-300"
                         }`}
                       >
                         {post.status.toUpperCase()}
                       </span>
                     </div>
 
-                    <p className="text-xs text-slate-300 line-clamp-2 leading-snug">
+                    <p className="text-xs text-slate-700 line-clamp-2 leading-snug">
                       {post.asset.caption}
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800/80">
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100">
                     <div className="flex items-center gap-1.5">
-                      <Clock className="w-3 h-3 text-rose-400" />
+                      <Clock className="w-3 h-3 text-rose-600" />
                       <span>{formattedDate}</span>
                       {post.recurrence !== "none" && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-sm bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-sm bg-purple-50 text-purple-700 border border-purple-200">
                           {post.recurrence}
                         </span>
                       )}
@@ -101,7 +101,7 @@ export const ScheduledQueue: React.FC = () => {
                       {post.status === "scheduled" && (
                         <button
                           onClick={() => publishNow(post.id)}
-                          className="p-1 text-slate-400 hover:text-rose-400 transition-colors"
+                          className="p-1 text-slate-400 hover:text-rose-600 transition-colors"
                           title="Trigger Publish Now"
                         >
                           <Send className="w-3.5 h-3.5" />
@@ -109,7 +109,7 @@ export const ScheduledQueue: React.FC = () => {
                       )}
                       <button
                         onClick={() => removeScheduledPost(post.id)}
-                        className="p-1 text-slate-400 hover:text-red-400 transition-colors"
+                        className="p-1 text-slate-400 hover:text-red-600 transition-colors"
                         title="Delete from Queue"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

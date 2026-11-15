@@ -20,7 +20,7 @@ export default function Home() {
   }, [initBackendData]);
 
   return (
-    <div className="min-h-screen bg-[#090A0F] text-slate-100 flex flex-col font-sans selection:bg-pink-500/30 selection:text-pink-300">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-rose-100 selection:text-rose-700">
       {/* Top Navbar */}
       <Navbar />
 
@@ -53,8 +53,8 @@ export default function Home() {
       <SchedulerModal isOpen={schedulerOpen} onClose={() => setSchedulerOpen(false)} />
 
       {/* Footer */}
-      <footer className="border-t border-slate-900 py-6 text-center text-xs text-slate-500">
-        AutoInsta B2B AI Studio ? Powered by Neon Database & S3 Storage ? Instagram Automation
+      <footer className="border-t border-slate-200 py-6 text-center text-xs text-slate-500">
+        AutoInsta B2B AI Studio • Powered by Neon Database & S3 Storage • Instagram Automation
       </footer>
     </div>
   );

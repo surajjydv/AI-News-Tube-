@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AutoInsta Studio | B2B Instagram AI Content & Scheduling",
+  title: "AutoInsta Studio | B2B Instagram Content & Scheduling",
   description: "One Prompt to Full 4K Image, 9:16 Video Reel, Neural Voiceover & Auto-Schedule Publishing",
 };
 
@@ -25,9 +25,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-[#090A0F] text-slate-100">{children}</body>
+      <body className="min-h-full flex flex-col bg-slate-50 text-slate-900">{children}</body>
     </html>
   );
 }
