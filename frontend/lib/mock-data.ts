@@ -4,10 +4,10 @@ export const MOCK_ACCOUNTS: Account[] = [
   {
     id: "acc_1",
     username: "SRJUNDERRATED",
-    displayName: "SRJ UNDERRATED",
+    displayName: "NewsTube (@SRJUNDERRATED)",
     avatarUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&h=200&fit=crop",
     followers: 3,
-    category: "YouTube & Live Broadcast",
+    category: "NewsTube 24/7 Live Broadcast",
     isConnected: true,
   },
   {
@@ -32,7 +32,7 @@ export const MOCK_ACCOUNTS: Account[] = [
 
 export const MOCK_BRAND_KITS: Record<string, BrandKit> = {
   acc_1: {
-    brandName: "SRJ UNDERRATED",
+    brandName: "NewsTube",
     primaryColor: "#E11D48",
     secondaryColor: "#F59E0B",
     fontTone: "Prime-Time News & Documentary",

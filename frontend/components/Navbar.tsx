@@ -24,14 +24,16 @@ export const Navbar: React.FC = () => {
               <Tv className="w-4 h-4 text-white stroke-[2.2]" />
             </div>
             <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold text-base tracking-tight text-slate-900">SRJ UNDERRATED</span>
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-emerald-50 text-[10px] font-semibold text-emerald-700 border border-emerald-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  LIVE
+              <div className="flex items-center gap-2">
+                <span className="font-black text-lg tracking-tight text-slate-950 flex items-center">
+                  NEWS<span className="text-red-600">TUBE</span>
+                </span>
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-red-50 text-[10px] font-bold text-red-700 border border-red-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>
+                  LIVE 24/7
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 font-medium">AI Broadcast & Distribution Studio</p>
+              <p className="text-[11px] text-slate-500 font-semibold tracking-tight">AI Broadcast Studio • @SRJUNDERRATED</p>
             </div>
           </div>
 

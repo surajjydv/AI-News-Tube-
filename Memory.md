@@ -236,3 +236,8 @@
   - Replaced the static `Local Ready` badge with a 1-click **Post to Channel** button in `YouTubeStudio.tsx` that calls `POST /api/youtube/publish-local`.
   - Added `publish_local_video_to_youtube` and `POST /api/youtube/publish-local` in `app.py` to trigger direct public uploads or RTMP broadcasting with thumbnail integration.
   - Fixed root `auth_youtube.py` import to invoke `auth/auth_youtube.py` directly for one-time Google OAuth authorization.
+
+- **NewsTube Header Branding & Real YouTube Channel Telemetry**:
+  - Replaced legacy account header branding with prominent **NewsTube** identity (`NEWSTUBE • LIVE 24/7`, `AI Broadcast Studio • @SRJUNDERRATED`) across `Navbar.tsx`, `YouTubeStudio.tsx`, and `layout.tsx`.
+  - Ordered real channel uploads first (`combined = real_vids + local_vids`) in `services/youtube_real_service.py` with offline cached persistent fallback (`data/youtube_real_videos.json`).
+  - Added segmented filters in `YouTubeStudio.tsx`: `All (21)`, `YouTube Uploads (15)`, `Long Form (16:9)`, `Shorts`, and `Local Drafts (6)` with verified YouTube badges on all 15 official channel uploads.

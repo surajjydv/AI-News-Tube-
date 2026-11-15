@@ -29,7 +29,7 @@ export const YouTubeStudio: React.FC = () => {
   const [videos, setVideos] = useState<YouTubeVideo[]>([]);
   const [streamInfo, setStreamInfo] = useState<YouTubeStreamInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "videos" | "shorts">("all");
+  const [filter, setFilter] = useState<"all" | "youtube" | "videos" | "shorts" | "local">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedKey, setCopiedKey] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -233,8 +233,17 @@ export const YouTubeStudio: React.FC = () => {
   };
 
   const filteredVideos = videos.filter((v) => {
+    const isLocal = v.id.startsWith("local_");
     const matchesFilter =
-      filter === "all" ? true : filter === "shorts" ? v.isShort : !v.isShort;
+      filter === "all"
+        ? true
+        : filter === "youtube"
+        ? !isLocal
+        : filter === "local"
+        ? isLocal
+        : filter === "shorts"
+        ? v.isShort
+        : !v.isShort;
     const matchesSearch =
       searchQuery === "" ||
       v.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -274,19 +283,23 @@ export const YouTubeStudio: React.FC = () => {
 
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">
+                <span className="font-black text-xl md:text-2xl tracking-tight text-slate-950 flex items-center">
+                  NEWS<span className="text-red-600">TUBE</span>
+                </span>
+                <span className="text-slate-300 font-light mx-1">|</span>
+                <h1 className="text-lg md:text-xl font-bold text-slate-800 tracking-tight">
                   {channel?.title || "SRJ UNDERRATED"}
                 </h1>
-                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  LIVE
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-red-50 text-red-700 text-[11px] font-bold border border-red-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
+                  LIVE 24/7
                 </span>
-                <span className="px-2 py-0.5 rounded-sm bg-slate-100 text-slate-600 text-xs font-medium border border-slate-200">
+                <span className="px-2 py-0.5 rounded-sm bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200 font-mono">
                   {channel?.customUrl || "@SRJUNDERRATED"}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-1 max-w-xl">
-                {channel?.description || "24/7 AI-NewsTube Live & Automated Broadcasts"}
+              <p className="text-xs text-slate-500 mt-1 max-w-xl font-medium">
+                NewsTube Autonomous Broadcast Newsroom • Live Channel Data & Telemetry
               </p>
             </div>
           </div>
@@ -577,7 +590,7 @@ export const YouTubeStudio: React.FC = () => {
         </div>
 
         {/* Filter Segmented Controls */}
-        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-sm border border-slate-200 shrink-0">
+        <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-sm border border-slate-200 shrink-0">
           <button
             onClick={() => setFilter("all")}
             className={`px-3 py-1.5 rounded-sm text-xs font-semibold transition-colors ${
@@ -586,7 +599,18 @@ export const YouTubeStudio: React.FC = () => {
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/80"
             }`}
           >
-            All Uploads ({videos.length})
+            All ({videos.length})
+          </button>
+          <button
+            onClick={() => setFilter("youtube")}
+            className={`px-3 py-1.5 rounded-sm text-xs font-semibold transition-colors flex items-center gap-1 ${
+              filter === "youtube"
+                ? "bg-red-600 text-white"
+                : "text-slate-700 hover:text-slate-900 hover:bg-slate-200/80 font-bold"
+            }`}
+          >
+            <CheckCircle2 className="w-3 h-3" />
+            YouTube Uploads ({videos.filter((v) => !v.id.startsWith("local_")).length})
           </button>
           <button
             onClick={() => setFilter("videos")}
@@ -596,7 +620,7 @@ export const YouTubeStudio: React.FC = () => {
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/80"
             }`}
           >
-            Long Form (16:9)
+            Long Form
           </button>
           <button
             onClick={() => setFilter("shorts")}
@@ -608,6 +632,18 @@ export const YouTubeStudio: React.FC = () => {
           >
             Shorts ({videos.filter((v) => v.isShort).length})
           </button>
+          {videos.some((v) => v.id.startsWith("local_")) && (
+            <button
+              onClick={() => setFilter("local")}
+              className={`px-3 py-1.5 rounded-sm text-xs font-semibold transition-colors ${
+                filter === "local"
+                  ? "bg-red-600 text-white"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/80"
+              }`}
+            >
+              Local Drafts ({videos.filter((v) => v.id.startsWith("local_")).length})
+            </button>
+          )}
         </div>
       </div>
 
@@ -658,6 +694,12 @@ export const YouTubeStudio: React.FC = () => {
                   {vid.isShort && (
                     <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded-none bg-red-600 text-white font-bold text-[10px] tracking-wider uppercase shadow-xs">
                       Shorts
+                    </span>
+                  )}
+                  {!vid.id.startsWith("local_") && (
+                    <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-none bg-red-600 text-white font-bold text-[10px] tracking-wider uppercase shadow-xs flex items-center gap-1">
+                      <CheckCircle2 className="w-2.5 h-2.5" />
+                      YouTube
                     </span>
                   )}
                   {vid.id.startsWith("local_") && (

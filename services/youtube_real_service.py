@@ -111,6 +111,14 @@ class YouTubeRealService:
                     })
         except Exception as e:
             logger.warning(f"[YouTubeService] RSS feed fetch warning: {e}")
+            cache_file = BASE_DIR / "data" / "youtube_real_videos.json"
+            if cache_file.exists():
+                try:
+                    import json
+                    videos = json.loads(cache_file.read_text(encoding="utf-8"))
+                    return videos
+                except Exception:
+                    pass
         return videos
 
     def _fetch_local_rendered_videos(self) -> List[Dict[str, Any]]:
@@ -288,7 +296,8 @@ class YouTubeRealService:
         # 3. Include local rendered videos from videos/
         local_vids = self._fetch_local_rendered_videos()
 
-        combined = local_vids + real_vids
+        # Real YouTube Channel uploads FIRST, then local drafts
+        combined = real_vids + local_vids
         if combined:
             return combined[:max_results]
 
