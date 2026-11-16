@@ -24,6 +24,8 @@ import {
   Upload,
 } from "lucide-react";
 
+const BACKEND_URL: string = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000";
+
 export const YouTubeStudio: React.FC = () => {
   const [channel, setChannel] = useState<YouTubeChannel | null>(null);
   const [videos, setVideos] = useState<YouTubeVideo[]>([]);
@@ -53,7 +55,7 @@ export const YouTubeStudio: React.FC = () => {
     setPublishingId(vidId);
     setPublishFeedback(null);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/youtube/publish-local", {
+      const res = await fetch(`${BACKEND_URL}/api/youtube/publish-local`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ video_id: vidId }),
@@ -76,9 +78,9 @@ export const YouTubeStudio: React.FC = () => {
     setLoading(true);
     try {
       const [chanRes, vidsRes, streamRes] = await Promise.all([
-        fetch("http://127.0.0.1:8000/api/youtube/channel"),
-        fetch("http://127.0.0.1:8000/api/youtube/videos?max_results=50"),
-        fetch("http://127.0.0.1:8000/api/youtube/stream"),
+        fetch(`${BACKEND_URL}/api/youtube/channel`),
+        fetch(`${BACKEND_URL}/api/youtube/videos?max_results=50`),
+        fetch(`${BACKEND_URL}/api/youtube/stream`),
       ]);
 
       if (chanRes.ok) {
@@ -102,7 +104,7 @@ export const YouTubeStudio: React.FC = () => {
 
   const fetchLiveStatus = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/live/status");
+      const res = await fetch(`${BACKEND_URL}/api/live/status`);
       if (res.ok) {
         const data = await res.json();
         setIsLiveStreamActive(!!data.isLive);
@@ -117,7 +119,7 @@ export const YouTubeStudio: React.FC = () => {
     setLiveStreamLoading(true);
     setLiveMsg(null);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/live/start", { method: "POST" });
+      const res = await fetch(`${BACKEND_URL}/api/live/start`, { method: "POST" });
       const data = await res.json();
       if (data.success) {
         setIsLiveStreamActive(true);
@@ -136,7 +138,7 @@ export const YouTubeStudio: React.FC = () => {
   const handleStopLiveStream = async () => {
     setLiveStreamLoading(true);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/live/stop", { method: "POST" });
+      const res = await fetch(`${BACKEND_URL}/api/live/stop`, { method: "POST" });
       const data = await res.json();
       setIsLiveStreamActive(false);
       setLiveMsg("Live stream stopped.");
@@ -163,7 +165,7 @@ export const YouTubeStudio: React.FC = () => {
     setGenerationMsg(null);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/generate/custom", {
+      const res = await fetch(`${BACKEND_URL}/api/generate/custom`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -205,7 +207,7 @@ export const YouTubeStudio: React.FC = () => {
     setGenerationMsg(null);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/generate/trending", {
+      const res = await fetch(`${BACKEND_URL}/api/generate/trending`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
