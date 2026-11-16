@@ -241,3 +241,9 @@
   - Replaced legacy account header branding with prominent **NewsTube** identity (`NEWSTUBE • LIVE 24/7`, `AI Broadcast Studio • @SRJUNDERRATED`) across `Navbar.tsx`, `YouTubeStudio.tsx`, and `layout.tsx`.
   - Ordered real channel uploads first (`combined = real_vids + local_vids`) in `services/youtube_real_service.py` with offline cached persistent fallback (`data/youtube_real_videos.json`).
   - Added segmented filters in `YouTubeStudio.tsx`: `All (21)`, `YouTube Uploads (15)`, `Long Form (16:9)`, `Shorts`, and `Local Drafts (6)` with verified YouTube badges on all 15 official channel uploads.
+
+- **Git Push & Production Vercel Deployment**:
+  - Replaced Google Font network dependencies with robust native system font stack in `layout.tsx` to enable fast static optimization without network blocking.
+  - Configured `next build --webpack` in `package.json` for deterministic, zero-panic production bundling.
+  - Deployed Next.js frontend to Vercel production: `https://frontend-two-kappa-50.vercel.app` (Deployment ID: `dpl_CsVMTaydSVQucjkDneBS7DcCnfYG`).
+  - Synced all frontend files and pushed commits (`d56285e`) to GitHub repository `https://github.com/surajjydv/AI-News-Tube-.git` on branch `main`.
